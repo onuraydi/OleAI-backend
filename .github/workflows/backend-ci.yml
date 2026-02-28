@@ -1,40 +1,42 @@
 name: Backend CI Pipeline
 
-# Pipeline'ın tetiklenme kuralları
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [ "main", "develop" ]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [ "main", "develop" ]
 
-# Eşzamanlılık (Concurrency): Aynı PR'a yeni bir commit atılırsa, eski çalışan pipeline'ı iptal et. (Senior best practice)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build and Test .NET 9 Backend
+  build-test-analyze:
+    name: Build, Test and Analyze
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Kodu repository'den çek
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # SonarQube analizi için tüm geçmişi çekmek önemlidir
+          fetch-depth: 0 # SonarQube analizi için tüm commit geçmişi (Blame/History) gereklidir.
 
-      # 2. .NET 9 SDK'sını kur
+      # SonarScanner, Java Runtime Environment (JRE) gerektirir
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
-      # 3. NuGet Paketlerini Cache'le (Build sürelerini ciddi oranda kısaltır)
+      # .NET SonarScanner aracını global olarak kur
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
       - name: Cache NuGet Packages
         uses: actions/cache@v3
         with:
@@ -43,29 +45,43 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      # 4. Bağımlılıkları yükle
       - name: Restore Dependencies
         run: dotnet restore ./src/OleAI.Backend.sln
 
-      # 5. Kodu Derle (Warning'leri hata olarak kabul etme - opsiyonel ama önerilir)
+      # 1. SonarQube analizini başlat (Wait=true parametresi PR'ı engellemek için hayatidir)
+      - name: SonarQube Begin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # PR üzerine yorum atabilmesi için
+        run: |
+          dotnet sonarscanner begin \
+          /k:"onuraydi_OleAI-backend" \
+          /o:"onuraydi" \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
+          /d:sonar.qualitygate.wait=true 
+
+      # 2. Kodu Derle
       - name: Build
         run: dotnet build ./src/OleAI.Backend.sln --configuration Release --no-restore
 
-      # 6. xUnit Birim ve Entegrasyon Testlerini Koş
+      # 3. Testleri Koş ve Code Coverage (Test Kapsamı) raporu üret
       - name: Run Tests
-        run: dotnet test ./src/OleAI.Backend.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test_results.trx"
+        run: |
+          dotnet test ./src/OleAI.Backend.sln \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger trx \
+          --DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=xml \
+          --results-directory ./coverage
 
-      # 7. Test Sonuçlarını GitHub'a Yükle (Hataları arayüzde görmek için)
-      - name: Publish Test Results
-        uses: actions/upload-artifact@v4
-        if: always() # Önceki adımlar hata verse bile test raporunu yükle
-        with:
-          name: Test-Results
-          path: '**/TestResults/*.trx'
+      # Üretilen coverage formatını SonarQube'un okuyabileceği kök dizine taşı
+      - name: Move Coverage File
+        run: cp ./coverage/**/*.xml ./coverage.xml
 
-      # 8. SonarQube Statik Kod Analizi (Daha sonra detaylandırılacak)
-      # - name: SonarQube Scan
-      #   uses: sonarsource/sonarqube-scan-action@master
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # 4. SonarQube analizini bitir ve sonuçları sunucuya gönder
+      - name: SonarQube End
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
