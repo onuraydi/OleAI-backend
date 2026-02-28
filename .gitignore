@@ -60,3 +60,9 @@ nunit-*.xml
 .vs/
 bin/
 obj/
+src/.vs/OleAI.Backend/DesignTimeBuild/.dtbcache.v2
+src/.vs/OleAI.Backend/DesignTimeBuild/.dtbcache.v2
+src/.vs/OleAI.Backend/v17/.futdcache.v2
+src/.vs/OleAI.Backend/v17/.futdcache.v2
+src/.vs/OleAI.Backend/v17/.suo
+src/.vs/OleAI.Backend/v17/DocumentLayout.json
