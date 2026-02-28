@@ -48,18 +48,18 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore ./src/OleAI.Backend.sln
 
-      # 1. SonarQube analizini başlat (Wait=true parametresi PR'ı engellemek için hayatidir)
+      # 1. SonarQube analizini başlat
       - name: SonarQube Begin
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # PR üzerine yorum atabilmesi için
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           dotnet sonarscanner begin \
-          /k:"onuraydi_OleAI-backend" \
-          /o:"onuraydi" \
+          /k:"SENIN_PROJE_ANAHTARIN" \
+          /o:"SENIN_ORGANIZASYON_ANAHTARIN" \
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
           /d:sonar.host.url="https://sonarcloud.io" \
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
-          /d:sonar.qualitygate.wait=true 
+          /d:sonar.cs.opencover.reportsPaths=coverage.xml \
+          /d:sonar.qualitygate.wait=true
 
       # 2. Kodu Derle
       - name: Build
@@ -73,8 +73,9 @@ jobs:
           --no-build \
           --verbosity normal \
           --logger trx \
-          --DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=xml \
-          --results-directory ./coverage
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./coverage \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       # Üretilen coverage formatını SonarQube'un okuyabileceği kök dizine taşı
       - name: Move Coverage File
