@@ -1,0 +1,6 @@
+@OleAI.Backend.Presentation_HostAddress = http://localhost:5147
+
+GET {{OleAI.Backend.Presentation_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

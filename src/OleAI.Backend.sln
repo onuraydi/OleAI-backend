@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35818.85
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Core", "OleAI.Backend.Core\OleAI.Backend.Core.csproj", "{8446EB3B-7789-43ED-9B35-BD101B952549}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Domain", "OleAI.Backend.Domain\OleAI.Backend.Domain.csproj", "{D43D9E07-B929-4FAE-A454-C51FA7A6323E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Persistence", "OleAI.Backend.Persistence\OleAI.Backend.Persistence.csproj", "{1B6B93AC-B2FE-45DE-847D-C0156F7F6611}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Application", "OleAI.Backend.Application\OleAI.Backend.Application.csproj", "{82DB6170-1D3E-4F65-A679-11B71676609F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Presentation", "OleAI.Backend.Presentation\OleAI.Backend.Presentation.csproj", "{52FC80E3-6DD3-4441-A5F1-321AA391FB19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8446EB3B-7789-43ED-9B35-BD101B952549}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8446EB3B-7789-43ED-9B35-BD101B952549}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8446EB3B-7789-43ED-9B35-BD101B952549}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8446EB3B-7789-43ED-9B35-BD101B952549}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D43D9E07-B929-4FAE-A454-C51FA7A6323E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D43D9E07-B929-4FAE-A454-C51FA7A6323E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D43D9E07-B929-4FAE-A454-C51FA7A6323E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D43D9E07-B929-4FAE-A454-C51FA7A6323E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B6B93AC-B2FE-45DE-847D-C0156F7F6611}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B6B93AC-B2FE-45DE-847D-C0156F7F6611}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B6B93AC-B2FE-45DE-847D-C0156F7F6611}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B6B93AC-B2FE-45DE-847D-C0156F7F6611}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82DB6170-1D3E-4F65-A679-11B71676609F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82DB6170-1D3E-4F65-A679-11B71676609F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82DB6170-1D3E-4F65-A679-11B71676609F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82DB6170-1D3E-4F65-A679-11B71676609F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52FC80E3-6DD3-4441-A5F1-321AA391FB19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52FC80E3-6DD3-4441-A5F1-321AA391FB19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52FC80E3-6DD3-4441-A5F1-321AA391FB19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52FC80E3-6DD3-4441-A5F1-321AA391FB19}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F1F0D89A-451A-4496-B926-138DE9296DC3}
+	EndGlobalSection
+EndGlobal
