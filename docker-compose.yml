@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # 1. SQL Server Veritabanı
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: oleai_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD} # .env dosyasından otomatik okunacak
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql # Veritabanı container kapanınca silinmesin diye Volume oluşturuyoruz
+    networks:
+      - oleai_network
+
+  # 2. .NET 9 Backend API
+  backend-api:
+    build:
+      context: . # Dockerfile'ın bulunduğu dizin (OleAI-backend kök dizini)
+      dockerfile: Dockerfile
+    container_name: oleai_backend
+    depends_on:
+      - sql-server # Veritabanı hazır olmadan backend ayağa kalkmasın
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "8080:8080"
+    networks:
+      - oleai_network
+
+networks:
+  oleai_network:
+    driver: bridge
+
+volumes:
+  sql_data:
