@@ -1,0 +1,20 @@
+root = true
+
+# Tüm dosyalar için genel kurallar
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# dosyaları için özel .NET kuralları
+[*.cs]
+# System.* using'leri her zaman en üstte olsun
+dotnet_sort_system_directives_first = true
+
+# Süslü parantezler her zaman yeni satırda başlasın (K&R yerine Allman stili)
+csharp_new_line_before_open_brace = all
+
+# Metot parametreleri çok uzunsa alt satıra insin
+csharp_space_between_method_declaration_parameter_list_parentheses = false
