@@ -1,0 +1,34 @@
+# =============================================================================
+# .dockerignore — Docker build context'inden hariç tutulacak dosyalar
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Build artifacts
+**/bin/
+**/obj/
+
+# Test results
+**/TestResults/
+**/coverage/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Documentation & CI (runtime'da gerekli değil)
+*.md
+.github/
+.husky/
+.editorconfig
+.config/

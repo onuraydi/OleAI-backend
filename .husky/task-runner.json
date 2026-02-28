@@ -2,13 +2,42 @@
    "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
    "tasks": [
       {
-         "name": "welcome-message-example",
-         "command": "bash",
-         "args": [ "-c", "echo Husky.Net is awesome!" ],
-         "windows": {
-            "command": "cmd",
-            "args": ["/c", "echo Husky.Net is awesome!" ]
-         }
+         "name": "dotnet-format",
+         "command": "dotnet",
+         "args": [
+            "format",
+            "src/OleAI.Backend.sln",
+            "--verify-no-changes",
+            "--verbosity",
+            "normal"
+         ],
+         "group": "pre-commit"
+      },
+      {
+         "name": "dotnet-build",
+         "command": "dotnet",
+         "args": [
+            "build",
+            "src/OleAI.Backend.sln",
+            "--configuration",
+            "Release",
+            "--no-restore"
+         ],
+         "group": "pre-commit"
+      },
+      {
+         "name": "dotnet-test",
+         "command": "dotnet",
+         "args": [
+            "test",
+            "src/OleAI.Backend.sln",
+            "--configuration",
+            "Release",
+            "--no-build",
+            "--verbosity",
+            "normal"
+         ],
+         "group": "pre-commit"
       }
    ]
 }
