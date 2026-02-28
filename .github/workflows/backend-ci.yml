@@ -1,0 +1,71 @@
+name: Backend CI Pipeline
+
+# Pipeline'ın tetiklenme kuralları
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Eşzamanlılık (Concurrency): Aynı PR'a yeni bir commit atılırsa, eski çalışan pipeline'ı iptal et. (Senior best practice)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and Test .NET 9 Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Kodu repository'den çek
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # SonarQube analizi için tüm geçmişi çekmek önemlidir
+
+      # 2. .NET 9 SDK'sını kur
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # 3. NuGet Paketlerini Cache'le (Build sürelerini ciddi oranda kısaltır)
+      - name: Cache NuGet Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # 4. Bağımlılıkları yükle
+      - name: Restore Dependencies
+        run: dotnet restore ./src/OleAI.Backend.sln
+
+      # 5. Kodu Derle (Warning'leri hata olarak kabul etme - opsiyonel ama önerilir)
+      - name: Build
+        run: dotnet build ./src/OleAI.Backend.sln --configuration Release --no-restore
+
+      # 6. xUnit Birim ve Entegrasyon Testlerini Koş
+      - name: Run Tests
+        run: dotnet test ./src/OleAI.Backend.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test_results.trx"
+
+      # 7. Test Sonuçlarını GitHub'a Yükle (Hataları arayüzde görmek için)
+      - name: Publish Test Results
+        uses: actions/upload-artifact@v4
+        if: always() # Önceki adımlar hata verse bile test raporunu yükle
+        with:
+          name: Test-Results
+          path: '**/TestResults/*.trx'
+
+      # 8. SonarQube Statik Kod Analizi (Daha sonra detaylandırılacak)
+      # - name: SonarQube Scan
+      #   uses: sonarsource/sonarqube-scan-action@master
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
