@@ -58,7 +58,7 @@ jobs:
           /o:"onuraydi" \
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
           /d:sonar.host.url="https://sonarcloud.io" \
-          /d:sonar.cs.opencover.reportsPaths=coverage.xml \
+          /d:sonar.cs.opencover.reportsPaths="coverage/**/coverage.opencover.xml" \
           /d:sonar.qualitygate.wait=true
 
       # 2. Kodu Derle
@@ -77,9 +77,6 @@ jobs:
           --results-directory ./coverage \
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
-      # Üretilen coverage formatını SonarQube'un okuyabileceği kök dizine taşı
-      - name: Move Coverage File
-        run: cp ./coverage/**/*.xml ./coverage.xml
 
       # 4. SonarQube analizini bitir ve sonuçları sunucuya gönder
       - name: SonarQube End
