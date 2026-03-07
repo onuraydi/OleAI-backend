@@ -52,11 +52,11 @@ jobs:
       - name: SonarQube Begin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} 
         run: |
           dotnet sonarscanner begin \
           /k:"onuraydi_OleAI-backend" \
           /o:"onuraydi" \
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
           /d:sonar.host.url="https://sonarcloud.io" \
           /d:sonar.cs.opencover.reportsPaths="coverage/**/coverage.opencover.xml" \
           /d:sonar.coverage.exclusions="**/Program.cs" \
@@ -66,7 +66,7 @@ jobs:
       - name: Build
         run: dotnet build ./src/OleAI.Backend.sln --configuration Release --no-restore
 
-      # 3. Testleri Koş ve Code Coverage (Test Kapsamı) raporu üret
+      # 3. Testleri Koş ve Code Coverage
       - name: Run Tests
         run: |
           dotnet test ./src/OleAI.Backend.sln \
@@ -78,9 +78,9 @@ jobs:
           --results-directory ./coverage \
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
-
       # 4. SonarQube analizini bitir ve sonuçları sunucuya gönder
       - name: SonarQube End
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} 
+        run: dotnet sonarscanner end 
