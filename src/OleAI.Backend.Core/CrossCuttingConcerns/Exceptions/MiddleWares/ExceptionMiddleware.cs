@@ -27,11 +27,11 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares
             }
         }
 
-        private Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
             _httpExceptionHandler.Response = context.Response;
-            return _httpExceptionHandler.HandleException(exception);
+            await _httpExceptionHandler.HandleExceptionAsync(exception);
         }
     }
 
