@@ -24,13 +24,13 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers
             return HandleException(exception);
         }
 
-        public abstract Task HandleExcepiton(AuthenticationException authenticationException);
-        public abstract Task HandleExcepiton(AuthorizationException authorizationException);
-        public abstract Task HandleExcepiton(BusinessException businessException);
-        public abstract Task HandleExcepiton(InternalException internalException);
-        public abstract Task HandleExcepiton(ExternalException externalException);
-        public abstract Task HandleExcepiton(NotFoundException notFoundException);
-        public abstract Task HandleExcepiton(ValidationException validationException);
+        public abstract Task HandleException(AuthenticationException authenticationException);
+        public abstract Task HandleException(AuthorizationException authorizationException);
+        public abstract Task HandleException(BusinessException businessException);
+        public abstract Task HandleException(InternalException internalException);
+        public abstract Task HandleException(ExternalException externalException);
+        public abstract Task HandleException(NotFoundException notFoundException);
+        public abstract Task HandleException(ValidationException validationException);
         public abstract Task HandleException(Exception exception);
     }
 }
