@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Query;
 using OleAI.Backend.Core.Repositories.Dynamic;
+using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 
 namespace OleAI.Backend.Core.Repositories
@@ -15,23 +16,11 @@ namespace OleAI.Backend.Core.Repositories
             CancellationToken cancellationToken = default);
 
         Task<Paginate<TEntity>> GetListAsync(
-            Expression<Func<TEntity, bool>>? predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            int index = 0,
-            int size = 10,
-            bool withDeleted = false,
-            bool enableTracking = true,
+            QueryOptions<TEntity> options,
             CancellationToken cancellationToken = default);
 
         Task<Paginate<TEntity>> GetListByDynamicAsync(
-            DynamicQuery dynamic,
-            Expression<Func<TEntity, bool>>? predicate = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            int index = 0,
-            int size = 10,
-            bool withDeleted = false,
-            bool enableTracking = true,
+            DynamicQueryOptions<TEntity> options,
             CancellationToken cancellationToken = default);
 
         Task<bool> AnyAsync(
