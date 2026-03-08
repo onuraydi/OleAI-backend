@@ -73,7 +73,12 @@ public class EfRepositoryBaseTests
 
         // Act
         // Request Page 1 (index 0) with PageSize 2
-        var result = await _repository.GetListAsync(index: 0, size: 2);
+        var options = new OleAI.Backend.Core.Repositories.Options.QueryOptions<TestEntity>
+        {
+            Index = 0,
+            Size = 2
+        };
+        var result = await _repository.GetListAsync(options);
 
         // Assert
         result.Items.Count.Should().Be(2);
@@ -208,7 +213,14 @@ public class EfRepositoryBaseTests
             Filter = new OleAI.Backend.Core.Repositories.Dynamic.Filter { Field = "Name", Operator = "contains", Value = "J" }
         };
 
-        var result = await _repository.GetListByDynamicAsync(dynamicQuery, index: 0, size: 10);
+        var options = new OleAI.Backend.Core.Repositories.Options.DynamicQueryOptions<TestEntity>
+        {
+            Dynamic = dynamicQuery,
+            Index = 0,
+            Size = 10
+        };
+
+        var result = await _repository.GetListByDynamicAsync(options);
 
         result.Items.Count.Should().Be(2);
         result.TotalItems.Should().Be(2);

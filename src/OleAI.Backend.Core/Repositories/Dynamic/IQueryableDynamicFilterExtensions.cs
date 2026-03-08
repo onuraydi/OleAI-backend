@@ -28,7 +28,7 @@ namespace OleAI.Backend.Core.Repositories.Dynamic
         }
 
 
-        private static IList<Filter> GetAllFilters(Filter filter)
+        private static List<Filter> GetAllFilters(Filter filter)
         {
             List<Filter> filters = new();
             GetFilters(filter, filters);
@@ -73,7 +73,7 @@ namespace OleAI.Backend.Core.Repositories.Dynamic
             return where.ToString();
         }
 
-        private static readonly IDictionary<string, string> Operators = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> Operators = new Dictionary<string, string>
         {
             { "eq", "==" },
             { "neq", "!=" },
