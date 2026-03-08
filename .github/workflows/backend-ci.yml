@@ -50,6 +50,7 @@ jobs:
 
       # 1. SonarQube analizini başlat
       - name: SonarQube Begin
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -80,6 +81,7 @@ jobs:
 
       # 4. SonarQube analizini bitir ve sonuçları sunucuya gönder
       - name: SonarQube End
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
