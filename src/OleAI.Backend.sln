@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Presentation.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Persistence.Tests", "..\tests\OleAI.Backend.Persistence.Tests\OleAI.Backend.Persistence.Tests.csproj", "{900F5FD7-4623-4398-97DD-9A13B30C0157}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OleAI.Backend.Core.Tests", "..\tests\OleAI.Backend.Core.Tests\OleAI.Backend.Core.Tests.csproj", "{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,18 @@ Global
 		{900F5FD7-4623-4398-97DD-9A13B30C0157}.Release|x64.Build.0 = Release|Any CPU
 		{900F5FD7-4623-4398-97DD-9A13B30C0157}.Release|x86.ActiveCfg = Release|Any CPU
 		{900F5FD7-4623-4398-97DD-9A13B30C0157}.Release|x86.Build.0 = Release|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Debug|x64.Build.0 = Debug|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Debug|x86.Build.0 = Debug|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Release|x64.ActiveCfg = Release|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Release|x64.Build.0 = Release|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Release|x86.ActiveCfg = Release|Any CPU
+		{1A4609DF-6D45-44A7-8FE0-4AEF6ACD2864}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
