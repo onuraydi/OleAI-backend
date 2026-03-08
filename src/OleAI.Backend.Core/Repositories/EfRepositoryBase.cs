@@ -2,19 +2,15 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using OleAI.Backend.Core.Repositories.Dynamic;
+using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 
 namespace OleAI.Backend.Core.Repositories
 {
-    public class EfRepositoryBase<TEntity, TId> : IAsyncRepository<TEntity, TId>
+    public class EfRepositoryBase<TEntity, TId>(DbContext context) : IAsyncRepository<TEntity, TId>
         where TEntity : Entity<TId>
     {
-        protected readonly DbContext _context;
-
-        public EfRepositoryBase(DbContext context)
-        {
-            _context = context;
-        }
+        protected readonly DbContext _context = context;
 
         public async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
@@ -37,7 +33,7 @@ namespace OleAI.Backend.Core.Repositories
             if (!enableTracking)
                 queryable = queryable.AsNoTracking();
 
-            if (withDeleted)
+            if (!withDeleted)
                 queryable = queryable.Where(x => x.DeletedDate == null);
 
             if (predicate != null)
@@ -130,68 +126,50 @@ namespace OleAI.Backend.Core.Repositories
             return await queryable.CountAsync(cancellationToken);
         }
 
-        public async Task<Paginate<TEntity>> GetListAsync(Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null, int index = 0, int size = 10, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
+        public async Task<Paginate<TEntity>> GetListAsync(QueryOptions<TEntity> options, CancellationToken cancellationToken = default)
         {
             IQueryable<TEntity> queryable = _context.Set<TEntity>();
 
-            if (!enableTracking)
+            if (!options.EnableTracking)
                 queryable = queryable.AsNoTracking();
 
-            if (!withDeleted)
-                queryable = queryable.Where(x => x.DeletedDate == null);
+            if (options.Include != null)
+                queryable = options.Include.Invoke(queryable);
 
-            if (include != null)
-                queryable = include(queryable);
-
-            if (orderBy != null)
-                queryable = orderBy(queryable);
-
-            if (predicate != null)
-                queryable = queryable.Where(predicate);
-
-            var totalItems = await queryable.CountAsync(cancellationToken);
-            var items = await queryable.Skip(index * size).Take(size).ToListAsync(cancellationToken);
-
-            return new Paginate<TEntity>
-            {
-                Items = items,
-                TotalItems = totalItems,
-                PageNumber = index + 1,
-                PageSize = size,
-                TotalPages = (int)Math.Ceiling(totalItems / (double)size)
-            };
-        }
-
-        public async Task<Paginate<TEntity>> GetListByDynamicAsync(DynamicQuery dynamic, Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null, int index = 0, int size = 10, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
-        {
-            IQueryable<TEntity> queryable = _context.Set<TEntity>();
-
-            if (!enableTracking)
-                queryable = queryable.AsNoTracking();
-
-            if (include != null)
-                queryable = include(queryable);
-
-            if (withDeleted)
+            if (options.WithDeleted)
                 queryable = queryable.IgnoreQueryFilters();
 
-            if (predicate != null)
-                queryable = queryable.Where(predicate);
+            if (options.Predicate != null)
+                queryable = queryable.Where(options.Predicate);
 
-            queryable = queryable.ToDynamic(dynamic);
-
-
-            var totalItems = await queryable.CountAsync(cancellationToken);
-            var items = await queryable.Skip(index * size).Take(size).ToListAsync(cancellationToken);
-
-            return new Paginate<TEntity>
+            if (options.OrderBy != null)
             {
-                Items = items,
-                TotalItems = totalItems,
-                PageNumber = index + 1,
-                PageSize = size,
-                TotalPages = (int)Math.Ceiling(totalItems / (double)size)
-            };
+                return await options.OrderBy.Invoke(queryable)
+                                    .ToPaginateAsync(options.Index, options.Size, cancellationToken);
+            }
+
+            return await queryable.ToPaginateAsync(options.Index, options.Size, cancellationToken);
+        }
+
+        public async Task<Paginate<TEntity>> GetListByDynamicAsync(DynamicQueryOptions<TEntity> options, CancellationToken cancellationToken = default)
+        {
+            IQueryable<TEntity> queryable = _context.Set<TEntity>();
+
+            if (!options.EnableTracking)
+                queryable = queryable.AsNoTracking();
+
+            if (options.Include != null)
+                queryable = options.Include.Invoke(queryable);
+
+            if (options.WithDeleted)
+                queryable = queryable.IgnoreQueryFilters();
+
+            if (options.Predicate != null)
+                queryable = queryable.Where(options.Predicate);
+
+            queryable = queryable.ToDynamic(options.Dynamic);
+
+            return await queryable.ToPaginateAsync(options.Index, options.Size, cancellationToken);
         }
 
         public async Task<TEntity> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
