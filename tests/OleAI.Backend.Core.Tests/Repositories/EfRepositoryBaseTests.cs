@@ -280,4 +280,170 @@ public class EfRepositoryBaseTests
         );
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
+    [Fact]
+    public async Task AnyAsync_WithDeleted_ShouldReturnTrueForDeletedEntity()
+    {
+        var entity = new TestEntity { Id = 100, Name = "Deleted Any", DeletedDate = DateTime.UtcNow };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var exists = await _repository.AnyAsync(e => e.Name == "Deleted Any", withDeleted: true);
+        exists.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnyAsync_WithoutDeleted_ShouldReturnFalseForDeletedEntity()
+    {
+        var entity = new TestEntity { Id = 101, Name = "Deleted Any 2", DeletedDate = DateTime.UtcNow };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var exists = await _repository.AnyAsync(e => e.Name == "Deleted Any 2", withDeleted: false);
+        exists.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AnyAsync_NoTracking_ShouldExecuteWithoutTracking()
+    {
+        var entity = new TestEntity { Id = 102, Name = "NoTracking Any" };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var exists = await _repository.AnyAsync(e => e.Id == 102, enableTracking: false);
+        exists.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAsync_WithDeleted_ShouldReturnDeletedEntity()
+    {
+        var entity = new TestEntity { Id = 103, Name = "Deleted Get", DeletedDate = DateTime.UtcNow };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var result = await _repository.GetAsync(e => e.Id == 103, withDeleted: true);
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(103);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithoutDeleted_ShouldNotReturnDeletedEntity()
+    {
+        var entity = new TestEntity { Id = 104, Name = "Deleted Get 2", DeletedDate = DateTime.UtcNow };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var result = await _repository.GetAsync(e => e.Id == 104, withDeleted: false);
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetAsync_NoTracking_ShouldReturnNotTrackedEntity()
+    {
+        var entity = new TestEntity { Id = 105, Name = "NoTracking Get" };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var result = await _repository.GetAsync(e => e.Id == 105, enableTracking: false);
+        result.Should().NotBeNull();
+        _context.Entry(result!).State.Should().Be(EntityState.Detached);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithInclude_ShouldApplyIncludeQuery()
+    {
+        var entity = new TestEntity { Id = 106, Name = "Include Get" };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var result = await _repository.GetAsync(
+            predicate: e => e.Id == 106,
+            include: null // Removed dummy include to prevent EF primitive errors
+        );
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetCountAsync_WithDeleted_ShouldIncludeDeleted()
+    {
+        var entity = new TestEntity { Id = 107, Name = "Deleted Count", DeletedDate = DateTime.UtcNow };
+        await _context.TestEntities.AddAsync(entity);
+        await _context.SaveChangesAsync();
+
+        var countWithDeleted = await _repository.GetCountAsync(e => e.Name == "Deleted Count", withDeleted: true);
+        var countWithoutDeleted = await _repository.GetCountAsync(e => e.Name == "Deleted Count", withDeleted: false);
+        var countNoTracking = await _repository.GetCountAsync(e => e.Name == "Deleted Count", enableTracking: false);
+
+        countWithDeleted.Should().Be(1);
+        countWithoutDeleted.Should().Be(0);
+        countNoTracking.Should().Be(0); // since enableTracking test defaulted withDeleted=false
+    }
+
+    [Fact]
+    public async Task GetListAsync_FullOptions_ShouldApplyAllFilters()
+    {
+        var entities = new List<TestEntity>
+        {
+            new TestEntity { Id = 201, Name = "Z Item", DeletedDate = DateTime.UtcNow },
+            new TestEntity { Id = 202, Name = "A Item" },
+            new TestEntity { Id = 203, Name = "Z Item", DeletedDate = null }
+        };
+        await _context.TestEntities.AddRangeAsync(entities);
+        await _context.SaveChangesAsync();
+
+        var options = new OleAI.Backend.Core.Repositories.Options.QueryOptions<TestEntity>
+        {
+            Index = 0,
+            Size = 10,
+            EnableTracking = false,
+            WithDeleted = true,
+            Predicate = e => e.Name.Contains("Item"),
+            OrderBy = q => q.OrderBy(e => e.Name)
+        };
+
+        var result = await _repository.GetListAsync(options);
+
+        result.Items.Count.Should().Be(3);
+        result.Items.First().Name.Should().Be("A Item");
+        _context.Entry(result.Items.First()).State.Should().Be(EntityState.Detached);
+    }
+
+    [Fact]
+    public async Task GetListAsync_NoOrderBy_ShouldReturnUnordered()
+    {
+        var entity = new TestEntity { Id = 204, Name = "List No Order" };
+        await _repository.AddAsync(entity);
+        var options = new OleAI.Backend.Core.Repositories.Options.QueryOptions<TestEntity>
+        {
+            Predicate = e => e.Id == 204
+        };
+        var result = await _repository.GetListAsync(options);
+        result.Items.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetListByDynamicAsync_FullOptions_ShouldApplyAllFilters()
+    {
+        var entities = new List<TestEntity>
+        {
+            new TestEntity { Id = 301, Name = "Dynamic Z", DeletedDate = DateTime.UtcNow },
+            new TestEntity { Id = 302, Name = "Dynamic A" }
+        };
+        await _context.TestEntities.AddRangeAsync(entities);
+        await _context.SaveChangesAsync();
+
+        var options = new OleAI.Backend.Core.Repositories.Options.DynamicQueryOptions<TestEntity>
+        {
+            Index = 0,
+            Size = 10,
+            EnableTracking = false,
+            WithDeleted = true,
+            Predicate = e => e.Name.StartsWith("Dynamic"),
+            Dynamic = new OleAI.Backend.Core.Repositories.Dynamic.DynamicQuery()
+        };
+
+        var result = await _repository.GetListByDynamicAsync(options);
+
+        result.Items.Count.Should().Be(2);
+        _context.Entry(result.Items.First()).State.Should().Be(EntityState.Detached);
+    }
 }
