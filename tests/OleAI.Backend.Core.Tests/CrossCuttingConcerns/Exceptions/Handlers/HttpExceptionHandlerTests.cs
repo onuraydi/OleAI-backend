@@ -20,12 +20,16 @@ public class HttpExceptionHandlerTests
         _handler.Response = _httpContext.Response;
     }
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     private async Task<T> GetResponseDetail<T>()
     {
         _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
-        using var reader = new StreamReader(_httpContext.Response.Body);
-        var json = await reader.ReadToEndAsync();
-        return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        var result = await JsonSerializer.DeserializeAsync<T>(_httpContext.Response.Body, _jsonOptions);
+        return result!;
     }
 
     [Fact]
