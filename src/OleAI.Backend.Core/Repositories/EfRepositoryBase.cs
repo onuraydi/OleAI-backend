@@ -33,7 +33,7 @@ namespace OleAI.Backend.Core.Repositories
             if (!enableTracking)
                 queryable = queryable.AsNoTracking();
 
-            if (withDeleted)
+            if (!withDeleted)
                 queryable = queryable.Where(x => x.DeletedDate == null);
 
             if (predicate != null)
