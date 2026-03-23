@@ -1,4 +1,5 @@
 using System.Text;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -6,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using OleAI.Backend.Application;
 using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Caching.Redis;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares;
 using OleAI.Backend.Core.CrossCuttingConcerns.Mailing;
 using OleAI.Backend.Core.Helpers;
@@ -13,6 +15,8 @@ using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
 using StackExchange.Redis;
+
+Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +31,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.AddScoped<ICacheService, RedisCacheManager>();
 builder.Services.AddScoped<IMailService, SmtpMailManager>();
 builder.Services.AddScoped<ITokenHelper, JwtHelper>();
-
+builder.Services.AddSingleton<HttpExceptionHandler>();
 
 
 builder.Services.AddControllers();
