@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Auth.Commands.ChangePassword;
@@ -91,9 +92,13 @@ namespace OleAI.Backend.Presentation.Controllers
 
         [Authorize]
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            command.Request.UserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var command = new ChangePasswordCommand
+            {
+                UserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+                Request = request
+            };
 
             var result = await Mediator.Send(command);
             return Ok(result);
