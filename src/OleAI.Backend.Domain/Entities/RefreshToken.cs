@@ -15,7 +15,7 @@ namespace OleAI.Backend.Domain.Entities
 
         public bool IsExpired => DateTime.UtcNow >= Expires;
         public bool IsRevoked => Revoked != null;
-        public bool ISActive => !IsRevoked && !IsExpired;
+        public bool IsActive => !IsRevoked && !IsExpired;
 
         public virtual User User { get; set; } = null!;
     }
