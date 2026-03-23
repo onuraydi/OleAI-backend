@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OleAI.Backend.Domain\OleAI.Backend.Domain.csproj" />
     <ProjectReference Include="..\OleAI.Backend.Application\OleAI.Backend.Application.csproj" />
   </ItemGroup>
 
