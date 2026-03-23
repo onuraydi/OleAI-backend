@@ -1,5 +1,5 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity.Data;
+using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Application.Features.Auth.Dtos.Responses;
 
 namespace OleAI.Backend.Application.Features.Auth.Commands.Login
