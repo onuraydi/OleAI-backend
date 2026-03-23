@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using OleAI.Backend.Domain.Helpers;
+using OleAI.Backend.Core.Helpers;
 
 namespace OleAI.Backend.Core.Security.Jwt
 {

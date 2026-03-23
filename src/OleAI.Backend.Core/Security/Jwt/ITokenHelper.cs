@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using OleAI.Backend.Core.Security.Jwt;
 
-namespace OleAI.Backend.Domain.Helpers
+namespace OleAI.Backend.Core.Helpers
 {
     public interface ITokenHelper
     {
