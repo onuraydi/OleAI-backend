@@ -21,7 +21,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ChangePassword
         public async Task<ChangePasswordResponse> Handle(ChangePasswordCommand command, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetAsync(
-                    predicate: u => u.Id == command.Request.UserId,
+                    predicate: u => u.Id == command.UserId,
                     cancellationToken: cancellationToken
                 );
 
