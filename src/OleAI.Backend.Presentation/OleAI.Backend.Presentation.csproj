@@ -8,15 +8,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OleAI.Backend.Persistence\OleAI.Backend.Persistence.csproj" />
-    <ProjectReference Include="..\OleAI.Backend.Application\OleAI.Backend.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.5" />
   </ItemGroup>
 
 </Project>
