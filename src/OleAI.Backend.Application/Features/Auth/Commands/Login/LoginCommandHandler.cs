@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using OleAI.Backend.Application.Features.Auth.Dtos.Responses;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
-using OleAI.Backend.Domain.Entities;
-using OleAI.Backend.Domain.Helpers;
+using OleAI.Backend.Core.Helpers;
 
 namespace OleAI.Backend.Application.Features.Auth.Commands.Login
 {
@@ -51,7 +50,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Login
             var accessToken = _tokenHelper.CreateToken(claims);
             var coreRefreshToken = _tokenHelper.CreateRefreshToken();
 
-            var domainRefreshToken = new RefreshToken
+            var domainRefreshToken = new Domain.Entities.RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
