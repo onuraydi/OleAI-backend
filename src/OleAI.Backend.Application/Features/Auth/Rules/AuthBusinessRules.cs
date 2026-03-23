@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
@@ -62,6 +61,18 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
             {
                 throw new BusinessException(AuthMessages.PasswordOrEmailNotCorrect);
             }
+        }
+
+        public void UserPasswordShouldBeMatch(User user, string password)
+        {
+            if (!HashingHelper.VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+                throw new BusinessException("Mevcut şifreniz hatalı.");
+        }
+
+        public void RefreshTokenShouldBeActive(RefreshToken? refreshToken)
+        {
+            if (refreshToken == null || !refreshToken.IsActive)
+                throw new AuthenticationException(AuthMessages.InvalidRefreshToken);
         }
     }
 }
