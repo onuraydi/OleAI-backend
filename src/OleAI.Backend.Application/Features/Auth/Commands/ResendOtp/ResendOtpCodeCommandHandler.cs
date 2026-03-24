@@ -28,7 +28,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResendOtp
         {
             var user = await _userRepository.GetAsync(u => u.Email == command.Request.Email, cancellationToken: cancellationToken);
             _authBusinessRules.UserShouldBeExistsWhenSelected(user);
-            _authBusinessRules.UserAlreadyVerified(user.Email);
+            await _authBusinessRules.UserAlreadyVerified(user.Email);
 
             string otpCode = OtpHelper.GenerateSixDigitCode();
             string redisKey = $"OTP:Verify:{user.Email}";

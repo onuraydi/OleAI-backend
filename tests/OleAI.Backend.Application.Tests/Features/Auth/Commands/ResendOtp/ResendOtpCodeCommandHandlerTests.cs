@@ -89,15 +89,8 @@ public class ResendOtpCodeCommandHandlerTests
             .WithMessage(AuthMessages.UserNotFound);
     }
 
-    /// <summary>
-    /// NOTE: The source handler (ResendOtpCodeCommandHandler.cs line 31) calls
-    /// _authBusinessRules.UserAlreadyVerified(user.Email) WITHOUT await.
-    /// The returned Task is fire-and-forget — the BusinessException is never propagated.
-    /// This test documents the current (buggy) behavior.
-    /// TODO: Fix the handler to await UserAlreadyVerified so the guard is actually enforced.
-    /// </summary>
     [Fact]
-    public async Task Handle_UserAlreadyVerified_CurrentBehavior_ShouldNotThrow_DueToUnawaited_Bug()
+    public async Task Handle_UserAlreadyVerified_ShouldThrowBusinessException()
     {
         // Arrange
         var email = "verified@example.com";
@@ -114,9 +107,11 @@ public class ResendOtpCodeCommandHandlerTests
             false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(verifiedUser);
 
-        // Act & Assert – exception is swallowed due to missing await
-        // When the source bug is fixed, change to ThrowAsync<BusinessException>
+        // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-        await act.Should().NotThrowAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.UserAlreadyVerified);
     }
 }

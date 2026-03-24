@@ -1,126 +1,215 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using OleAI.Backend.Core.Repositories.Dynamic;
 using Xunit;
 
 namespace OleAI.Backend.Core.Tests.Repositories.Dynamic;
 
-public class TestEntity
+public class FilterEntity
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public int? Age { get; set; }
+    public int Age { get; set; }
+    public string? Description { get; set; }
+}
+
+public class FilterDbContext : DbContext
+{
+    public FilterDbContext(DbContextOptions<FilterDbContext> options) : base(options)
+    {
+    }
+    public DbSet<FilterEntity> FilterEntities { get; set; }
 }
 
 public class IQueryableDynamicFilterExtensionsTests
 {
-    private readonly IQueryable<TestEntity> _queryable;
+    private readonly FilterDbContext _context;
 
     public IQueryableDynamicFilterExtensionsTests()
     {
-        var data = new List<TestEntity>
+        var options = new DbContextOptionsBuilder<FilterDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _context = new FilterDbContext(options);
+    }
+
+    private async Task SeedData()
+    {
+        await _context.FilterEntities.AddRangeAsync(new List<FilterEntity>
         {
-            new TestEntity { Id = 1, Name = "Alice", Age = 25 },
-            new TestEntity { Id = 2, Name = "Bob", Age = 30 },
-            new TestEntity { Id = 3, Name = "Charlie", Age = 35 },
-            new TestEntity { Id = 4, Name = "David", Age = null }
-        };
-        _queryable = data.AsQueryable();
+            new FilterEntity { Id = 1, Name = "Alice", Age = 25, Description = "Engineer" },
+            new FilterEntity { Id = 2, Name = "Bob", Age = 30, Description = "Manager" },
+            new FilterEntity { Id = 3, Name = "Charlie", Age = 35, Description = null },
+            new FilterEntity { Id = 4, Name = "David", Age = 40, Description = "Director" },
+            new FilterEntity { Id = 5, Name = "Eve", Age = 45, Description = "Robot" }
+        });
+        await _context.SaveChangesAsync();
     }
 
     [Fact]
-    public void ToDynamic_WithFilterEq_ShouldReturnFilteredData()
+    public async Task ToDynamic_Operator_Eq_ShouldWork()
     {
-        // Arrange
-        var dynamicQuery = new DynamicQuery
-        {
-            Filter = new Filter { Field = "Name", Operator = "eq", Value = "Bob" }
-        };
-
-        // Act
-        var result = _queryable.ToDynamic(dynamicQuery).ToList();
-
-        // Assert
-        result.Count.Should().Be(1);
-        result.First().Name.Should().Be("Bob");
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Name", Operator = "eq", Value = "Alice" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Should().ContainSingle().Which.Name.Should().Be("Alice");
     }
 
     [Fact]
-    public void ToDynamic_WithFilterContains_ShouldReturnFilteredData()
+    public async Task ToDynamic_Operator_Neq_ShouldWork()
     {
-        // Arrange
-        var dynamicQuery = new DynamicQuery
-        {
-            Filter = new Filter { Field = "Name", Operator = "contains", Value = "li" }
-        };
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Age", Operator = "neq", Value = "30" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Count.Should().Be(4);
+        result.Should().NotContain(x => x.Age == 30);
+    }
 
-        // Act
-        var result = _queryable.ToDynamic(dynamicQuery).ToList();
+    [Fact]
+    public async Task ToDynamic_Operator_Lt_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Age", Operator = "lt", Value = "30" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Should().ContainSingle().Which.Name.Should().Be("Alice");
+    }
 
-        // Assert
+    [Fact]
+    public async Task ToDynamic_Operator_Lte_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Age", Operator = "lte", Value = "30" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
         result.Count.Should().Be(2);
-        result.Should().Contain(e => e.Name == "Alice");
-        result.Should().Contain(e => e.Name == "Charlie");
     }
 
     [Fact]
-    public void ToDynamic_WithFilterIsNull_ShouldReturnFilteredData()
+    public async Task ToDynamic_Operator_Gt_ShouldWork()
     {
-        // Arrange
-        var dynamicQuery = new DynamicQuery
-        {
-            Filter = new Filter { Field = "Age", Operator = "isnull" }
-        };
-
-        // Act
-        var result = _queryable.ToDynamic(dynamicQuery).ToList();
-
-        // Assert
-        result.Count.Should().Be(1);
-        result.First().Name.Should().Be("David");
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Age", Operator = "gt", Value = "35" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Count.Should().Be(2); // David (40), Eve (45)
     }
 
     [Fact]
-    public void ToDynamic_WithSortDesc_ShouldReturnSortedData()
+    public async Task ToDynamic_Operator_Gte_ShouldWork()
     {
-        // Arrange
-        var dynamicQuery = new DynamicQuery
-        {
-            Sort = new List<Sort> { new Sort { Field = "Name", Dir = "desc" } }
-        };
-
-        // Act
-        var result = _queryable.ToDynamic(dynamicQuery).ToList();
-
-        // Assert
-        result.First().Name.Should().Be("David");
-        result.Last().Name.Should().Be("Alice");
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Age", Operator = "gte", Value = "35" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Count.Should().Be(3); // Charlie, David, Eve
     }
 
     [Fact]
-    public void ToDynamic_WithCompoundLogic_ShouldReturnFilteredData()
+    public async Task ToDynamic_Operator_IsNull_ShouldWork()
     {
-        // Arrange
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Description", Operator = "isnull" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Should().ContainSingle().Which.Name.Should().Be("Charlie");
+    }
+
+    [Fact]
+    public async Task ToDynamic_Operator_IsNotNull_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Description", Operator = "isnotnull" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Count.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task ToDynamic_Operator_StartsWith_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Name", Operator = "startswith", Value = "Bo" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Should().ContainSingle().Which.Name.Should().Be("Bob");
+    }
+
+    [Fact]
+    public async Task ToDynamic_Operator_EndsWith_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Name", Operator = "endswith", Value = "ie" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Should().ContainSingle().Which.Name.Should().Be("Charlie");
+    }
+
+    [Fact]
+    public async Task ToDynamic_Operator_Contains_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Description", Operator = "contains", Value = "nag" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Should().ContainSingle().Which.Description.Should().Be("Manager");
+    }
+
+    [Fact]
+    public async Task ToDynamic_Operator_DoesNotContain_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery { Filter = new Filter { Field = "Description", Operator = "doesnotcontain", Value = "e" } };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        // Alice, Bob, David contain 'e'. Eve (Robot) does not. Charlie is null.
+        result.Should().Contain(x => x.Name == "Eve");
+        result.Count.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task ToDynamic_Logic_And_ShouldWork()
+    {
+        await SeedData();
         var dynamicQuery = new DynamicQuery
         {
             Filter = new Filter
             {
-                Field = "Name",
-                Operator = "eq",
-                Value = "Alice",
-                Logic = "or",
+                Logic = "and",
                 Filters = new List<Filter>
                 {
-                    new Filter { Field = "Name", Operator = "eq", Value = "Charlie" }
+                    new Filter { Field = "Age", Operator = "gt", Value = "25" },
+                    new Filter { Field = "Age", Operator = "lt", Value = "40" }
                 }
             }
         };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.Count.Should().Be(2); // Bob (30), Charlie (35)
+    }
 
-        // Act
-        var result = _queryable.ToDynamic(dynamicQuery).ToList();
-
-        // Assert
+    [Fact]
+    public async Task ToDynamic_Logic_Or_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery
+        {
+            Filter = new Filter
+            {
+                Logic = "or",
+                Filters = new List<Filter>
+                {
+                    new Filter { Field = "Name", Operator = "eq", Value = "Alice" },
+                    new Filter { Field = "Name", Operator = "eq", Value = "Bob" }
+                }
+            }
+        };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
         result.Count.Should().Be(2);
-        result.Should().Contain(e => e.Name == "Alice");
-        result.Should().Contain(e => e.Name == "Charlie");
+    }
+
+    [Fact]
+    public async Task ToDynamic_Sort_ShouldWork()
+    {
+        await SeedData();
+        var dynamicQuery = new DynamicQuery
+        {
+            Sort = new List<Sort>
+            {
+                new Sort { Field = "Age", Dir = "desc" }
+            }
+        };
+        var result = _context.FilterEntities.ToDynamic(dynamicQuery).ToList();
+        result.First().Name.Should().Be("Eve");
+        result.Last().Name.Should().Be("Alice");
     }
 }
