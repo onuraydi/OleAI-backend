@@ -62,7 +62,10 @@ public class RefreshTokenCommandHandlerTests
             Email = "test@test.com",
             FirstName = "Test",
             LastName = "User",
-            UserOperationClaims = new List<UserOperationClaim>()
+            UserOperationClaims = new List<UserOperationClaim>
+            {
+                new UserOperationClaim { operationClaim = new OperationClaim { Name = "User" } }
+            }
         };
 
         var newAccessTokenStr = new AccessToken { Token = "new-access", Expriration = DateTime.UtcNow.AddMinutes(15) };
