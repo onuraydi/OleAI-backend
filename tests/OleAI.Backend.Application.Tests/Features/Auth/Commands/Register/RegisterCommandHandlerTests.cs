@@ -9,6 +9,7 @@ using OleAI.Backend.Application.Features.Auth.Dtos.Responses;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.CrossCuttingConcerns.Mailing;
 using OleAI.Backend.Domain.Entities;
 using Xunit;
@@ -84,5 +85,32 @@ public class RegisterCommandHandlerTests
 
         // Ensure mail is sent
         _mockMailService.Verify(m => m.sendAsync(request.Email, AuthMessages.EmailVerificationSubject, It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_DuplicateEmail_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var request = new RegisterRequest { Email = "existing@example.com", Password = "password123", FirstName = "Test", LastName = "User" };
+        var command = new RegisterCommand { Request = request };
+
+        // Simulate existing user in repository
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
+            It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>(),
+            false,
+            true,
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new User { Email = request.Email });
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.UserMailAlreadyExists);
+
+        // Ensure no user is added when email is duplicate
+        _mockUserRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
