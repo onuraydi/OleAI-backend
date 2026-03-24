@@ -3,9 +3,11 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using OleAI.Backend.Application.Features.Auth.Commands.Login;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Helpers;
 using OleAI.Backend.Core.Security.Hashing;
 using OleAI.Backend.Core.Security.Jwt;
@@ -35,6 +37,100 @@ public class LoginCommandHandlerTests
             _authBusinessRules,
             _mockTokenHelper.Object
         );
+    }
+
+    [Fact]
+    public async Task Handle_UserNotFound_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var command = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "ghost@test.com", Password = "123" },
+            IpAddress = "127.0.0.1"
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.UserNotFound);
+    }
+
+    [Fact]
+    public async Task Handle_UserEmailNotVerified_ShouldThrowBusinessException()
+    {
+        // Arrange
+        HashingHelper.CreatePasswordHash("123", out byte[] hash, out byte[] salt);
+        var command = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "unverified@test.com", Password = "123" },
+            IpAddress = "127.0.0.1"
+        };
+
+        var unverifiedUser = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "unverified@test.com",
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Status = false, // email not verified
+            UserOperationClaims = new List<UserOperationClaim>()
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(unverifiedUser);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.UserShouldBeVerifiedEmail);
+    }
+
+    [Fact]
+    public async Task Handle_WrongPassword_ShouldThrowBusinessException()
+    {
+        // Arrange
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var command = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "test@test.com", Password = "wrongPassword" },
+            IpAddress = "127.0.0.1"
+        };
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Status = true,
+            UserOperationClaims = new List<UserOperationClaim>()
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.PasswordOrEmailNotCorrect);
     }
 
     [Fact]

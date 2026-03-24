@@ -3,9 +3,11 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using OleAI.Backend.Application.Features.Auth.Commands.RefreshToken;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Helpers;
 using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Domain.Entities;
@@ -106,5 +108,90 @@ public class RefreshTokenCommandHandlerTests
 
         _mockRefreshTokenRepo.Verify(r => r.UpdateAsync(refreshTokenDb, It.IsAny<CancellationToken>()), Times.Once);
         _mockRefreshTokenRepo.Verify(r => r.AddAsync(It.Is<OleAI.Backend.Domain.Entities.RefreshToken>(x => x.Token == "new-refresh"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_RefreshTokenNotFound_ShouldThrowAuthenticationException()
+    {
+        // Arrange
+        var command = new RefreshTokenCommand
+        {
+            Request = new RefreshTokenRequest { Token = "non-existent-token", IpAddress = "127.0.0.1" }
+        };
+
+        _mockRefreshTokenRepo.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<OleAI.Backend.Domain.Entities.RefreshToken, bool>>>(),
+            It.IsAny<Func<IQueryable<OleAI.Backend.Domain.Entities.RefreshToken>, IIncludableQueryable<OleAI.Backend.Domain.Entities.RefreshToken, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((OleAI.Backend.Domain.Entities.RefreshToken?)null);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<AuthenticationException>()
+            .WithMessage(AuthMessages.InvalidRefreshToken);
+    }
+
+    [Fact]
+    public async Task Handle_RevokedRefreshToken_ShouldThrowAuthenticationException()
+    {
+        // Arrange
+        var revokedToken = new OleAI.Backend.Domain.Entities.RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = "revoked-token",
+            Expires = DateTime.UtcNow.AddDays(7),
+            Revoked = DateTime.UtcNow.AddMinutes(-5) // already revoked
+        };
+
+        var command = new RefreshTokenCommand
+        {
+            Request = new RefreshTokenRequest { Token = "revoked-token", IpAddress = "127.0.0.1" }
+        };
+
+        _mockRefreshTokenRepo.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<OleAI.Backend.Domain.Entities.RefreshToken, bool>>>(),
+            It.IsAny<Func<IQueryable<OleAI.Backend.Domain.Entities.RefreshToken>, IIncludableQueryable<OleAI.Backend.Domain.Entities.RefreshToken, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(revokedToken);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<AuthenticationException>()
+            .WithMessage(AuthMessages.InvalidRefreshToken);
+    }
+
+    [Fact]
+    public async Task Handle_ExpiredRefreshToken_ShouldThrowAuthenticationException()
+    {
+        // Arrange
+        var expiredToken = new OleAI.Backend.Domain.Entities.RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = "expired-token",
+            Expires = DateTime.UtcNow.AddDays(-1), // expired yesterday
+            Revoked = null
+        };
+
+        var command = new RefreshTokenCommand
+        {
+            Request = new RefreshTokenRequest { Token = "expired-token", IpAddress = "127.0.0.1" }
+        };
+
+        _mockRefreshTokenRepo.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<OleAI.Backend.Domain.Entities.RefreshToken, bool>>>(),
+            It.IsAny<Func<IQueryable<OleAI.Backend.Domain.Entities.RefreshToken>, IIncludableQueryable<OleAI.Backend.Domain.Entities.RefreshToken, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expiredToken);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<AuthenticationException>()
+            .WithMessage(AuthMessages.InvalidRefreshToken);
     }
 }

@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.CrossCuttingConcerns.Mailing;
 using OleAI.Backend.Domain.Entities;
 using Xunit;
@@ -63,5 +64,28 @@ public class ForgotPasswordCommandHandlerTests
         var redisKey = $"OTP:Reset:{request.Email}";
         _mockCacheService.Verify(c => c.SetAsync(redisKey, It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>()), Times.Once);
         _mockMailService.Verify(m => m.sendAsync(request.Email, AuthMessages.PasswordResetSubject, It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_UserNotFound_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var command = new ForgotPasswordCommand
+        {
+            Request = new ForgotPasswordRequest { Email = "nobody@example.com" }
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
+            It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.UserNotFound);
     }
 }
