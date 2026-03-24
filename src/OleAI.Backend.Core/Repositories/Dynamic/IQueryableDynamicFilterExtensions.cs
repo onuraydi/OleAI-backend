@@ -46,11 +46,11 @@ namespace OleAI.Backend.Core.Repositories.Dynamic
         private static string transform(Filter filter, IList<Filter> filters)
         {
             int index = filters.IndexOf(filter);
-            string comparison = Operators[filter.Operator];
+            string? comparison = !string.IsNullOrEmpty(filter.Operator) && Operators.ContainsKey(filter.Operator) ? Operators[filter.Operator] : null;
             StringBuilder where = new();
 
             // Null veya is not null durumları için özel kontrol
-            if (!string.IsNullOrEmpty(filter.Value))
+            if (!string.IsNullOrEmpty(filter.Value) && comparison != null)
             {
                 if (filter.Operator == "doesnotcontain")
                     where.Append($"(!np({filter.Field}).{comparison}(@{index}))");
@@ -61,13 +61,15 @@ namespace OleAI.Backend.Core.Repositories.Dynamic
             }
             else if (filter.Operator == "isnull" || filter.Operator == "isnotnull")
             {
-                where.Append($"np({filter.Field}) {comparison}");
+                if (comparison != null)
+                    where.Append($"np({filter.Field}) {comparison}");
             }
 
             // AND / OR mantığı varsa iç içe filtreleri birleştir
             if (filter.Logic is not null && filter.Filters is not null && filter.Filters.Any())
             {
-                return $"{where} {filter.Logic} ({string.Join($" {filter.Logic} ", filter.Filters.Select(f => transform(f, filters)).ToArray())})";
+                string children = $"({string.Join($" {filter.Logic} ", filter.Filters.Select(f => transform(f, filters)).Where(s => !string.IsNullOrEmpty(s)).ToArray())})";
+                return string.IsNullOrEmpty(where.ToString()) ? children : $"{where} {filter.Logic} {children}";
             }
 
             return where.ToString();
