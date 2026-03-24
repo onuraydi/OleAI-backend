@@ -55,7 +55,10 @@ public class LoginCommandHandlerTests
             PasswordHash = hash,
             PasswordSalt = salt,
             Status = true,
-            UserOperationClaims = new List<UserOperationClaim>()
+            UserOperationClaims = new List<UserOperationClaim>
+            {
+                new UserOperationClaim { operationClaim = new OperationClaim { Name = "Admin" } }
+            }
         };
 
         var accessToken = new AccessToken { Token = "access", Expriration = DateTime.UtcNow.AddMinutes(15) };
