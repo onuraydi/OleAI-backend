@@ -177,4 +177,32 @@ public class AuthBusinessRulesTests
         // Assert
         act.Should().NotThrow<BusinessException>();
     }
+
+    [Fact]
+    public void UserPasswordShouldBeMatch_ShouldThrowWhenPasswordIsIncorrect()
+    {
+        // Arrange
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var user = new User { PasswordHash = hash, PasswordSalt = salt };
+
+        // Act
+        Action act = () => _businessRules.UserPasswordShouldBeMatch(user, "wrongPassword");
+
+        // Assert
+        act.Should().Throw<BusinessException>().WithMessage("Mevcut şifreniz hatalı.");
+    }
+
+    [Fact]
+    public void UserPasswordShouldBeMatch_ShouldNotThrowWhenPasswordIsCorrect()
+    {
+        // Arrange
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var user = new User { PasswordHash = hash, PasswordSalt = salt };
+
+        // Act
+        Action act = () => _businessRules.UserPasswordShouldBeMatch(user, "correctPassword");
+
+        // Assert
+        act.Should().NotThrow<BusinessException>();
+    }
 }
