@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\OleAI.Backend.Core\OleAI.Backend.Core.csproj" />
+  </ItemGroup>
+
 </Project>
