@@ -33,7 +33,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Login
 
             _authBusinessRules.UserShouldBeExistsWhenSelected(user);
             _authBusinessRules.UserShouldBeVerifiedEmail(user);
-            _authBusinessRules.PasswordAndEmailShouldBeValid(command.Request.Password, user.PasswordHash, user.PasswordSalt);
+            _authBusinessRules.PasswordAndEmailShouldBeValid(command.Request.Password, user!.PasswordHash, user.PasswordSalt);
 
             var claims = new List<Claim>
             {

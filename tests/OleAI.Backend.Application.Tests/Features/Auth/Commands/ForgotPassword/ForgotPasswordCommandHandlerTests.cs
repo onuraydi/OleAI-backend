@@ -59,11 +59,11 @@ public class ForgotPasswordCommandHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Message.Should().Be(AuthMessages.ForgotPasswordSuccess);
+        result.Message.Should().Be(AuthMessages.RecoveryEmailSentMessage);
 
         var redisKey = $"OTP:Reset:{request.Email}";
         _mockCacheService.Verify(c => c.SetAsync(redisKey, It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>()), Times.Once);
-        _mockMailService.Verify(m => m.sendAsync(request.Email, AuthMessages.PasswordResetSubject, It.IsAny<string>()), Times.Once);
+        _mockMailService.Verify(m => m.sendAsync(request.Email, AuthMessages.AccountRecoverySubject, It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
