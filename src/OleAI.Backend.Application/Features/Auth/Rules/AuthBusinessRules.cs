@@ -59,7 +59,7 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
         {
             if (!HashingHelper.VerifyPasswordHash(password, userPasswordHash, userPasswordSalt))
             {
-                throw new BusinessException(AuthMessages.PasswordOrEmailNotCorrect);
+                throw new BusinessException(AuthMessages.LoginInformationNotCorrect);
             }
         }
 

@@ -10,11 +10,11 @@ namespace OleAI.Backend.Application.Features.Auth.Constants
         public const string VerificationCodeIsIncorrectOrExpired = "Doğrulama kodu hatalı veya süresi dolmuş.";
         public const string UserVerifiedMessage = "E-posta adresiniz başarıyla doğrulandı. Artık giriş yapabilirsiniz.";
         public const string UserShouldBeVerifiedEmail = "Lütfen önce e-posta adresinizi doğrulayın.";
-        public const string PasswordOrEmailNotCorrect = "E-posta veya şifre hatalı.";
-        public const string PasswordResetSubject = "OleAI - Şifre Sıfırlama Kodu";
-        public const string PasswordChangedSuccessfully = "Şifreniz başarıyla değiştirildi.";
-        public const string PasswordResetSuccessfully = "Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.";
-        public const string ForgotPasswordSuccess = "Eğer sistemimizde böyle bir kayıt varsa, şifre sıfırlama kodu e-posta adresinize gönderilmiştir.";
+        public const string LoginInformationNotCorrect = "E-posta veya şifre hatalı.";
+        public const string AccountRecoverySubject = "OleAI - Şifre Sıfırlama Kodu";
+        public const string SecurityKeyUpdateSuccess = "Şifreniz başarıyla değiştirildi.";
+        public const string AccountRecoverySuccess = "Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.";
+        public const string RecoveryEmailSentMessage = "Eğer sistemimizde böyle bir kayıt varsa, şifre sıfırlama kodu e-posta adresinize gönderilmiştir.";
         public const string InvalidRefreshToken = "Oturumunuzun süresi dolmuş veya geçersiz. Lütfen tekrar giriş yapın.";
         public const string ResendOtpCodeSuccessfully = "Yeni doğrulama kodu e-posta adresinize gönderildi.";
     }

@@ -55,7 +55,7 @@ public class ChangePasswordCommandHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Message.Should().Be(AuthMessages.PasswordChangedSuccessfully);
+        result.Message.Should().Be(AuthMessages.SecurityKeyUpdateSuccess);
 
         // Ensure hash changed
         user.PasswordHash.Should().NotEqual(hash);

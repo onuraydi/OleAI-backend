@@ -239,7 +239,7 @@ public class AuthControllerTests
             Request = new ForgotPasswordRequest { Email = "test@example.com" }
         };
 
-        var response = new ForgotPasswordResponse { Message = AuthMessages.ForgotPasswordSuccess };
+        var response = new ForgotPasswordResponse { Message = AuthMessages.RecoveryEmailSentMessage };
 
         _mockMediator.Setup(m => m.Send(It.IsAny<ForgotPasswordCommand>(), default))
             .ReturnsAsync(response);
@@ -264,7 +264,7 @@ public class AuthControllerTests
             Request = new ResetPasswordRequest { Email = "test@example.com", OtpCode = "123456", NewPassword = "NewPass!" }
         };
 
-        var response = new ResetPasswordResponse { Message = AuthMessages.PasswordResetSuccessfully };
+        var response = new ResetPasswordResponse { Message = AuthMessages.AccountRecoverySuccess };
 
         _mockMediator.Setup(m => m.Send(It.IsAny<ResetPasswordCommand>(), default))
             .ReturnsAsync(response);
@@ -317,7 +317,7 @@ public class AuthControllerTests
         _controller.ControllerContext.HttpContext.User = claimsPrincipal;
 
         var request = new ChangePasswordRequest { OldPassword = "old", NewPassword = "newPass1!" };
-        var response = new ChangePasswordResponse { Message = AuthMessages.PasswordChangedSuccessfully };
+        var response = new ChangePasswordResponse { Message = AuthMessages.SecurityKeyUpdateSuccess };
 
         _mockMediator.Setup(m => m.Send(It.IsAny<ChangePasswordCommand>(), default))
             .ReturnsAsync(response);

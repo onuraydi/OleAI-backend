@@ -59,7 +59,7 @@ public class ResetPasswordCommandHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Message.Should().Be(AuthMessages.PasswordResetSuccessfully);
+        result.Message.Should().Be(AuthMessages.AccountRecoverySuccess);
 
         user.PasswordHash.Should().NotBeEmpty();
         user.PasswordSalt.Should().NotBeEmpty();

@@ -130,7 +130,7 @@ public class LoginCommandHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage(AuthMessages.PasswordOrEmailNotCorrect);
+            .WithMessage(AuthMessages.LoginInformationNotCorrect);
     }
 
     [Fact]

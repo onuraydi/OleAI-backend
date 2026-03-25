@@ -36,7 +36,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ChangePassword
 
             return new ChangePasswordResponse
             {
-                Message = AuthMessages.PasswordChangedSuccessfully
+                Message = AuthMessages.SecurityKeyUpdateSuccess
             };
         }
     }

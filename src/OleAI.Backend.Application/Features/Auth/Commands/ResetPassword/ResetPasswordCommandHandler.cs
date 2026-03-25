@@ -33,7 +33,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
             string redisKey = $"OTP:Reset{command.Request.Email}";
             var cachedCode = await _cacheService.GetAsync<string>(redisKey);
 
-            _authBusinessRules.VerificationCodeShouldBeValid(cachedCode, command.Request.OtpCode);
+            _authBusinessRules.VerificationCodeShouldBeValid(cachedCode!, command.Request.OtpCode);
 
             HashingHelper.CreatePasswordHash(command.Request.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
             user!.PasswordHash = passwordHash;
@@ -44,7 +44,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
 
             return new ResetPasswordResponse
             {
-                Message = AuthMessages.PasswordResetSuccessfully
+                Message = AuthMessages.AccountRecoverySuccess
             };
         }
     }

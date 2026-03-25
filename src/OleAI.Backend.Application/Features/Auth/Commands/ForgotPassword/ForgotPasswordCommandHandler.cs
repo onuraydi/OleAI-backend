@@ -34,16 +34,16 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword
             _authBusinessRules.UserShouldBeExistsWhenSelected(user);
 
             string otpCode = OtpHelper.GenerateSixDigitCode();
-            string redisKey = $"OTP:Reset:{user.Email}";
+            string redisKey = $"OTP:Reset:{user!.Email}";
 
             await _cacheService.SetAsync(redisKey, otpCode, absoluteExpiration: TimeSpan.FromMinutes(5));
 
             string mailBody = $"<h2>OleAI Şifre Sıfırlama</h2><p>Şifrenizi sıfırlamak için onay kodunuz:</p><h1 style='color:#FF5722;'>{otpCode}</h1>";
-            await _mailService.sendAsync(user.Email, AuthMessages.PasswordResetSubject, mailBody);
+            await _mailService.sendAsync(user.Email, AuthMessages.AccountRecoverySubject, mailBody);
 
             return new ForgotPasswordResponse
             {
-                Message = AuthMessages.ForgotPasswordSuccess,
+                Message = AuthMessages.RecoveryEmailSentMessage,
             };
         }
     }
