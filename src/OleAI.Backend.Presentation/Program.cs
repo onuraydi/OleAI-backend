@@ -1,23 +1,108 @@
+using System.Text;
+using DotNetEnv;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using OleAI.Backend.Application;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching.Redis;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares;
+using OleAI.Backend.Core.CrossCuttingConcerns.Mailing;
+using OleAI.Backend.Core.Helpers;
+using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
+using StackExchange.Redis;
+
+Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Service Registrations (katman bazlı extension methods) ----
+builder.Services.AddApplicationServices();
+builder.Services.AddPersistanceServices(builder.Configuration);
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+        ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+
+// CORE KATMANI SERVİSLERİ
+builder.Services.AddScoped<ICacheService, RedisCacheManager>();
+builder.Services.AddScoped<IMailService, SmtpMailManager>();
+builder.Services.AddScoped<ITokenHelper, JwtHelper>();
+builder.Services.AddSingleton<HttpExceptionHandler>();
+
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Swagger Configuration
+
+builder.Services.AddSwaggerGen(opt =>
+{
+    opt.SwaggerDoc("v1", new OpenApiInfo { Title = "OleAI API", Version = "v1" });
+
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Token bilginizi 'Bearer {token}' formatına gerek kalmadan doğrudan aşağıya giriniz."
+    });
+
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// JWT Configuration
+
+var tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOptions>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidIssuer = tokenOptions!.Issuer,
+            ValidAudience = tokenOptions.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenOptions.SecurityKey)),
+
+            // SENIOR CHECK: Default 5 dakikalık tolerans süresini sıfırlıyoruz. Bu sayede tam 15 dk'de token süresi doluyor.
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
 var app = builder.Build();
+
+// kendi yazdığımız exceptionları entegre ettik.
+app.UseMiddleware<ExceptionMiddleware>();
 
 // ---- Middleware Pipeline ----
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
@@ -28,7 +113,7 @@ if (app.Environment.IsDevelopment())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        dbContext.Database.Migrate();
+        await dbContext.Database.MigrateAsync();
     }
     catch (Exception ex)
     {
@@ -37,4 +122,4 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-app.Run();
+await app.RunAsync();
