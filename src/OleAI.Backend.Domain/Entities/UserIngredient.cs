@@ -30,6 +30,19 @@ namespace OleAI.Backend.Domain.Entities
             };
         }
 
+        // Onay bekleyen ürün ekleme (Sistemde olmayan)
+        public static UserIngredient CreatePending(Guid id, Guid userId, Guid ingredientRequestId, double quantity, DateTime? expirationDate = null)
+        {
+            return new UserIngredient
+            {
+                Id = id,
+                UserId = userId,
+                IngredientRequestId = ingredientRequestId,
+                Quantity = quantity,
+                ExpirationDate = expirationDate
+            };
+        }
+
         // Domain Behaviors
         public void Consume(double amountToConsume)
         {
