@@ -67,6 +67,10 @@ namespace OleAI.Backend.Domain.Entities
         {
             if (IngredientRequestId == null)
                 throw new InvalidOperationException(DomainConstants.ProductAlreadyApprovedOrRequestIdMissingMessage);
+
+            IngredientId = masterIngredientId;
+            // Onaylandığı için request bağlantısını koparabilir veya log için tutabiliriz.
+            // Şimdilik dolapta aktif hale gelmesi için Master ID'yi set ediyoruz.
         }
     }
 }
