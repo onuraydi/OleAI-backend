@@ -22,6 +22,148 @@ namespace OleAI.Backend.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Name");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories", (string)null);
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.Ingredient", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BaseUnitType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("BaseUnitType");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Name");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Ingredients", (string)null);
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.IngredientAlias", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AliasName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("AliasName");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IngredientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AliasName")
+                        .HasDatabaseName("IX_IngredientAliases_AliasName");
+
+                    b.HasIndex("IngredientId");
+
+                    b.ToTable("IngredientAliases", (string)null);
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.IngredientRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LlmAnalysisResult")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("LlmAnalysisResult");
+
+                    b.Property<string>("RequestedName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("RequestedName");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasColumnName("Status");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_IngredientRequests_Status");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("IngredientRequests", (string)null);
+                });
+
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.OperationClaim", b =>
                 {
                     b.Property<Guid>("Id")
@@ -157,6 +299,54 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.UserIngredient", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpirationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("IngredientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("IngredientRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("Quantity")
+                        .HasColumnType("float")
+                        .HasColumnName("Quantity");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IngredientId");
+
+                    b.HasIndex("IngredientRequestId");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_UserIngredients_UserId");
+
+                    b.HasIndex("UserId", "IngredientId")
+                        .IsUnique()
+                        .HasDatabaseName("UK_UserIngredients_UserId_IngredientId")
+                        .HasFilter("[IngredientId] IS NOT NULL");
+
+                    b.ToTable("UserIngredients", (string)null);
+                });
+
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.UserOperationClaim", b =>
                 {
                     b.Property<Guid>("Id")
@@ -188,6 +378,39 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.ToTable("UserOperationClaims", (string)null);
                 });
 
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.Ingredient", b =>
+                {
+                    b.HasOne("OleAI.Backend.Domain.Entities.Category", "Category")
+                        .WithMany("Ingredients")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.IngredientAlias", b =>
+                {
+                    b.HasOne("OleAI.Backend.Domain.Entities.Ingredient", "Ingredient")
+                        .WithMany("Aliases")
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.IngredientRequest", b =>
+                {
+                    b.HasOne("OleAI.Backend.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("OleAI.Backend.Domain.Entities.User", "User")
@@ -195,6 +418,29 @@ namespace OleAI.Backend.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.UserIngredient", b =>
+                {
+                    b.HasOne("OleAI.Backend.Domain.Entities.Ingredient", "Ingredient")
+                        .WithMany("UserIngredients")
+                        .HasForeignKey("IngredientId");
+
+                    b.HasOne("OleAI.Backend.Domain.Entities.IngredientRequest", "IngredientRequest")
+                        .WithMany()
+                        .HasForeignKey("IngredientRequestId");
+
+                    b.HasOne("OleAI.Backend.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+
+                    b.Navigation("IngredientRequest");
 
                     b.Navigation("User");
                 });
@@ -216,6 +462,18 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Navigation("User");
 
                     b.Navigation("operationClaim");
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("OleAI.Backend.Domain.Entities.Ingredient", b =>
+                {
+                    b.Navigation("Aliases");
+
+                    b.Navigation("UserIngredients");
                 });
 
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.User", b =>
