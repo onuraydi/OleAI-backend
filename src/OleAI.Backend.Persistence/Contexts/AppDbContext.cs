@@ -14,6 +14,11 @@ public class AppDbContext : DbContext
     public DbSet<OperationClaim> OperationClaims { get; set; }
     public DbSet<UserOperationClaim> UserOperationClaims { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Ingredient> Ingredients { get; set; }
+    public DbSet<IngredientAlias> IngredientAliases { get; set; }
+    public DbSet<UserIngredient> UserIngredients { get; set; }
+    public DbSet<IngredientRequest> IngredientRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
