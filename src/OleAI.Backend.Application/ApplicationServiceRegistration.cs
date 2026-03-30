@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using OleAI.Backend.Application.Features.Auth.Rules;
+using OleAI.Backend.Application.Features.Pantry.Rules;
 
 namespace OleAI.Backend.Application
 {
@@ -16,6 +17,7 @@ namespace OleAI.Backend.Application
             });
 
             services.AddScoped<AuthBusinessRules>();
+            services.AddScoped<PantryBusinessRules>();
 
             return services;
         }
