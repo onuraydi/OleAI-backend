@@ -1,8 +1,11 @@
 using System.Linq.Expressions;
 using FluentAssertions;
+using MediatR;
 using Moq;
 using OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient;
+using OleAI.Backend.Application.Features.Pantry.Constants;
 using OleAI.Backend.Application.Features.Pantry.Dtos.Requests;
+using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Pantry.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Domain.Entities;
@@ -14,6 +17,7 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
         private readonly Mock<IUserIngredientRepository> _mockUserIngredientRepository;
         private readonly Mock<IIngredientRequestRepository> _mockIngredientRequestRepository;
         private readonly Mock<IIngredientRepository> _mockIngredientRepository;
+        private readonly Mock<IMediator> _mockMediator;
         private readonly PantryBusinessRules _businessRules;
         private readonly AddUserIngredientCommandHandler _handler;
 
@@ -22,12 +26,14 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
             _mockUserIngredientRepository = new Mock<IUserIngredientRepository>();
             _mockIngredientRequestRepository = new Mock<IIngredientRequestRepository>();
             _mockIngredientRepository = new Mock<IIngredientRepository>();
+            _mockMediator = new Mock<IMediator>();
 
             _businessRules = new PantryBusinessRules(_mockIngredientRepository.Object);
             _handler = new AddUserIngredientCommandHandler(
                 _mockUserIngredientRepository.Object,
                 _mockIngredientRequestRepository.Object,
-                _businessRules);
+                _businessRules,
+                _mockMediator.Object);
         }
 
         [Fact]
@@ -46,7 +52,7 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
                 Request = addUserIngredientRequest,
             };
 
-            // DÜZELTME 1: GetAsync için 5 parametre (araya enableTracking için 'true' veya 'false' eklendi)
+            // Business rule checks for existence
             _mockIngredientRepository.Setup(r => r.GetAsync(
                     It.IsAny<Expression<Func<Ingredient, bool>>>(),
                     null,
@@ -58,7 +64,7 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
             // Dolapta aynı ürün varmış gibi davran (İçinde 200 gram var)
             var existingPantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, 200);
 
-            // DÜZELTME 2: GetAsync için 5 parametre
+            // Mock GetAsync to return the existing item
             _mockUserIngredientRepository.Setup(r => r.GetAsync(
                     It.IsAny<Expression<Func<UserIngredient, bool>>>(),
                     null,
@@ -70,15 +76,14 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            // Assert (Doğrulama)
+            // Assert
             result.Should().NotBeNull();
             result.IsPendingApproval.Should().BeFalse();
-            result.Message.Should().Be("Ürün miktarı güncellendi.");
+            result.Message.Should().Be(PantryMessages.IngredientQuantityUpdatedMessage);
 
             // Dolaptaki ürünün miktarı 200 + 500 = 700 olmuş mu?
             existingPantryItem.Quantity.Should().Be(700);
 
-            // DÜZELTME 3: UpdateAsync ve AddAsync için It.IsAny<CancellationToken>() eklendi
             _mockUserIngredientRepository.Verify(r => r.UpdateAsync(existingPantryItem, It.IsAny<CancellationToken>()), Times.Once);
             _mockUserIngredientRepository.Verify(r => r.AddAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -102,17 +107,23 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
             // Assert
             result.Should().NotBeNull();
             result.IsPendingApproval.Should().BeTrue();
-            result.Message.Should().Contain("yapay zeka onayına gönderildi");
+            result.Message.Should().Be(PantryMessages.IngredientSentForAiApprovalMessage);
 
-            // DÜZELTME 4: AddAsync metoduna It.IsAny<CancellationToken>() eklendi
+            // Verify IngredientRequest was added
             _mockIngredientRequestRepository.Verify(r => r.AddAsync(
-                It.Is<IngredientRequest>(ir => ir.RequestedName == "Ejder Meyvesi"),
+                It.Is<IngredientRequest>(ir => ir.RequestedName == "Ejder Meyvesi" && ir.UserId == command.Request.UserId),
                 It.IsAny<CancellationToken>()), Times.Once);
 
-            // DÜZELTME 5: AddAsync metoduna It.IsAny<CancellationToken>() eklendi
+            // Verify UserIngredient was added with Pending status (IngredientRequestId set)
             _mockUserIngredientRepository.Verify(r => r.AddAsync(
-                It.Is<UserIngredient>(ui => ui.IngredientId == null && ui.Quantity == 2),
+                It.Is<UserIngredient>(ui => ui.IngredientId == null && ui.IngredientRequestId != null && ui.Quantity == 2),
+                It.IsAny<CancellationToken>()), Times.Once);
+
+            // Verify Event published
+            _mockMediator.Verify(m => m.Publish(
+                It.Is<IngredientRequestedEvent>(e => e.RequestedName == "Ejder Meyvesi"),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
+

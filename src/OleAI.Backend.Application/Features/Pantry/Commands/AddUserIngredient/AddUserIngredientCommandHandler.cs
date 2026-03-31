@@ -1,6 +1,7 @@
 using MediatR;
 using OleAI.Backend.Application.Features.Pantry.Constants;
 using OleAI.Backend.Application.Features.Pantry.Dtos.Responses;
+using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Pantry.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Domain.Entities;
@@ -12,12 +13,14 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
         private readonly IUserIngredientRepository _userIngredientRepository;
         private readonly IIngredientRequestRepository _ingredientRequestRepository;
         private readonly PantryBusinessRules _businessRules;
+        private readonly IMediator _mediator;
 
-        public AddUserIngredientCommandHandler(IUserIngredientRepository userIngredientRepository, IIngredientRequestRepository ingredientRequestRepository, PantryBusinessRules businessRules)
+        public AddUserIngredientCommandHandler(IUserIngredientRepository userIngredientRepository, IIngredientRequestRepository ingredientRequestRepository, PantryBusinessRules businessRules, IMediator mediator)
         {
             _userIngredientRepository = userIngredientRepository;
             _ingredientRequestRepository = ingredientRequestRepository;
             _businessRules = businessRules;
+            _mediator = mediator;
         }
 
         public async Task<AddedUserIngredientResponse> Handle(AddUserIngredientCommand command, CancellationToken cancellationToken)
@@ -65,7 +68,11 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
                 isPending = true;
                 message = PantryMessages.IngredientSentForAiApprovalMessage;
 
-                // TODO: İleriki Sprint'te burada "IngredientRequestedEvent" fırlatacağız (LLM için)
+                await _mediator.Publish(new IngredientRequestedEvent
+                {
+                    RequestId = ingredientRequest.Id,
+                    RequestedName = ingredientRequest.RequestedName!,
+                }, cancellationToken);
             }
 
             return new AddedUserIngredientResponse
