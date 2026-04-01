@@ -22,7 +22,7 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Commands.Updat
         public async Task<string> Handle(UpdateCategoryCommand command, CancellationToken cancellationToken)
         {
             var category = await _categoryRepository.GetAsync(c => c.Id == command.Request.Id, cancellationToken: cancellationToken);
-            _categoryBusinessRules.CategoryMustExstWhenRequested(category);
+            _categoryBusinessRules.CategoryMustExistWhenRequested(category);
 
             await _categoryBusinessRules.CategoryNameCannotBeDuplicatedWhenInserted(command.Request.Name);
 
