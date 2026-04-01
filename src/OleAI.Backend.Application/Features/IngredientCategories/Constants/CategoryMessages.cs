@@ -7,5 +7,6 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Constants
         public const string CategoryCannotBeDeletedDueToDependenciesMessage = "Bu kategoriye bağlı malzemeler bulunduğu için silinemez. Önce malzemeleri başka kategoriye taşıyın.";
         public const string CreatedCategoryMessage = "Kategori başarıyla eklendi.";
         public const string UpdatedCategoryMessage = "Kategori başarıyla güncellendi.";
+        public const string DeletedCategoryMessage = "Kategori başarıyla silindi.";
     }
 }
