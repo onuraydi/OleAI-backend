@@ -21,7 +21,7 @@ Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Service Registrations (katman bazlı extension methods) ----
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
