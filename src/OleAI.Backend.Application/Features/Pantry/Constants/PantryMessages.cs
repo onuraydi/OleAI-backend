@@ -16,5 +16,6 @@ namespace OleAI.Backend.Application.Features.Pantry.Constants
         public const string RequestResolvedAndInventoryUpdatedMessage = "Talep başarıyla çözümlendi ve kullanıcının envanteri güncellendi.";
         public const string InventoryItemNotFoundMessage = "Dolabınızda böyle bir ürün bulunamadı.";
         public const string IngredientDeletedMessage = "Ürün dolabınızdan başarıyla silindi.";
+        public const string NoExpiredProductsToCleanMessage = "Temizlenecek tarihi geçmiş ürün bulunamadı.";
     }
 }
