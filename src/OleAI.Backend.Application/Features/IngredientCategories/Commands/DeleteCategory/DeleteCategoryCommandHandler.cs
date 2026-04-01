@@ -19,7 +19,7 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Commands.Delet
         public async Task<string> Handle(DeleteCategoryCommand request, CancellationToken cancellationToken)
         {
             var category = await _categoryRepository.GetAsync(c => c.Id == request.Id, cancellationToken: cancellationToken);
-            _categoryBusinessRules.CategoryMustExstWhenRequested(category);
+            _categoryBusinessRules.CategoryMustExistWhenRequested(category);
 
             await _categoryBusinessRules.CategoryCannotBeDeletedIfHasIngredients(request.Id);
 

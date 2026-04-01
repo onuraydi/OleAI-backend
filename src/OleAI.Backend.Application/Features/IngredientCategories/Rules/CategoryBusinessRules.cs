@@ -16,7 +16,7 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Rules
             _ingredientRepository = ingredientRepository;
         }
 
-        public void CategoryMustExstWhenRequested(Category? category)
+        public void CategoryMustExistWhenRequested(Category? category)
         {
             if (category == null)
                 throw new NotFoundException(CategoryMessages.CategoryNotFoundMessage);
