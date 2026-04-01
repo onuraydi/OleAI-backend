@@ -17,6 +17,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Profiles
 
             CreateMap<CreateIngredientRequest, Ingredient>();
             CreateMap<UpdateIngredientRequest, Ingredient>();
+            CreateMap<Ingredient, CreatedIngredientResponse>();
         }
     }
 }
