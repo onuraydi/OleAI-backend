@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OleAI.Backend.Application.Features.Auth.Rules;
+using OleAI.Backend.Application.Features.IngredientCategories.Rules;
 using OleAI.Backend.Application.Features.Pantry.Rules;
 using OleAI.Backend.Application.Services.Llm;
 
@@ -20,6 +21,7 @@ namespace OleAI.Backend.Application
 
             services.AddScoped<AuthBusinessRules>();
             services.AddScoped<PantryBusinessRules>();
+            services.AddScoped<CategoryBusinessRules>();
 
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();
