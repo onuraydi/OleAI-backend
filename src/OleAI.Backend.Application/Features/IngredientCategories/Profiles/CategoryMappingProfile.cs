@@ -11,6 +11,7 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Profiles
         public CategoryMappingProfile()
         {
             CreateMap<Category, CategoryResponse>().ReverseMap();
+            CreateMap<Category, CreatedCategoryResponse>().ReverseMap();
             CreateMap<Paginate<Category>, Paginate<CategoryResponse>>().ReverseMap();
 
             CreateMap<CreateCategoryRequest, Category>();
