@@ -4,5 +4,6 @@ namespace OleAI.Backend.Application.Features.Ingredients.Constants
     {
         public const string IngredientNotFoundMessage = "İstenilen malzeme bulunamadı.";
         public const string ActiveIngredientAlreadyExistsMessage = "Bu isimde aktif bir malzeme zaten mevcut.";
+        public const string IngredientUpdatedMessage = "Malzeme güncellendi";
     }
 }
