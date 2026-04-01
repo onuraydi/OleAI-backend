@@ -2,6 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient;
+using OleAI.Backend.Application.Features.Pantry.Commands.ClearExpiredUserIngredients;
+using OleAI.Backend.Application.Features.Pantry.Commands.DeleteUserIngredient;
+using OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredient;
+using OleAI.Backend.Application.Features.Pantry.Dtos.Requests;
 using OleAI.Backend.Application.Features.Pantry.Queries.GetMyPantry;
 using OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient;
 
@@ -50,6 +54,57 @@ namespace OleAI.Backend.Presentation.Controllers
             var result = await Mediator.Send(command);
 
             return Created("", result);
+        }
+
+        /// <summary>
+        /// Dolaptaki bir ürünün miktarını manuel olarak günceller.
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateIngredientQuantity([FromRoute] Guid id, [FromBody] double newQuantity)
+        {
+            var request = new UpdateUserIngredientRequest
+            {
+                Id = id,
+                UserId = LoggedInUserId,
+                NewQuantity = newQuantity
+            };
+
+            var command = new UpdateUserIngredientCommand
+            {
+                Request = request,
+            };
+
+            var result = await Mediator.Send(command);
+            return Ok(new { Message = result });
+        }
+
+        /// <summary>
+        /// Dolaptaki bir ürünü manuel olarak siler.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteIngredient([FromRoute] Guid id)
+        {
+            var command = new DeleteUserIngredientCommand
+            {
+                Id = id,
+                UserId = LoggedInUserId
+            };
+            var result = await Mediator.Send(command);
+            return Ok(new { Message = result });
+        }
+
+        /// <summary>
+        /// Kullanıcının dolabında son kullanma tarihi geçmiş tüm ürünleri otomatik temizler.
+        /// </summary>
+        [HttpDelete("clear-expired")]
+        public async Task<IActionResult> ClearExpiredIngredients()
+        {
+            var command = new ClearExpiredUserIngredientsCommand
+            {
+                userId = LoggedInUserId
+            };
+            var result = await Mediator.Send(command);
+            return Ok(new { Message = result });
         }
     }
 }
