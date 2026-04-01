@@ -7,10 +7,12 @@ namespace OleAI.Backend.Application.Features.Pantry.Rules
     public class PantryBusinessRules
     {
         private readonly IIngredientRepository _ingredientRepository;
+        private readonly IUserIngredientRepository _userIngredientRepository;
 
-        public PantryBusinessRules(IIngredientRepository ingredientRepository)
+        public PantryBusinessRules(IIngredientRepository ingredientRepository, IUserIngredientRepository userIngredientRepository)
         {
             _ingredientRepository = ingredientRepository;
+            _userIngredientRepository = userIngredientRepository;
         }
 
         public async Task IngredientMustExistWhenSelectedFromList(Guid ingredientId)
@@ -27,6 +29,13 @@ namespace OleAI.Backend.Application.Features.Pantry.Rules
 
             if (!ingredientId.HasValue && string.IsNullOrWhiteSpace(requestedName))
                 throw new BusinessException(PantryMessages.ProductSelectionRequiredMessage);
+        }
+
+        public async Task InventoryItemNotFound(Guid id)
+        {
+            var userIngredient = await _userIngredientRepository.GetAsync(ui => ui.Id == id);
+            if (userIngredient == null)
+                throw new NotFoundException(PantryMessages.InventoryItemNotFoundMessage);
         }
     }
 }

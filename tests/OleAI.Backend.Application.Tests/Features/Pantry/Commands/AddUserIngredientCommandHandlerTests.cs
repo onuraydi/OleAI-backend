@@ -28,7 +28,7 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
             _mockIngredientRepository = new Mock<IIngredientRepository>();
             _mockMediator = new Mock<IMediator>();
 
-            _businessRules = new PantryBusinessRules(_mockIngredientRepository.Object);
+            _businessRules = new PantryBusinessRules(_mockIngredientRepository.Object, _mockUserIngredientRepository.Object);
             _handler = new AddUserIngredientCommandHandler(
                 _mockUserIngredientRepository.Object,
                 _mockIngredientRequestRepository.Object,

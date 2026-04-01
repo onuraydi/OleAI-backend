@@ -14,5 +14,6 @@ namespace OleAI.Backend.Application.Features.Pantry.Constants
         public const string MergedAsAliasMessage = "Alias olarak birleştirildi.";
         public const string RequestRejectedMessage = "Alias olarak birleştirildi.";
         public const string RequestResolvedAndInventoryUpdatedMessage = "Talep başarıyla çözümlendi ve kullanıcının envanteri güncellendi.";
+        public const string InventoryItemNotFoundMessage = "Dolabınızda böyle bir ürün bulunamadı.";
     }
 }
