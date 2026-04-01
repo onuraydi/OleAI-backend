@@ -63,6 +63,14 @@ namespace OleAI.Backend.Domain.Entities
             Quantity += amountToAdd;
         }
 
+        public void UpdateQuantity(double newQuantity)
+        {
+            if (newQuantity < 0)
+                throw new ArgumentException(DomainConstants.AmountCannotBeNegativeMessage);
+
+            Quantity = newQuantity;
+        }
+
         public void ApprovePendingRequest(Guid masterIngredientId)
         {
             if (IngredientRequestId == null)
