@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using OleAI.Backend.Application.Features.IngredientAliases.Constants;
 using OleAI.Backend.Application.Features.IngredientAliases.Dtos.Responses;
 using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Services.Repositories;
@@ -27,8 +28,9 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Commands.CreateIn
 
             var IngredientAlias = _mapper.Map<IngredientAlias>(command.Request);
             var createdIngredientAlias = await _ingredientAliasRepository.AddAsync(IngredientAlias, cancellationToken);
-
-            return _mapper.Map<CreatedIngredientAliasResponse>(createdIngredientAlias);
+            var response = _mapper.Map<CreatedIngredientAliasResponse>(createdIngredientAlias);
+            response.Message = IngredientAliasMessages.AliasCreatedMessage;
+            return response;
         }
     }
 }
