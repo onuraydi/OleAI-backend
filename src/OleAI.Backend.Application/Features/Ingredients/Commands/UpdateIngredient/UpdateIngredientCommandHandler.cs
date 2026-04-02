@@ -27,7 +27,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.UpdateIngredie
             await _ingredientBusinessRules.IngredientNameCannotBeDuplicatedWhenInserted(command.Request.Name);
 
             _mapper.Map(command.Request, ingredient);
-            await _ingredientRepository.UpdateAsync(ingredient);
+            await _ingredientRepository.UpdateAsync(ingredient!);
 
             return IngredientMessages.IngredientUpdatedMessage;
         }
