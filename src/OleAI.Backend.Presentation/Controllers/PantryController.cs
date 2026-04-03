@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient;
+using OleAI.Backend.Application.Features.Pantry.Commands.CancelRequest;
 using OleAI.Backend.Application.Features.Pantry.Commands.ClearExpiredUserIngredients;
 using OleAI.Backend.Application.Features.Pantry.Commands.DeleteUserIngredient;
 using OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredient;
@@ -102,6 +103,21 @@ namespace OleAI.Backend.Presentation.Controllers
             var command = new ClearExpiredUserIngredientsCommand
             {
                 userId = LoggedInUserId
+            };
+            var result = await Mediator.Send(command);
+            return Ok(new { Message = result });
+        }
+
+        /// <summary>
+        /// Kullanıcının henüz onay bekleyen (Pending) bir malzeme talebini iptal etmesini sağlar.
+        /// </summary>
+        [HttpDelete("requests/{requestId}")]
+        public async Task<IActionResult> CancelPendingRequest([FromRoute] Guid requestId)
+        {
+            var command = new CancelIngredientRequestCommand
+            {
+                RequestId = requestId,
+                UserId = LoggedInUserId
             };
             var result = await Mediator.Send(command);
             return Ok(new { Message = result });
