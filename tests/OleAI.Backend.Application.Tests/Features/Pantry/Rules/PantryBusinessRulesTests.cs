@@ -13,13 +13,15 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Rules
     {
         private readonly Mock<IIngredientRepository> _mockIngredientRepository;
         private readonly Mock<IUserIngredientRepository> _mockUserIngredientRepository;
+        private readonly Mock<IIngredientRequestRepository> _mockIngredientRequestRepository;
         private readonly PantryBusinessRules _businessRules;
 
         public PantryBusinessRulesTests()
         {
             _mockIngredientRepository = new Mock<IIngredientRepository>();
             _mockUserIngredientRepository = new Mock<IUserIngredientRepository>();
-            _businessRules = new PantryBusinessRules(_mockIngredientRepository.Object, _mockUserIngredientRepository.Object);
+            _mockIngredientRequestRepository = new Mock<IIngredientRequestRepository>();
+            _businessRules = new PantryBusinessRules(_mockIngredientRepository.Object, _mockUserIngredientRepository.Object, _mockIngredientRequestRepository.Object);
         }
 
         [Fact]
