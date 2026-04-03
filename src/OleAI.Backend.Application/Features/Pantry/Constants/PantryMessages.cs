@@ -17,5 +17,9 @@ namespace OleAI.Backend.Application.Features.Pantry.Constants
         public const string InventoryItemNotFoundMessage = "Dolabınızda böyle bir ürün bulunamadı.";
         public const string IngredientDeletedMessage = "Ürün dolabınızdan başarıyla silindi.";
         public const string NoExpiredProductsToCleanMessage = "Temizlenecek tarihi geçmiş ürün bulunamadı.";
+        public const string IngredientRequestNotFounMessage = "Talep bulunamadı veya bu talebi iptal etme yetkiniz yok.";
+        public const string RequestAlreadyProcessedCannotBeCancelledMessage = "Bu talep zaten yönetici tarafından incelenmiş veya karara bağlanmış. İptal edilemez.";
+        public const string IngredientRequestCancelledMessage = "Talebiniz başarıyla iptal edildi ve dolabınızdan kaldırıldı.";
+        public const string RequestCancelledByUserMessage = "Kullanıcı talebini kendi isteğiyle iptal etti/geri çekti.";
     }
 }
