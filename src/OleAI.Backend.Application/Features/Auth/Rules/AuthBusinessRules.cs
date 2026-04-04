@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
@@ -10,9 +11,41 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
     {
         private readonly IUserRepository _userRepository;
 
+        private static readonly byte[] DummyPasswordHash;
+        private static readonly byte[] DummyPasswordSalt;
+
+        static AuthBusinessRules()
+        {
+            HashingHelper.CreatePasswordHash(
+                Guid.NewGuid().ToString(),
+                out byte[] hash,
+                out byte[] salt);
+            DummyPasswordHash = hash;
+            DummyPasswordSalt = salt;
+        }
+
         public AuthBusinessRules(IUserRepository userRepository)
         {
             _userRepository = userRepository;
+        }
+
+        /// <summary>
+        /// Validates user credentials in a single operation, preventing User Enumeration
+        /// and Timing Attack vulnerabilities.
+        ///
+        /// Security guarantees:
+        /// 1. Returns a single generic error message for both "user not found" and "wrong password".
+        /// 2. Runs PBKDF2 regardless of whether the user exists, so response time doesn't leak info.
+        /// </summary>
+        public void ValidateCredentials(User? user, string password)
+        {
+            byte[] hashToVerify = user?.PasswordHash ?? DummyPasswordHash;
+            byte[] saltToVerify = user?.PasswordSalt ?? DummyPasswordSalt;
+
+            bool isPasswordValid = HashingHelper.VerifyPasswordHash(password, hashToVerify, saltToVerify);
+
+            if (user == null || !isPasswordValid)
+                throw new BusinessException(AuthMessages.InvalidCredentials);
         }
 
         public async Task EmailCannotBeDuplicatedWhenRegistered(string email)

@@ -4,6 +4,7 @@ using OleAI.Backend.Application.Features.Auth.Dtos.Responses;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Security.Hashing;
 
 namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
@@ -28,16 +29,17 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
                     cancellationToken: cancellationToken
                 );
 
-            _authBusinessRules.UserShouldBeExistsWhenSelected(user);
-
             string redisKey = $"OTP:Reset{command.Request.Email}";
             var cachedCode = await _cacheService.GetAsync<string>(redisKey);
 
             _authBusinessRules.VerificationCodeShouldBeValid(cachedCode!, command.Request.OtpCode);
 
+            if (user == null)
+                throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+
             HashingHelper.CreatePasswordHash(command.Request.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
-            user!.PasswordHash = passwordHash;
-            user!.PasswordSalt = passwordSalt;
+            user.PasswordHash = passwordHash;
+            user.PasswordSalt = passwordSalt;
 
             await _userRepository.UpdateAsync(user);
             await _cacheService.RemoveAsync(redisKey);
