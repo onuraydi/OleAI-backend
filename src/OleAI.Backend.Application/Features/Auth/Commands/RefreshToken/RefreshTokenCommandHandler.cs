@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OleAI.Backend.Application.Features.Auth.Dtos.Responses;
 using OleAI.Backend.Application.Features.Auth.Rules;
+using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Helpers;
 
@@ -14,14 +15,20 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.RefreshToken
         private readonly IUserRepository _userRepository;
         private readonly ITokenHelper _tokenHelper;
         private readonly AuthBusinessRules _authBusinessRules;
+        private readonly IAuthService _authService;
 
-
-        public RefreshTokenCommandHandler(IRefreshTokenRepository refreshTokenRepository, IUserRepository userRepository, ITokenHelper tokenHelper, AuthBusinessRules authBusinessRules)
+        public RefreshTokenCommandHandler(
+            IRefreshTokenRepository refreshTokenRepository,
+            IUserRepository userRepository,
+            ITokenHelper tokenHelper,
+            AuthBusinessRules authBusinessRules,
+            IAuthService authService)
         {
             _refreshTokenRepository = refreshTokenRepository;
             _userRepository = userRepository;
             _tokenHelper = tokenHelper;
             _authBusinessRules = authBusinessRules;
+            _authService = authService;
         }
 
         public async Task<RefreshTokenResponse> Handle(RefreshTokenCommand command, CancellationToken cancellationToken)
@@ -71,6 +78,8 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.RefreshToken
                 CreatedDate = DateTime.UtcNow,
                 CreatedByIp = command.Request.IpAddress
             };
+
+            await _authService.DeleteOldRefreshTokensAsync(user.Id, cancellationToken);
             await _refreshTokenRepository.AddAsync(newDomainRefreshToken);
 
             return new RefreshTokenResponse

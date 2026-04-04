@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.Auth.Commands.Login;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Application.Features.Auth.Rules;
+using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Helpers;
@@ -21,6 +22,7 @@ public class LoginCommandHandlerTests
     private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<IRefreshTokenRepository> _mockRefreshTokenRepo;
     private readonly Mock<ITokenHelper> _mockTokenHelper;
+    private readonly Mock<IAuthService> _mockAuthService;
     private readonly AuthBusinessRules _authBusinessRules;
     private readonly LoginCommandHandler _handler;
 
@@ -29,13 +31,15 @@ public class LoginCommandHandlerTests
         _mockUserRepository = new Mock<IUserRepository>();
         _mockRefreshTokenRepo = new Mock<IRefreshTokenRepository>();
         _mockTokenHelper = new Mock<ITokenHelper>();
+        _mockAuthService = new Mock<IAuthService>();
         _authBusinessRules = new AuthBusinessRules(_mockUserRepository.Object);
 
         _handler = new LoginCommandHandler(
             _mockUserRepository.Object,
             _mockRefreshTokenRepo.Object,
             _authBusinessRules,
-            _mockTokenHelper.Object
+            _mockTokenHelper.Object,
+            _mockAuthService.Object
         );
     }
 
