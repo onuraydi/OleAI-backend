@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.Auth.Commands.RefreshToken;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Application.Features.Auth.Rules;
+using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Helpers;
@@ -20,6 +21,7 @@ public class RefreshTokenCommandHandlerTests
     private readonly Mock<IRefreshTokenRepository> _mockRefreshTokenRepo;
     private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<ITokenHelper> _mockTokenHelper;
+    private readonly Mock<IAuthService> _mockAuthService;
     private readonly AuthBusinessRules _authBusinessRules;
     private readonly RefreshTokenCommandHandler _handler;
 
@@ -28,13 +30,15 @@ public class RefreshTokenCommandHandlerTests
         _mockRefreshTokenRepo = new Mock<IRefreshTokenRepository>();
         _mockUserRepository = new Mock<IUserRepository>();
         _mockTokenHelper = new Mock<ITokenHelper>();
+        _mockAuthService = new Mock<IAuthService>();
         _authBusinessRules = new AuthBusinessRules(_mockUserRepository.Object);
 
         _handler = new RefreshTokenCommandHandler(
             _mockRefreshTokenRepo.Object,
             _mockUserRepository.Object,
             _mockTokenHelper.Object,
-            _authBusinessRules
+            _authBusinessRules,
+            _mockAuthService.Object
         );
     }
 
