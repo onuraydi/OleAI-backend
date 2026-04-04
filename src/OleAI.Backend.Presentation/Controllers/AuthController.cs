@@ -1,10 +1,10 @@
 using System.Security.Claims;
-using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Auth.Commands.ChangePassword;
 using OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword;
 using OleAI.Backend.Application.Features.Auth.Commands.Login;
+using OleAI.Backend.Application.Features.Auth.Commands.Logout;
 using OleAI.Backend.Application.Features.Auth.Commands.RefreshToken;
 using OleAI.Backend.Application.Features.Auth.Commands.Register;
 using OleAI.Backend.Application.Features.Auth.Commands.ResendOtp;
@@ -105,10 +105,21 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            var command = new LogoutCommand
+            {
+                RefreshToken = refreshToken ?? string.Empty,
+                IpAddress = GetIpAddress()
+            };
+
+            var result = await Mediator.Send(command);
+
             Response.Cookies.Delete("refreshToken");
-            return Ok(new { message = "Başarıyla çıkış yapıldı." });
+
+            return Ok(result);
         }
 
         // Yardımcı metotlar (GetIpAddress, SetRefreshTokenToCookie)

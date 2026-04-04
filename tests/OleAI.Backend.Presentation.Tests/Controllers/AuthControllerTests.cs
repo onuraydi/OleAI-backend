@@ -8,6 +8,7 @@ using Moq;
 using OleAI.Backend.Application.Features.Auth.Commands.ChangePassword;
 using OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword;
 using OleAI.Backend.Application.Features.Auth.Commands.Login;
+using OleAI.Backend.Application.Features.Auth.Commands.Logout;
 using OleAI.Backend.Application.Features.Auth.Commands.RefreshToken;
 using OleAI.Backend.Application.Features.Auth.Commands.Register;
 using OleAI.Backend.Application.Features.Auth.Commands.ResendOtp;
@@ -157,13 +158,16 @@ public class AuthControllerTests
     // ──────────────────────────────────────────────
 
     [Fact]
-    public void Logout_ShouldDeleteCookie_AndReturnOk()
+    public async Task Logout_ShouldDeleteCookie_AndReturnOk()
     {
         // Arrange
         _controller.HttpContext.Request.Headers.Append("Cookie", "refreshToken=refresh-token");
 
+        _mockMediator.Setup(m => m.Send(It.IsAny<LogoutCommand>(), default))
+            .ReturnsAsync(new LoggedOutResponse { Message = "Logged out successfully" });
+
         // Act
-        var result = _controller.Logout();
+        var result = await _controller.Logout();
 
         // Assert
         var okResult = result as OkObjectResult;
