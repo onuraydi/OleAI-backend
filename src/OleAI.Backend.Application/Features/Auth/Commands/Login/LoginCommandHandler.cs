@@ -31,18 +31,20 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Login
                 cancellationToken: cancellationToken
                 );
 
-            _authBusinessRules.UserShouldBeExistsWhenSelected(user);
-            _authBusinessRules.UserShouldBeVerifiedEmail(user);
-            _authBusinessRules.PasswordAndEmailShouldBeValid(command.Request.Password, user!.PasswordHash, user.PasswordSalt);
+            _authBusinessRules.ValidateCredentials(user, command.Request.Password);
+
+            var verifiedUser = user!;
+
+            _authBusinessRules.UserShouldBeVerifiedEmail(verifiedUser);
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}")
+                new Claim(ClaimTypes.NameIdentifier, verifiedUser.Id.ToString()),
+                new Claim(ClaimTypes.Email, verifiedUser.Email),
+                new Claim(ClaimTypes.Name, $"{verifiedUser.FirstName} {verifiedUser.LastName}")
             };
 
-            foreach (var userRole in user.UserOperationClaims)
+            foreach (var userRole in verifiedUser.UserOperationClaims)
             {
                 claims.Add(new Claim(ClaimTypes.Role, userRole.operationClaim.Name));
             }
@@ -53,7 +55,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Login
             var domainRefreshToken = new Domain.Entities.RefreshToken
             {
                 Id = Guid.NewGuid(),
-                UserId = user.Id,
+                UserId = verifiedUser.Id,
                 Token = coreRefreshToken.Token,
                 Expires = coreRefreshToken.Expiration,
                 CreatedDate = DateTime.UtcNow,

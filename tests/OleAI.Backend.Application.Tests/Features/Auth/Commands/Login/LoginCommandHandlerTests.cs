@@ -40,9 +40,9 @@ public class LoginCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_UserNotFound_ShouldThrowBusinessException()
+    public async Task Handle_UserNotFound_ShouldThrowBusinessException_WithGenericMessage()
     {
-        // Arrange
+        // Arrange — user does not exist
         var command = new LoginCommand
         {
             Request = new LoginRequest { Email = "ghost@test.com", Password = "123" },
@@ -58,9 +58,97 @@ public class LoginCommandHandlerTests
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
+        // Assert — must use the unified InvalidCredentials message (not the old "UserNotFound")
         await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage(AuthMessages.UserNotFound);
+            .WithMessage(AuthMessages.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Handle_WrongPassword_ShouldThrowBusinessException_WithSameGenericMessage()
+    {
+        // Arrange — user exists but password is wrong
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var command = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "test@test.com", Password = "wrongPassword" },
+            IpAddress = "127.0.0.1"
+        };
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Status = true,
+            UserOperationClaims = new List<UserOperationClaim>()
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert — same generic message as user-not-found (anti-enumeration)
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Handle_UserNotFound_And_WrongPassword_ShouldReturn_IdenticalErrorMessages()
+    {
+        // Scenario 1: Non-existent user
+        var commandNoUser = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "ghost@test.com", Password = "123" },
+            IpAddress = "127.0.0.1"
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        string? messageNoUser = null;
+        try { await _handler.Handle(commandNoUser, CancellationToken.None); }
+        catch (BusinessException ex) { messageNoUser = ex.Message; }
+
+        // Scenario 2: Existing user, wrong password
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var existingUser = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Status = true,
+            UserOperationClaims = new List<UserOperationClaim>()
+        };
+
+        var commandWrongPwd = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "test@test.com", Password = "wrongPassword" },
+            IpAddress = "127.0.0.1"
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingUser);
+
+        string? messageWrongPwd = null;
+        try { await _handler.Handle(commandWrongPwd, CancellationToken.None); }
+        catch (BusinessException ex) { messageWrongPwd = ex.Message; }
+
+        // The core anti-enumeration assertion: both messages MUST be identical
+        messageNoUser.Should().Be(messageWrongPwd);
+        messageNoUser.Should().Be(AuthMessages.InvalidCredentials);
     }
 
     [Fact]
@@ -96,41 +184,6 @@ public class LoginCommandHandlerTests
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(AuthMessages.UserShouldBeVerifiedEmail);
-    }
-
-    [Fact]
-    public async Task Handle_WrongPassword_ShouldThrowBusinessException()
-    {
-        // Arrange
-        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
-        var command = new LoginCommand
-        {
-            Request = new LoginRequest { Email = "test@test.com", Password = "wrongPassword" },
-            IpAddress = "127.0.0.1"
-        };
-
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = "test@test.com",
-            PasswordHash = hash,
-            PasswordSalt = salt,
-            Status = true,
-            UserOperationClaims = new List<UserOperationClaim>()
-        };
-
-        _mockUserRepository.Setup(r => r.GetAsync(
-            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
-            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
-            , false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
-
-        // Act
-        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage(AuthMessages.LoginInformationNotCorrect);
     }
 
     [Fact]

@@ -69,9 +69,9 @@ public class ResetPasswordCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_UserNotFound_ShouldThrowBusinessException()
+    public async Task Handle_UserNotFound_ShouldThrowSameError_AsInvalidOtp()
     {
-        // Arrange
+        // Arrange — user does not exist, so no OTP was ever generated → cache returns null
         var command = new ResetPasswordCommand
         {
             Request = new ResetPasswordRequest { Email = "nobody@example.com", OtpCode = "123456", NewPassword = "newPass" }
@@ -83,12 +83,63 @@ public class ResetPasswordCommandHandlerTests
             false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
+        // Cache returns null — no OTP exists for this non-existent user
+        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+            .ReturnsAsync((string?)null);
+
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
+        // Assert — same error as invalid OTP, NOT a "user not found" message
         await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage(AuthMessages.UserNotFound);
+            .WithMessage(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+    }
+
+    [Fact]
+    public async Task Handle_UserNotFound_And_InvalidOtp_ShouldReturn_IdenticalErrorMessages()
+    {
+        // Scenario 1: Non-existent user (cache returns null)
+        var commandNoUser = new ResetPasswordCommand
+        {
+            Request = new ResetPasswordRequest { Email = "ghost@example.com", OtpCode = "123456", NewPassword = "newPass" }
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
+            It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+            .ReturnsAsync((string?)null);
+
+        string? messageNoUser = null;
+        try { await _handler.Handle(commandNoUser, CancellationToken.None); }
+        catch (BusinessException ex) { messageNoUser = ex.Message; }
+
+        // Scenario 2: Existing user, wrong OTP code
+        var existingUser = new User { Id = Guid.NewGuid(), Email = "test@example.com" };
+        var commandWrongOtp = new ResetPasswordCommand
+        {
+            Request = new ResetPasswordRequest { Email = "test@example.com", OtpCode = "999999", NewPassword = "newPass" }
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
+            It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingUser);
+
+        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+            .ReturnsAsync("123456"); // correct code is 123456 but user sent 999999
+
+        string? messageWrongOtp = null;
+        try { await _handler.Handle(commandWrongOtp, CancellationToken.None); }
+        catch (BusinessException ex) { messageWrongOtp = ex.Message; }
+
+        // The core anti-enumeration assertion: both messages MUST be identical
+        messageNoUser.Should().Be(messageWrongOtp);
+        messageNoUser.Should().Be(AuthMessages.VerificationCodeIsIncorrectOrExpired);
     }
 
     [Fact]
