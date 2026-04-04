@@ -70,6 +70,20 @@ public class AuthBusinessRulesTests
     }
 
     [Fact]
+    public void UserShouldBeActive_ShouldThrow_WhenIsActiveIsFalse()
+    {
+        var act = () => _rules.UserShouldBeActive(new User { IsActive = false });
+        act.Should().Throw<BusinessException>();
+    }
+
+    [Fact]
+    public void UserShouldBeActive_ShouldNotThrow_WhenIsActiveIsTrue()
+    {
+        var act = () => _rules.UserShouldBeActive(new User { IsActive = true });
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void PasswordAndEmailShouldBeValid_ShouldThrow_WhenPasswordWrong()
     {
         // Actually this needs HashingHelper verification, which is static.

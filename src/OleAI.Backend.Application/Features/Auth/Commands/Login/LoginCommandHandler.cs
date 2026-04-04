@@ -36,6 +36,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Login
             var verifiedUser = user!;
 
             _authBusinessRules.UserShouldBeVerifiedEmail(verifiedUser);
+            _authBusinessRules.UserShouldBeActive(verifiedUser);
 
             var claims = new List<Claim>
             {
