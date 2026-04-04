@@ -37,15 +37,14 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
         /// 1. Returns a single generic error message for both "user not found" and "wrong password".
         /// 2. Runs PBKDF2 regardless of whether the user exists, so response time doesn't leak info.
         /// </summary>
-        public void ValidateCredentials(User? user, string password)
+        public bool ValidateCredentials(User? user, string password)
         {
             byte[] hashToVerify = user?.PasswordHash ?? DummyPasswordHash;
             byte[] saltToVerify = user?.PasswordSalt ?? DummyPasswordSalt;
 
             bool isPasswordValid = HashingHelper.VerifyPasswordHash(password, hashToVerify, saltToVerify);
 
-            if (user == null || !isPasswordValid)
-                throw new BusinessException(AuthMessages.InvalidCredentials);
+            return user != null && isPasswordValid;
         }
 
         public async Task EmailCannotBeDuplicatedWhenRegistered(string email)

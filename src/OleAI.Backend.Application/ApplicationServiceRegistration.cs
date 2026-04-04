@@ -18,6 +18,7 @@ namespace OleAI.Backend.Application
             });
 
             services.AddScoped<AuthBusinessRules>();
+            services.AddScoped<RoleBusinessRules>();
 
             services.AddScoped<IAuthService>(sp =>
             {

@@ -21,5 +21,25 @@ namespace OleAI.Backend.Application.Features.Auth.Constants
         public const string LogoutSuccesfullyMessage = "Başarıyla çıkış yapıldı.";
         public const string LogoutSuccesfullyWithUserRequestMessage = "Kullanıcı isteğiyle çıkış yapıldı (Logout).";
         public const string AccountNotActiveMessage = "Kullanıcı hesabı aktif değil veya askıya alınmış.";
+        public const string TargetUserNotFound = "Belirtilen kullanıcı bulunamadı.";
+        public const string OperationClaimNotFound = "Belirtilen yetki (rol) bulunamadı.";
+        public const string UserAlreadyHasRole = "Kullanıcı zaten bu yetkiye sahip.";
+        public const string RoleAssignedSuccessfully = "Kullanıcıya ilgili rol başarıyla atandı.";
+
+        // Brute-force / Lockout Messages
+        public const string LockoutPermanentSubject = "OleAI - Hesabınız Güvenlik Nedeniyle Kapatıldı";
+        public const string LockoutPermanentBody = "Hesabınıza 25 kez peş peşe hatalı giriş yapıldı. Güvenliğiniz için hesabınız pasif duruma çekildi. Lütfen yöneticinizle iletişime geçin.";
+
+        public const string Lockout24HoursSubject = "OleAI - Şüpheli Giriş Uyarıları (24 Saat Kilit)";
+        public const string Lockout24HoursBody = "Hesabınıza peş peşe hatalı giriş denemeleri yapıldığı için hesabınız 24 saat kilitlendi. Bu işlemi siz yapmadıysanız şifrenizi hemen sıfırlayın.";
+
+        public const string Lockout1HourSubject = "OleAI - Şüpheli Giriş Uyarıları (1 Saat Kilit)";
+        public const string Lockout1HourBody = "Hesabınıza art arda hatalı denemeler yapıldı ve hesabınız 1 saat kilitlendi.";
+
+        public const string Lockout15MinutesSubject = "OleAI - Şüpheli Giriş Uyarıları (15 Dakika Kilit)";
+        public const string Lockout15MinutesBody = "10 kez hatalı giriş denemesi sebebiyle 15 dakika kilitlendiniz.";
+
+        public const string Lockout5MinutesSubject = "OleAI - Şüpheli Aktivite Tespit Edildi";
+        public const string Lockout5MinutesBody = "5 kez hatalı şifre girdiniz. Sistem sizi 5 dakika oyalıyor. Şifrenizi hatırlamıyorsanız şifremi unuttum adımını kullanınız.";
     }
 }
