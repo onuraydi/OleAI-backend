@@ -78,7 +78,7 @@ public class RegisterCommandHandlerTests
             u.Email == request.Email &&
             u.PasswordHash != null &&
             u.PasswordSalt != null &&
-            u.Status == false), It.IsAny<CancellationToken>()), Times.Once);
+            u.IsEmailVerified == false), It.IsAny<CancellationToken>()), Times.Once);
 
         // Ensure Cache is set
         _mockCacheService.Verify(c => c.SetAsync(It.Is<string>(k => k == $"OTP:Verify:{request.Email}"), It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>()), Times.Once);

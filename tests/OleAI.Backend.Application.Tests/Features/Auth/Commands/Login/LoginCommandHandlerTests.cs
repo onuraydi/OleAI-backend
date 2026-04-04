@@ -80,7 +80,7 @@ public class LoginCommandHandlerTests
             Email = "test@test.com",
             PasswordHash = hash,
             PasswordSalt = salt,
-            Status = true,
+            IsEmailVerified = true,
             UserOperationClaims = new List<UserOperationClaim>()
         };
 
@@ -126,7 +126,7 @@ public class LoginCommandHandlerTests
             Email = "test@test.com",
             PasswordHash = hash,
             PasswordSalt = salt,
-            Status = true,
+            IsEmailVerified = true,
             UserOperationClaims = new List<UserOperationClaim>()
         };
 
@@ -168,7 +168,7 @@ public class LoginCommandHandlerTests
             Email = "unverified@test.com",
             PasswordHash = hash,
             PasswordSalt = salt,
-            Status = false, // email not verified
+            IsEmailVerified = false, // email not verified
             UserOperationClaims = new List<UserOperationClaim>()
         };
 
@@ -203,7 +203,7 @@ public class LoginCommandHandlerTests
             LastName = "User",
             PasswordHash = hash,
             PasswordSalt = salt,
-            Status = true,
+            IsEmailVerified = true,
             UserOperationClaims = new List<UserOperationClaim>
             {
                 new UserOperationClaim { operationClaim = new OperationClaim { Name = "Admin" } }

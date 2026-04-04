@@ -66,9 +66,9 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
 
         public async Task UserAlreadyVerified(string email)
         {
-            User? User = await _userRepository.GetAsync(predicate: u => u.Email == email);
+            User? user = await _userRepository.GetAsync(predicate: u => u.Email == email);
 
-            if (User!.Status)
+            if (user != null && user.IsEmailVerified)
             {
                 throw new BusinessException(AuthMessages.UserAlreadyVerified);
             }
@@ -82,9 +82,17 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
 
         public void UserShouldBeVerifiedEmail(User? user)
         {
-            if (!user!.Status)
+            if (user != null && !user.IsEmailVerified)
             {
                 throw new BusinessException(AuthMessages.UserShouldBeVerifiedEmail);
+            }
+        }
+
+        public void UserShouldBeActive(User? user)
+        {
+            if (user != null && !user.IsActive)
+            {
+                throw new BusinessException(AuthMessages.AccountNotActiveMessage);
             }
         }
 

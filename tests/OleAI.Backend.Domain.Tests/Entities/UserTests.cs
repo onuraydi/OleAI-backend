@@ -39,7 +39,7 @@ public class UserTests
         user.FirstName.Should().BeEmpty();
         user.LastName.Should().BeEmpty();
         user.Email.Should().BeEmpty();
-        user.Status.Should().BeFalse();
+        user.IsEmailVerified.Should().BeFalse();
         user.PasswordHash.Should().BeEmpty();
         user.PasswordSalt.Should().BeEmpty();
     }

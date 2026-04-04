@@ -18,7 +18,7 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
 
             builder.Property(u => u.PasswordHash).IsRequired();
             builder.Property(u => u.PasswordSalt).IsRequired();
-            builder.Property(u => u.Status).HasDefaultValue(true);
+            builder.Property(u => u.IsEmailVerified).HasDefaultValue(true);
 
             builder.HasMany(u => u.UserOperationClaims)
                 .WithOne(uoc => uoc.User)
