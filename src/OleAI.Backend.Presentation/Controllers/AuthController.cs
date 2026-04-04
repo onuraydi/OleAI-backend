@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OleAI.Backend.Application.Features.Auth.Commands.AssignRole;
 using OleAI.Backend.Application.Features.Auth.Commands.ChangePassword;
 using OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword;
 using OleAI.Backend.Application.Features.Auth.Commands.Login;
@@ -9,7 +11,9 @@ using OleAI.Backend.Application.Features.Auth.Commands.RefreshToken;
 using OleAI.Backend.Application.Features.Auth.Commands.Register;
 using OleAI.Backend.Application.Features.Auth.Commands.ResendOtp;
 using OleAI.Backend.Application.Features.Auth.Commands.ResetPassword;
+using OleAI.Backend.Application.Features.Auth.Commands.UnlockUser;
 using OleAI.Backend.Application.Features.Auth.Commands.VerifyEmail;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Dtos.Requests;
 using OleAI.Backend.Core.Security.Jwt;
 
@@ -19,6 +23,7 @@ namespace OleAI.Backend.Presentation.Controllers
     [ApiController]
     public class AuthController : BaseController
     {
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterCommand command)
         {
@@ -33,6 +38,7 @@ namespace OleAI.Backend.Presentation.Controllers
             return Ok(result);
         }
 
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginCommand command)
         {
@@ -69,6 +75,7 @@ namespace OleAI.Backend.Presentation.Controllers
             return Ok(result.AccessToken);
         }
 
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("resend-otp")]
         public async Task<IActionResult> ResendOtp([FromBody] ResendOtpCommand command)
         {
@@ -76,6 +83,7 @@ namespace OleAI.Backend.Presentation.Controllers
             return Ok(result);
         }
 
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command)
         {
@@ -83,6 +91,7 @@ namespace OleAI.Backend.Presentation.Controllers
             return Ok(result);
         }
 
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
         {
@@ -100,6 +109,24 @@ namespace OleAI.Backend.Presentation.Controllers
                 Request = request
             };
 
+            var result = await Mediator.Send(command);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = AuthRoles.Admin)]
+        [HttpPost("assign-role")]
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+        {
+            var command = new AssignRoleCommand { Request = request };
+            var result = await Mediator.Send(command);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = AuthRoles.Admin)]
+        [HttpPost("unlock-user")]
+        public async Task<IActionResult> UnlockUser([FromBody] UnlockUserRequest request)
+        {
+            var command = new UnlockUserCommand { Request = request };
             var result = await Mediator.Send(command);
             return Ok(result);
         }

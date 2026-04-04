@@ -37,9 +37,15 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
             if (user == null)
                 throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
 
+            _authBusinessRules.UserShouldBeActive(user);
+
             HashingHelper.CreatePasswordHash(command.Request.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
+
+            // Sadece süreli kilitleri (LockoutEnd) ve deneme sayısını sıfırlar. Kalıcı banı (IsActive) değiştirmez.
+            user.FailedLoginAttempts = 0;
+            user.LockoutEnd = null;
 
             await _userRepository.UpdateAsync(user);
             await _cacheService.RemoveAsync(redisKey);
