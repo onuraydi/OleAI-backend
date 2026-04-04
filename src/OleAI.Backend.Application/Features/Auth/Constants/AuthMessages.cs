@@ -17,5 +17,7 @@ namespace OleAI.Backend.Application.Features.Auth.Constants
         public const string RecoveryEmailSentMessage = "Eğer sistemimizde böyle bir kayıt varsa, şifre sıfırlama kodu e-posta adresinize gönderilmiştir.";
         public const string InvalidRefreshToken = "Oturumunuzun süresi dolmuş veya geçersiz. Lütfen tekrar giriş yapın.";
         public const string ResendOtpCodeSuccessfully = "Yeni doğrulama kodu e-posta adresinize gönderildi.";
+        public const string LogoutSuccesfullyMessage = "Başarıyla çıkış yapıldı.";
+        public const string LogoutSuccesfullyWithUserRequestMessage = "Kullanıcı isteğiyle çıkış yapıldı (Logout).";
     }
 }
