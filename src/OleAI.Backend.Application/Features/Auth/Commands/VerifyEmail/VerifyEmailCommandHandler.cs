@@ -34,7 +34,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.VerifyEmail
 
             _authBusinessRules.VerificationCodeShouldBeValid(cachedCode!, command.Request.OtpCode);
 
-            user.Status = true; // TODO: Bu kısım // Entity içindeki bir metot ile durumu güncellemek (Encapsulation) [user.MarkAsEmailVerified();]
+            user.IsEmailVerified = true; // TODO: Bu kısım // Entity içindeki bir metot ile durumu güncellemek (Encapsulation) [user.MarkAsEmailVerified();]
 
             await _userRepository.UpdateAsync(user);
             await _cacheService.RemoveAsync(redisKey);

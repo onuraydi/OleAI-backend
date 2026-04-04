@@ -39,7 +39,6 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Register
             newUser.Id = Guid.NewGuid();
             newUser.PasswordHash = passwordHash;
             newUser.PasswordSalt = passwordSalt;
-            newUser.Status = false;
 
             await _userRepository.AddAsync(newUser);
 

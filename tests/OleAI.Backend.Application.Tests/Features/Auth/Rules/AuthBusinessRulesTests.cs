@@ -42,7 +42,7 @@ public class AuthBusinessRulesTests
     public async Task UserAlreadyVerified_ShouldThrow_WhenStatusIsTrue()
     {
         _userRepositoryMock.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<User, bool>>>(), null, false, true, default))
-            .ReturnsAsync(new User { Status = true });
+            .ReturnsAsync(new User { IsEmailVerified = true });
 
         var act = () => _rules.UserAlreadyVerified("test@test.com");
         await act.Should().ThrowAsync<BusinessException>();
@@ -65,7 +65,7 @@ public class AuthBusinessRulesTests
     [Fact]
     public void UserShouldBeVerifiedEmail_ShouldThrow_WhenStatusIsFalse()
     {
-        var act = () => _rules.UserShouldBeVerifiedEmail(new User { Status = false });
+        var act = () => _rules.UserShouldBeVerifiedEmail(new User { IsEmailVerified = false });
         act.Should().Throw<BusinessException>();
     }
 

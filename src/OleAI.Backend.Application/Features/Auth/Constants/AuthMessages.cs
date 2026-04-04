@@ -20,5 +20,6 @@ namespace OleAI.Backend.Application.Features.Auth.Constants
         public const string ResendOtpCodeSuccessfully = "Yeni doğrulama kodu e-posta adresinize gönderildi.";
         public const string LogoutSuccesfullyMessage = "Başarıyla çıkış yapıldı.";
         public const string LogoutSuccesfullyWithUserRequestMessage = "Kullanıcı isteğiyle çıkış yapıldı (Logout).";
+        public const string AccountNotActiveMessage = "Kullanıcı hesabı aktif değil veya askıya alınmış.";
     }
 }

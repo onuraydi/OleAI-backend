@@ -44,7 +44,7 @@ public class ResendOtpCodeCommandHandlerTests
         var request = new ResendOtpCodeRequest { Email = "test@example.com" };
         var command = new ResendOtpCommand { Request = request };
 
-        var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", Status = false };
+        var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", IsEmailVerified = false };
 
         _mockUserRepository.Setup(r => r.GetAsync(
             It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
@@ -99,7 +99,7 @@ public class ResendOtpCodeCommandHandlerTests
             Request = new ResendOtpCodeRequest { Email = email }
         };
 
-        var verifiedUser = new User { Id = Guid.NewGuid(), Email = email, Status = true };
+        var verifiedUser = new User { Id = Guid.NewGuid(), Email = email, IsEmailVerified = true };
 
         _mockUserRepository.Setup(r => r.GetAsync(
             It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
