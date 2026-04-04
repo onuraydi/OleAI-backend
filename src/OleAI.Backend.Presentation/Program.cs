@@ -1,6 +1,9 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -19,6 +22,38 @@ using StackExchange.Redis;
 Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Cloudflare / Proxy IP Resolution
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Rate Limiting Config
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("AuthLimit", httpContext =>
+    {
+        var clientIp = httpContext.Connection.RemoteIpAddress?.ToString();
+        if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+        {
+            clientIp = forwardedFor.FirstOrDefault();
+        }
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: clientIp ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+});
 
 // ---- Service Registrations (katman bazlı extension methods) ----
 builder.Services.AddApplicationServices();
@@ -89,8 +124,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 // kendi yazdığımız exceptionları entegre ettik.
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseRateLimiter();
 
 // ---- Middleware Pipeline ----
 if (app.Environment.IsDevelopment())
