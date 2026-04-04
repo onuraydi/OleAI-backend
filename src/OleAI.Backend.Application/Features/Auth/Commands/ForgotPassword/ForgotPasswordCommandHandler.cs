@@ -33,6 +33,8 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword
 
             if (user != null)
             {
+                _authBusinessRules.UserShouldBeActive(user);
+
                 string otpCode = OtpHelper.GenerateSixDigitCode();
                 string redisKey = $"OTP:Reset:{user.Email}";
 

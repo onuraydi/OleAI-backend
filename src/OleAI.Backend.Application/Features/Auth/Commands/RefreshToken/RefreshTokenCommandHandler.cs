@@ -47,6 +47,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.RefreshToken
             );
 
             _authBusinessRules.UserShouldBeExistsWhenSelected(user);
+            _authBusinessRules.UserShouldBeActive(user);
 
             var claims = new List<Claim>
             {
