@@ -122,4 +122,14 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+try
+{
+    await DbSeeder.SeedAsync(app.Services);
+    Console.WriteLine("Veritabanı kontrol edildi/tohumlandı.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Veritabanı tohumlanırken hata oluştu: {ex.Message}");
+}
+
 await app.RunAsync();
