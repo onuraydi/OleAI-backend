@@ -1,6 +1,7 @@
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.Options;
 using Moq;
 using OleAI.Backend.Application.Features.Auth.Commands.Register;
 using OleAI.Backend.Application.Features.Auth.Constants;
@@ -22,6 +23,7 @@ public class RegisterCommandHandlerTests
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IMailService> _mockMailService;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IOptions<SecuritySettings>> _mockSecuritySettings;
     private readonly AuthBusinessRules _authBusinessRules;
     private readonly RegisterCommandHandler _handler;
 
@@ -33,12 +35,16 @@ public class RegisterCommandHandlerTests
         _mockMapper = new Mock<IMapper>();
         _authBusinessRules = new AuthBusinessRules(_mockUserRepository.Object);
 
+        _mockSecuritySettings = new Mock<IOptions<SecuritySettings>>();
+        _mockSecuritySettings.Setup(s => s.Value).Returns(new SecuritySettings());
+
         _handler = new RegisterCommandHandler(
             _mockUserRepository.Object,
             _authBusinessRules,
             _mockCacheService.Object,
             _mockMailService.Object,
-            _mockMapper.Object
+            _mockMapper.Object,
+            _mockSecuritySettings.Object
         );
     }
 
