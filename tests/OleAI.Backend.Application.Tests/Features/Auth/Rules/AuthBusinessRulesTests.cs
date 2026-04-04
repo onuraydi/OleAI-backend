@@ -95,17 +95,16 @@ public class AuthBusinessRulesTests
     // ─── ValidateCredentials (User Enumeration & Timing Attack mitigation) ───
 
     [Fact]
-    public void ValidateCredentials_ShouldThrow_WhenUserIsNull()
+    public void ValidateCredentials_ShouldReturnFalse_WhenUserIsNull()
     {
-        // Even when user doesn't exist, PBKDF2 runs on dummy values before throwing.
-        var act = () => _rules.ValidateCredentials(null, "anyPassword");
+        // Even when user doesn't exist, PBKDF2 runs on dummy values to prevent timing attacks.
+        var result = _rules.ValidateCredentials(null, "anyPassword");
 
-        act.Should().Throw<BusinessException>()
-            .WithMessage(AuthMessages.InvalidCredentials);
+        result.Should().BeFalse();
     }
 
     [Fact]
-    public void ValidateCredentials_ShouldThrow_WhenPasswordIsWrong()
+    public void ValidateCredentials_ShouldReturnFalse_WhenPasswordIsWrong()
     {
         HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
         var user = new User
@@ -115,14 +114,13 @@ public class AuthBusinessRulesTests
             PasswordSalt = salt
         };
 
-        var act = () => _rules.ValidateCredentials(user, "wrongPassword");
+        var result = _rules.ValidateCredentials(user, "wrongPassword");
 
-        act.Should().Throw<BusinessException>()
-            .WithMessage(AuthMessages.InvalidCredentials);
+        result.Should().BeFalse();
     }
 
     [Fact]
-    public void ValidateCredentials_ShouldNotThrow_WhenCredentialsAreCorrect()
+    public void ValidateCredentials_ShouldReturnTrue_WhenCredentialsAreCorrect()
     {
         HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
         var user = new User
@@ -132,30 +130,9 @@ public class AuthBusinessRulesTests
             PasswordSalt = salt
         };
 
-        var act = () => _rules.ValidateCredentials(user, "correctPassword");
+        var result = _rules.ValidateCredentials(user, "correctPassword");
 
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void ValidateCredentials_ShouldReturn_SameErrorMessage_ForBothScenarios()
-    {
-        // Scenario 1: User does not exist
-        string? messageWhenUserNotFound = null;
-        try { _rules.ValidateCredentials(null, "anyPassword"); }
-        catch (BusinessException ex) { messageWhenUserNotFound = ex.Message; }
-
-        // Scenario 2: User exists but wrong password
-        HashingHelper.CreatePasswordHash("correct", out byte[] hash, out byte[] salt);
-        var user = new User { PasswordHash = hash, PasswordSalt = salt };
-
-        string? messageWhenWrongPassword = null;
-        try { _rules.ValidateCredentials(user, "wrong"); }
-        catch (BusinessException ex) { messageWhenWrongPassword = ex.Message; }
-
-        // Both messages must be identical — no user enumeration leakage
-        messageWhenUserNotFound.Should().Be(messageWhenWrongPassword);
-        messageWhenUserNotFound.Should().Be(AuthMessages.InvalidCredentials);
+        result.Should().BeTrue();
     }
 
     // ─── RefreshToken ───

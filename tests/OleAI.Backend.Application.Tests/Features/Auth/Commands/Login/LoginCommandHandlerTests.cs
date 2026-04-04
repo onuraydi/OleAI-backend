@@ -9,6 +9,7 @@ using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
+using OleAI.Backend.Core.CrossCuttingConcerns.Mailing;
 using OleAI.Backend.Core.Helpers;
 using OleAI.Backend.Core.Security.Hashing;
 using OleAI.Backend.Core.Security.Jwt;
@@ -23,6 +24,7 @@ public class LoginCommandHandlerTests
     private readonly Mock<IRefreshTokenRepository> _mockRefreshTokenRepo;
     private readonly Mock<ITokenHelper> _mockTokenHelper;
     private readonly Mock<IAuthService> _mockAuthService;
+    private readonly Mock<IMailService> _mockMailService;
     private readonly AuthBusinessRules _authBusinessRules;
     private readonly LoginCommandHandler _handler;
 
@@ -32,6 +34,7 @@ public class LoginCommandHandlerTests
         _mockRefreshTokenRepo = new Mock<IRefreshTokenRepository>();
         _mockTokenHelper = new Mock<ITokenHelper>();
         _mockAuthService = new Mock<IAuthService>();
+        _mockMailService = new Mock<IMailService>();
         _authBusinessRules = new AuthBusinessRules(_mockUserRepository.Object);
 
         _handler = new LoginCommandHandler(
@@ -39,7 +42,8 @@ public class LoginCommandHandlerTests
             _mockRefreshTokenRepo.Object,
             _authBusinessRules,
             _mockTokenHelper.Object,
-            _mockAuthService.Object
+            _mockAuthService.Object,
+            _mockMailService.Object
         );
     }
 
@@ -243,5 +247,86 @@ public class LoginCommandHandlerTests
         result.RefreshToken.Should().Be(refreshTokenCore);
 
         _mockRefreshTokenRepo.Verify(r => r.AddAsync(It.Is<OleAI.Backend.Domain.Entities.RefreshToken>(rt => rt.Token == "refresh"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(4, 5, 5)]
+    [InlineData(9, 10, 15)]
+    [InlineData(14, 15, 60)]
+    [InlineData(19, 20, 1440)]
+    public async Task Handle_WrongPassword_ShouldIncreaseFailedAttempts_AndLockoutUser(int initialAttempts, int expectedAttempts, int expectedLockoutMinutes)
+    {
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var command = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "test@test.com", Password = "wrongPassword" },
+            IpAddress = "127.0.0.1"
+        };
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            IsEmailVerified = true,
+            FailedLoginAttempts = initialAttempts,
+            IsActive = true
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<BusinessException>().WithMessage(AuthMessages.InvalidCredentials);
+
+        user.FailedLoginAttempts.Should().Be(expectedAttempts);
+        user.LockoutEnd.Should().NotBeNull();
+        user.LockoutEnd!.Value.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(expectedLockoutMinutes), TimeSpan.FromMinutes(1));
+
+        _mockUserRepository.Verify(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
+        _mockMailService.Verify(m => m.sendAsync(user.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WrongPassword_ShouldPermanentBlock_On25thAttempt()
+    {
+        HashingHelper.CreatePasswordHash("correctPassword", out byte[] hash, out byte[] salt);
+        var command = new LoginCommand
+        {
+            Request = new LoginRequest { Email = "test@test.com", Password = "wrongPassword" },
+            IpAddress = "127.0.0.1"
+        };
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            IsEmailVerified = true,
+            FailedLoginAttempts = 24,
+            IsActive = true
+        };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()
+            , It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>()
+            , false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<BusinessException>().WithMessage(AuthMessages.InvalidCredentials);
+
+        user.FailedLoginAttempts.Should().Be(25);
+        user.IsActive.Should().BeFalse();
+
+        _mockUserRepository.Verify(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
+        _mockMailService.Verify(m => m.sendAsync(user.Email, AuthMessages.LockoutPermanentSubject, It.IsAny<string>()), Times.Once);
     }
 }
