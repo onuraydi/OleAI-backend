@@ -17,12 +17,14 @@ public class ApplicationServiceRegistrationTests
         // Arrange
         var services = new ServiceCollection();
         var mockConfig = new Mock<IConfiguration>();
+        var mockSection = new Mock<IConfigurationSection>();
+        mockConfig.Setup(c => c.GetSection(It.IsAny<string>())).Returns(mockSection.Object);
         var mockRepo = new Mock<OleAI.Backend.Application.Services.Repositories.IUserRepository>();
         services.AddSingleton(mockRepo.Object);
 
         // Act
         services.AddLogging();
-        services.AddApplicationServices();
+        services.AddApplicationServices(mockConfig.Object);
         var provider = services.BuildServiceProvider();
 
         // Assert

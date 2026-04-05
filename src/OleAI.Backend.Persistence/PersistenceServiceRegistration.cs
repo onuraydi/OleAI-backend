@@ -18,6 +18,11 @@ namespace OleAI.Backend.Persistence
             services.AddScoped<IOperationClaimRepository, OperationClaimRepository>();
             services.AddScoped<IUserOperationClaimRepository, UserOperationClaimRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IIngredientRepository, IngredientRepository>();
+            services.AddScoped<IIngredientAliasRepository, IngredientAliasRepository>();
+            services.AddScoped<IUserIngredientRepository, UserIngredientRepository>();
+            services.AddScoped<IIngredientRequestRepository, IngredientRequestRepository>();
 
             return services;
         }

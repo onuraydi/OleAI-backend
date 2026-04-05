@@ -56,7 +56,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // ---- Service Registrations (katman bazlı extension methods) ----
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -159,6 +159,16 @@ if (app.Environment.IsDevelopment())
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating the database.");
     }
+}
+
+try
+{
+    await DbSeeder.SeedAsync(app.Services);
+    Console.WriteLine("Veritabanı kontrol edildi/tohumlandı.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Veritabanı tohumlanırken hata oluştu: {ex.Message}");
 }
 
 await app.RunAsync();
