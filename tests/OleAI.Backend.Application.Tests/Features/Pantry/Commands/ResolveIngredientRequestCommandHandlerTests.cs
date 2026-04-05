@@ -198,6 +198,44 @@ public class ResolveIngredientRequestCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_MergeAsAlias_WhenAdminNoteIsNull_ShouldUseDefaultMergedMessage()
+    {
+        // Arrange
+        var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Sumakkk");
+        var masterIngredientId = Guid.NewGuid();
+
+        var command = CreateCommand(ResolutionAction.MergeAsAlias);
+        command.Request.RequestId = ingredientRequest.Id;
+        command.Request.MasterIngredientId = masterIngredientId;
+        command.Request.AdminNote = null;
+
+        _mockIngredientRequestRepository
+            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<IngredientRequest, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ingredientRequest);
+
+        _mockIngredientAliasRepository
+            .Setup(r => r.AddAsync(It.IsAny<IngredientAlias>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientAlias entity, CancellationToken _) => entity);
+
+        _mockIngredientRequestRepository
+            .Setup(r => r.UpdateAsync(ingredientRequest, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ingredientRequest);
+
+        _mockUserIngredientRepository
+            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<UserIngredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserIngredient?)null);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(PantryMessages.RequestResolvedAndInventoryUpdatedMessage);
+        ingredientRequest.Status.Should().Be(IngredientRequestStatus.MergedWithAlias);
+        ingredientRequest.AdminNote.Should().Be(PantryMessages.MergedAsAliasMessage);
+        _mockUserIngredientRepository.Verify(r => r.UpdateAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_Reject_WhenValid_ShouldRejectAndReturnRejectMessage()
     {
         // Arrange
@@ -222,6 +260,68 @@ public class ResolveIngredientRequestCommandHandlerTests
         ingredientRequest.Status.Should().Be(IngredientRequestStatus.Rejected);
         ingredientRequest.AdminNote.Should().Be("Anlamsız giriş");
 
+        _mockUserIngredientRepository.Verify(r => r.UpdateAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_Reject_WhenAdminNoteIsNull_ShouldUseDefaultRejectMessage()
+    {
+        // Arrange
+        var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "###");
+        var command = CreateCommand(ResolutionAction.Reject);
+        command.Request.RequestId = ingredientRequest.Id;
+        command.Request.AdminNote = null;
+
+        _mockIngredientRequestRepository
+            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<IngredientRequest, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ingredientRequest);
+
+        _mockIngredientRequestRepository
+            .Setup(r => r.UpdateAsync(ingredientRequest, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ingredientRequest);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(PantryMessages.RequestRejectedMessage);
+        ingredientRequest.AdminNote.Should().Be(PantryMessages.RequestRejectedMessage);
+    }
+
+    [Fact]
+    public async Task Handle_ApproveAsNew_WhenPendingInventoryNotFound_ShouldStillResolveRequest()
+    {
+        // Arrange
+        var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Kimyonlu Tuz");
+        var categoryId = Guid.NewGuid();
+
+        var command = CreateCommand(ResolutionAction.ApproveAsNew);
+        command.Request.RequestId = ingredientRequest.Id;
+        command.Request.NewCategoryId = categoryId;
+        command.Request.NewBaseUnitType = "gram";
+
+        _mockIngredientRequestRepository
+            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<IngredientRequest, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ingredientRequest);
+
+        _mockIngredientRepository
+            .Setup(r => r.AddAsync(It.IsAny<Ingredient>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Ingredient entity, CancellationToken _) => entity);
+
+        _mockIngredientRequestRepository
+            .Setup(r => r.UpdateAsync(ingredientRequest, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ingredientRequest);
+
+        _mockUserIngredientRepository
+            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<UserIngredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserIngredient?)null);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(PantryMessages.RequestResolvedAndInventoryUpdatedMessage);
+        ingredientRequest.Status.Should().Be(IngredientRequestStatus.ApprovedAsNew);
         _mockUserIngredientRepository.Verify(r => r.UpdateAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
