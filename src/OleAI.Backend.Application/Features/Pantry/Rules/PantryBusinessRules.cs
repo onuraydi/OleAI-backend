@@ -45,10 +45,10 @@ namespace OleAI.Backend.Application.Features.Pantry.Rules
         public void IngredientRequestMustExistWhenSelected(IngredientRequest request)
         {
             if (request == null)
-                throw new NotFoundException(PantryMessages.IngredientRequestNotFounMessage);
+                throw new NotFoundException(PantryMessages.IngredientRequestNotFoundMessage);
         }
 
-        public void CannetCanceledRequest(IngredientRequestStatus status)
+        public void CannotBeCancelledRequest(IngredientRequestStatus status)
         {
             if (status != IngredientRequestStatus.Pending)
                 throw new BusinessException(PantryMessages.RequestAlreadyProcessedCannotBeCancelledMessage);
