@@ -177,6 +177,23 @@ public class AuthControllerTests
         setCookieHeader.Should().Contain("refreshToken=;"); // Cookie deletion
     }
 
+    [Fact]
+    public async Task Logout_ShouldSendCommandWithCookieTokenAndIp()
+    {
+        // Arrange
+        _controller.HttpContext.Request.Headers.Append("Cookie", "refreshToken=refresh-token");
+        _mockMediator.Setup(m => m.Send(It.IsAny<LogoutCommand>(), default))
+            .ReturnsAsync(new LoggedOutResponse { Message = AuthMessages.LogoutSuccesfullyMessage });
+
+        // Act
+        await _controller.Logout();
+
+        // Assert
+        _mockMediator.Verify(m => m.Send(
+            It.Is<LogoutCommand>(c => c.RefreshToken == "refresh-token" && c.IpAddress == "127.0.0.1"),
+            default), Times.Once);
+    }
+
     // ──────────────────────────────────────────────
     // Register
     // ──────────────────────────────────────────────
@@ -339,4 +356,5 @@ public class AuthControllerTests
             It.Is<ChangePasswordCommand>(cmd => cmd.UserId == userId),
             default), Times.Once);
     }
+
 }
