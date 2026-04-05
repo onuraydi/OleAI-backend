@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FluentAssertions;
 using OleAI.Backend.Core.Security.Hashing;
 using Xunit;
@@ -80,5 +82,21 @@ public class HashingHelperTests
         HashingHelper.CreatePasswordHash("AnyPassword", out byte[] hash, out _);
 
         hash.Length.Should().Be(64);
+    }
+
+    [Fact]
+    public void VerifyPasswordHash_WithLegacySaltLength128_ShouldUseLegacyVerificationPath()
+    {
+        // Arrange
+        const string password = "LegacyPassword";
+        var legacySalt = RandomNumberGenerator.GetBytes(128);
+        using var hmac = new HMACSHA512(legacySalt);
+        var legacyHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+
+        // Act
+        var result = HashingHelper.VerifyPasswordHash(password, legacyHash, legacySalt);
+
+        // Assert
+        result.Should().BeTrue();
     }
 }

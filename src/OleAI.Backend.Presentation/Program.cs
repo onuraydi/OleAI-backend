@@ -1,6 +1,9 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -20,8 +23,40 @@ Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cloudflare / Proxy IP Resolution
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Rate Limiting Config
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("AuthLimit", httpContext =>
+    {
+        var clientIp = httpContext.Connection.RemoteIpAddress?.ToString();
+        if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+        {
+            clientIp = forwardedFor.FirstOrDefault();
+        }
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: clientIp ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+});
+
 // ---- Service Registrations (katman bazlı extension methods) ----
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -89,8 +124,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 // kendi yazdığımız exceptionları entegre ettik.
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseRateLimiter();
 
 // ---- Middleware Pipeline ----
 if (app.Environment.IsDevelopment())
@@ -120,6 +159,16 @@ if (app.Environment.IsDevelopment())
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating the database.");
     }
+}
+
+try
+{
+    await DbSeeder.SeedAsync(app.Services);
+    Console.WriteLine("Veritabanı kontrol edildi/tohumlandı.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Veritabanı tohumlanırken hata oluştu: {ex.Message}");
 }
 
 await app.RunAsync();

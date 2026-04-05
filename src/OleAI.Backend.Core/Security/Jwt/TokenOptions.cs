@@ -7,5 +7,6 @@ namespace OleAI.Backend.Core.Security.Jwt
         public string SecurityKey { get; set; } = string.Empty;
         public int AccessTokenExpiration { get; set; }
         public int RefreshTokenExpiration { get; set; }
+        public int MaxActiveTokens { get; set; } = 5;
     }
 }

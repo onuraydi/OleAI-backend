@@ -11,7 +11,11 @@ namespace OleAI.Backend.Domain.Entities
         public byte[] PasswordHash { get; set; } = Array.Empty<byte>();
         public byte[] PasswordSalt { get; set; } = Array.Empty<byte>();
 
-        public bool Status { get; set; }
+        public bool IsEmailVerified { get; set; } = false;
+        public bool IsActive { get; set; } = true;
+
+        public int FailedLoginAttempts { get; set; } = 0;
+        public DateTime? LockoutEnd { get; set; }
 
         public virtual ICollection<UserOperationClaim> UserOperationClaims { get; set; }
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
