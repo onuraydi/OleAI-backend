@@ -3,6 +3,7 @@ using Moq;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Security.Hashing;
 using OleAI.Backend.Domain.Entities;
@@ -151,5 +152,50 @@ public class AuthBusinessRulesTests
         var token = new RefreshToken { Expires = DateTime.UtcNow.AddDays(-1) }; // Expired
         var act = () => _rules.RefreshTokenShouldBeActive(token);
         act.Should().Throw<AuthenticationException>();
+    }
+
+    // ─── ValidateAndTrackOtpAsync (Brute-Force mitigation) ───
+
+    [Fact]
+    public async Task ValidateAndTrackOtpAsync_ShouldThrow_WhenCodeIsEmpty()
+    {
+        var cacheMock = new Mock<ICacheService>();
+        var act = async () => await _rules.ValidateAndTrackOtpAsync(cacheMock.Object, "OTP:Key", "", "123");
+        await act.Should().ThrowAsync<BusinessException>().WithMessage(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+    }
+
+    [Fact]
+    public async Task ValidateAndTrackOtpAsync_ShouldIncrementAndThrow_WhenCodeMismatchAndUnderLimit()
+    {
+        var cacheMock = new Mock<ICacheService>();
+        cacheMock.Setup(c => c.GetAsync<string>("OTP:Key:Attempts")).ReturnsAsync("1"); // 1 previous fail
+
+        var act = async () => await _rules.ValidateAndTrackOtpAsync(cacheMock.Object, "OTP:Key", "456", "123");
+
+        await act.Should().ThrowAsync<BusinessException>().WithMessage(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+        cacheMock.Verify(c => c.SetAsync("OTP:Key:Attempts", "2", It.IsAny<TimeSpan?>(), null), Times.Once);
+    }
+
+    [Fact]
+    public async Task ValidateAndTrackOtpAsync_ShouldRemoveAndThrowLockout_WhenLimitReached()
+    {
+        var cacheMock = new Mock<ICacheService>();
+        cacheMock.Setup(c => c.GetAsync<string>("OTP:Key:Attempts")).ReturnsAsync("2"); // limit is 3, this is the 3rd fail
+
+        var act = async () => await _rules.ValidateAndTrackOtpAsync(cacheMock.Object, "OTP:Key", "456", "123");
+
+        await act.Should().ThrowAsync<BusinessException>().WithMessage(AuthMessages.TooManyOtpAttempts);
+        cacheMock.Verify(c => c.RemoveAsync("OTP:Key"), Times.Once);
+        cacheMock.Verify(c => c.RemoveAsync("OTP:Key:Attempts"), Times.Once);
+    }
+
+    [Fact]
+    public async Task ValidateAndTrackOtpAsync_ShouldClearAttemptsAndNotThrow_WhenCodeMatches()
+    {
+        var cacheMock = new Mock<ICacheService>();
+        var act = async () => await _rules.ValidateAndTrackOtpAsync(cacheMock.Object, "OTP:Key", "123", "123");
+
+        await act.Should().NotThrowAsync();
+        cacheMock.Verify(c => c.RemoveAsync("OTP:Key:Attempts"), Times.Once);
     }
 }

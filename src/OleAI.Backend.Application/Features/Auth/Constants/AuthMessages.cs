@@ -8,6 +8,7 @@ namespace OleAI.Backend.Application.Features.Auth.Constants
         public const string EmailVerificationSubject = "OleAI - E-posta Doğrulama Kodu";
         public const string UserAlreadyVerified = "Bu hesap zaten doğrulanmış.";
         public const string VerificationCodeIsIncorrectOrExpired = "Doğrulama kodu hatalı veya süresi dolmuş.";
+        public const string TooManyOtpAttempts = "Çok fazla hatalı giriş yaptınız. Güvenliğiniz için doğrulama kodunuz iptal edildi. Lütfen yeni bir kod talep edin.";
         public const string UserVerifiedMessage = "E-posta adresiniz başarıyla doğrulandı. Artık giriş yapabilirsiniz.";
         public const string UserShouldBeVerifiedEmail = "Lütfen önce e-posta adresinizi doğrulayın.";
         public const string LoginInformationNotCorrect = "E-posta adresi veya şifre hatalı.";

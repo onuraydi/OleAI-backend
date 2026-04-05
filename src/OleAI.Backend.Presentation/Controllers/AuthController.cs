@@ -31,6 +31,7 @@ namespace OleAI.Backend.Presentation.Controllers
             return Ok(result);
         }
 
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command)
         {
@@ -51,6 +52,7 @@ namespace OleAI.Backend.Presentation.Controllers
             return Ok(result);
         }
 
+        [EnableRateLimiting("AuthLimit")]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {

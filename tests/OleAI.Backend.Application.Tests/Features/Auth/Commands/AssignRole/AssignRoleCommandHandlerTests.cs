@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Moq;
 using OleAI.Backend.Application.Features.Auth.Commands.AssignRole;
 using OleAI.Backend.Application.Features.Auth.Constants;
@@ -22,6 +23,7 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
         private readonly Mock<IOperationClaimRepository> _mockOpClaimRepo;
         private readonly RoleBusinessRules _roleBusinessRules;
         private readonly AssignRoleCommandHandler _handler;
+        private readonly Guid _adminRoleId = Guid.NewGuid();
 
         public AssignRoleCommandHandlerTests()
         {
@@ -34,9 +36,16 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
                 _mockOpClaimRepo.Object,
                 _mockUserOpClaimRepo.Object);
 
+            var securitySettings = Options.Create(new SecuritySettings
+            {
+                AdminRoleId = _adminRoleId,
+                DefaultRoleId = Guid.NewGuid()
+            });
+
             _handler = new AssignRoleCommandHandler(
                 _mockUserOpClaimRepo.Object,
-                _roleBusinessRules);
+                _roleBusinessRules,
+                securitySettings);
         }
 
         [Fact]
@@ -45,7 +54,7 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
             // Arrange
             var command = new AssignRoleCommand
             {
-                Request = new AssignRoleRequest { UserId = Guid.NewGuid(), OperationClaimId = Guid.NewGuid() }
+                Request = new AssignRoleRequest { UserId = Guid.NewGuid() }
             };
 
             _mockUserRepo.Setup(r => r.GetAsync(
@@ -67,7 +76,7 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
             // Arrange
             var command = new AssignRoleCommand
             {
-                Request = new AssignRoleRequest { UserId = Guid.NewGuid(), OperationClaimId = Guid.NewGuid() }
+                Request = new AssignRoleRequest { UserId = Guid.NewGuid() }
             };
 
             _mockUserRepo.Setup(r => r.GetAsync(
@@ -94,7 +103,7 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
             // Arrange
             var command = new AssignRoleCommand
             {
-                Request = new AssignRoleRequest { UserId = Guid.NewGuid(), OperationClaimId = Guid.NewGuid() }
+                Request = new AssignRoleRequest { UserId = Guid.NewGuid() }
             };
 
             _mockUserRepo.Setup(r => r.GetAsync(
@@ -126,7 +135,7 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
             // Arrange
             var command = new AssignRoleCommand
             {
-                Request = new AssignRoleRequest { UserId = Guid.NewGuid(), OperationClaimId = Guid.NewGuid() }
+                Request = new AssignRoleRequest { UserId = Guid.NewGuid() }
             };
 
             _mockUserRepo.Setup(r => r.GetAsync(
@@ -152,7 +161,7 @@ namespace OleAI.Backend.Application.Tests.Features.Auth.Commands.AssignRole
             result.Message.Should().Be(AuthMessages.RoleAssignedSuccessfully);
 
             _mockUserOpClaimRepo.Verify(r => r.AddAsync(
-                It.Is<UserOperationClaim>(uc => uc.UserId == command.Request.UserId && uc.OperationClaimId == command.Request.OperationClaimId),
+                It.Is<UserOperationClaim>(uc => uc.UserId == command.Request.UserId && uc.OperationClaimId == _adminRoleId),
                 It.IsAny<CancellationToken>()
             ), Times.Once);
         }
