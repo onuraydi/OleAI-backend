@@ -160,7 +160,7 @@ public class HttpExceptionHandlerTests
         Assert.Equal(StatusCodes.Status500InternalServerError, _context.Response.StatusCode);
         var body = await GetResponseBody(_context.Response);
         var problemDetails = JsonSerializer.Deserialize<InternalServerProblemDetails>(body);
-        Assert.Equal("Generic error", problemDetails?.Detail);
+        Assert.Equal("Sunucu içi bir hata oluştu.", problemDetails?.Detail);
     }
 
     [Fact]

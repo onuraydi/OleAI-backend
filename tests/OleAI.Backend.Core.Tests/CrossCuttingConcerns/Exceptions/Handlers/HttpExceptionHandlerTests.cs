@@ -168,7 +168,7 @@ public class HttpExceptionHandlerTests
 
         var detail = await GetResponseDetail<InternalServerProblemDetails>();
         detail.Should().NotBeNull();
-        detail.Detail.Should().Be("A generic unhandled exception");
+        detail.Detail.Should().Be("Sunucu içi bir hata oluştu.");
     }
 
     [Fact]
