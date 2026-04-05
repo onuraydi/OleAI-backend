@@ -6,6 +6,6 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Commands.UpdateIn
 {
     public class UpdateIngredientAliasCommand : IRequest<UpdatedIngredientAliasResponse>
     {
-        public UpdateIngredientAliasRequest Requesst { get; set; } = default!;
+        public UpdateIngredientAliasRequest Request { get; set; } = default!;
     }
 }

@@ -23,12 +23,12 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Commands.UpdateIn
 
         public async Task<UpdatedIngredientAliasResponse> Handle(UpdateIngredientAliasCommand command, CancellationToken cancellationToken)
         {
-            var ingredientAlias = await _ingredientAliasRepository.GetAsync(ia => ia.Id == command.Requesst.Id, cancellationToken: cancellationToken);
+            var ingredientAlias = await _ingredientAliasRepository.GetAsync(ia => ia.Id == command.Request.Id, cancellationToken: cancellationToken);
 
             _ingredientAliasBusinessRules.AliasMustExistWhenRequested(ingredientAlias);
-            await _ingredientAliasBusinessRules.AliasNameCannotBeDuplicated(command.Requesst.AliasName);
+            await _ingredientAliasBusinessRules.AliasNameCannotBeDuplicated(command.Request.AliasName);
 
-            var mappedIngredientAlias = _mapper.Map(command.Requesst, ingredientAlias);
+            var mappedIngredientAlias = _mapper.Map(command.Request, ingredientAlias);
             await _ingredientAliasRepository.UpdateAsync(mappedIngredientAlias!);
 
             var response = _mapper.Map<UpdatedIngredientAliasResponse>(mappedIngredientAlias);

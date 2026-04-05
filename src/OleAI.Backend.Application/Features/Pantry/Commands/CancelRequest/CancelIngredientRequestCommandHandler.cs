@@ -23,7 +23,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.CancelRequest
             var ingredientRequest = await _ingredientRequestRepository.GetAsync(ir => ir.Id == request.RequestId && ir.UserId == request.UserId, cancellationToken: cancellationToken);
 
             _pantryBusinessRules.IngredientRequestMustExistWhenSelected(ingredientRequest!);
-            _pantryBusinessRules.CannetCanceledRequest(ingredientRequest!.Status);
+            _pantryBusinessRules.CannotBeCancelledRequest(ingredientRequest!.Status);
 
             var pendingUserInventoryItem = await _userIngredientRepository.GetAsync(ui => ui.IngredientRequestId == request.RequestId);
             if (pendingUserInventoryItem != null)
