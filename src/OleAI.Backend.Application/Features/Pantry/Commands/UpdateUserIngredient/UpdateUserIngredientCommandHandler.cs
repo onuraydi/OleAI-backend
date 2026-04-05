@@ -20,9 +20,12 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
         {
             var item = await _userIngredientRepository.GetAsync(i => i.Id == command.Request.Id && i.UserId == command.Request.UserId, cancellationToken: cancellationToken);
 
-            await _pantryBusinessRules.InventoryItemNotFound(item!.Id);
+            if (item == null)
+            {
+                await _pantryBusinessRules.InventoryItemNotFound(command.Request.Id); // Trigger the expected exception
+            }
 
-            item.UpdateQuantity(command.Request.NewQuantity);
+            item!.UpdateQuantity(command.Request.NewQuantity);
             await _userIngredientRepository.UpdateAsync(item);
 
             return PantryMessages.IngredientQuantityUpdatedMessage;

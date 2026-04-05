@@ -20,9 +20,12 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.DeleteUserIngredien
         {
             var item = await _userIngredientRepository.GetAsync(ui => ui.Id == request.Id && ui.UserId == request.UserId, cancellationToken: cancellationToken);
 
-            await _pantryBusinessRules.InventoryItemNotFound(item!.Id);
+            if (item == null)
+            {
+                await _pantryBusinessRules.InventoryItemNotFound(request.Id);
+            }
 
-            await _userIngredientRepository.DeleteAsync(item);
+            await _userIngredientRepository.DeleteAsync(item!);
 
             return PantryMessages.IngredientDeletedMessage;
         }
