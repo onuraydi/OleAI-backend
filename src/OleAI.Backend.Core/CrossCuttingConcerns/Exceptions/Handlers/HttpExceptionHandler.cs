@@ -67,7 +67,7 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers
         public override Task HandleException(Exception exception)
         {
             Response.StatusCode = StatusCodes.Status500InternalServerError;
-            var detail = new InternalServerProblemDetails(exception.Message);
+            var detail = new InternalServerProblemDetails("Sunucu içi bir hata oluştu.");
             return WriteAsJsonAsync(Response, detail);
         }
 

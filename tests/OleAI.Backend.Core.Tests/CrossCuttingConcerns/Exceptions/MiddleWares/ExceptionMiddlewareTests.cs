@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares;
@@ -11,6 +12,7 @@ public class ExceptionMiddlewareTests
 {
     private readonly Mock<RequestDelegate> _nextMock;
     private readonly HttpExceptionHandler _httpExceptionHandler;
+    private readonly Mock<ILogger<ExceptionMiddleware>> _loggerMock;
     private readonly ExceptionMiddleware _middleware;
     private readonly DefaultHttpContext _httpContext;
 
@@ -18,7 +20,8 @@ public class ExceptionMiddlewareTests
     {
         _nextMock = new Mock<RequestDelegate>();
         _httpExceptionHandler = new HttpExceptionHandler();
-        _middleware = new ExceptionMiddleware(_nextMock.Object, _httpExceptionHandler);
+        _loggerMock = new Mock<ILogger<ExceptionMiddleware>>();
+        _middleware = new ExceptionMiddleware(_nextMock.Object, _httpExceptionHandler, _loggerMock.Object);
 
         _httpContext = new DefaultHttpContext();
         _httpContext.Response.Body = new MemoryStream();

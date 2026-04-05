@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares;
@@ -10,13 +11,15 @@ public class ExceptionMiddlewareTests
 {
     private readonly Mock<RequestDelegate> _nextMock;
     private readonly Mock<HttpExceptionHandler> _handlerMock;
+    private readonly Mock<ILogger<ExceptionMiddleware>> _loggerMock;
     private readonly ExceptionMiddleware _middleware;
 
     public ExceptionMiddlewareTests()
     {
         _nextMock = new Mock<RequestDelegate>();
         _handlerMock = new Mock<HttpExceptionHandler>();
-        _middleware = new ExceptionMiddleware(_nextMock.Object, _handlerMock.Object);
+        _loggerMock = new Mock<ILogger<ExceptionMiddleware>>();
+        _middleware = new ExceptionMiddleware(_nextMock.Object, _handlerMock.Object, _loggerMock.Object);
     }
 
     [Fact]

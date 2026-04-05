@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers;
 
 namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares
@@ -8,11 +9,13 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares
     {
         private readonly RequestDelegate _next;
         private readonly HttpExceptionHandler _httpExceptionHandler;
+        private readonly ILogger<ExceptionMiddleware> _logger;
 
-        public ExceptionMiddleware(RequestDelegate next, HttpExceptionHandler httpExceptionHandler)
+        public ExceptionMiddleware(RequestDelegate next, HttpExceptionHandler httpExceptionHandler, ILogger<ExceptionMiddleware> logger)
         {
             _next = next;
             _httpExceptionHandler = httpExceptionHandler;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -23,6 +26,7 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.MiddleWares
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception, "An exception occurred while processing the request.");
                 await HandleExceptionAsync(context, exception);
             }
         }
