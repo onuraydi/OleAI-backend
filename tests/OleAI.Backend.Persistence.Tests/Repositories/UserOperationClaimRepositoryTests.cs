@@ -31,7 +31,7 @@ public class UserOperationClaimRepositoryTests
             Email = "test.user@test.com",
             PasswordHash = new byte[] { 1 },
             PasswordSalt = new byte[] { 2 },
-            Status = true
+            IsEmailVerified = true
         };
 
         var operationClaim = new OperationClaim { Id = Guid.NewGuid(), Name = "Admin" };
