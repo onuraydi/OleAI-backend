@@ -32,9 +32,9 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.VerifyEmail
             string redisKey = $"OTP:Verify:{command.Request.Email}";
             var cachedCode = await _cacheService.GetAsync<string>(redisKey);
 
-            _authBusinessRules.VerificationCodeShouldBeValid(cachedCode!, command.Request.OtpCode);
+            await _authBusinessRules.ValidateAndTrackOtpAsync(_cacheService, redisKey, cachedCode!, command.Request.OtpCode);
 
-            user.Status = true; // TODO: Bu kısım // Entity içindeki bir metot ile durumu güncellemek (Encapsulation) [user.MarkAsEmailVerified();]
+            user.IsEmailVerified = true; // TODO: Bu kısım // Entity içindeki bir metot ile durumu güncellemek (Encapsulation) [user.MarkAsEmailVerified();]
 
             await _userRepository.UpdateAsync(user);
             await _cacheService.RemoveAsync(redisKey);

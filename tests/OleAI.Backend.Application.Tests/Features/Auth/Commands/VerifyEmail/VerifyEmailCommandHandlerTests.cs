@@ -45,7 +45,7 @@ public class VerifyEmailCommandHandlerTests
         var request = new VerifyEmailRequest { Email = "test@example.com", OtpCode = "123456" };
         var command = new VerifyEmailCommand { Request = request };
 
-        var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", Status = false };
+        var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", IsEmailVerified = false };
 
         _mockUserRepository.Setup(r => r.GetAsync(
             It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
@@ -71,7 +71,7 @@ public class VerifyEmailCommandHandlerTests
         result.Should().NotBeNull();
         result.Message.Should().Be(AuthMessages.UserVerifiedMessage);
 
-        user.Status.Should().BeTrue(); // Email verified
+        user.IsEmailVerified.Should().BeTrue(); // Email verified
 
         _mockUserRepository.Verify(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(c => c.RemoveAsync($"OTP:Verify:{request.Email}"), Times.Once);
@@ -110,7 +110,7 @@ public class VerifyEmailCommandHandlerTests
             Request = new VerifyEmailRequest { Email = email, OtpCode = "123456" }
         };
 
-        var verifiedUser = new User { Id = Guid.NewGuid(), Email = email, Status = true };
+        var verifiedUser = new User { Id = Guid.NewGuid(), Email = email, IsEmailVerified = true };
 
         _mockUserRepository.Setup(r => r.GetAsync(
             It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
@@ -136,7 +136,7 @@ public class VerifyEmailCommandHandlerTests
             Request = new VerifyEmailRequest { Email = email, OtpCode = "999999" }
         };
 
-        var user = new User { Id = Guid.NewGuid(), Email = email, Status = false };
+        var user = new User { Id = Guid.NewGuid(), Email = email, IsEmailVerified = false };
 
         _mockUserRepository.Setup(r => r.GetAsync(
             It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),

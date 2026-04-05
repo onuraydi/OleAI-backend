@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.Extensions.Options;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Dtos.Responses;
 using OleAI.Backend.Application.Features.Auth.Rules;
@@ -18,15 +19,17 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Register
         private readonly AuthBusinessRules _authBusinessRules;
         private readonly ICacheService _cacheService;
         private readonly IMailService _mailService;
+        private readonly SecuritySettings _securitySettings;
         private readonly IMapper _mapper;
 
-        public RegisterCommandHandler(IUserRepository userRepository, AuthBusinessRules authBusinessRules, ICacheService cacheService, IMailService mailService, IMapper mapper)
+        public RegisterCommandHandler(IUserRepository userRepository, AuthBusinessRules authBusinessRules, ICacheService cacheService, IMailService mailService, IMapper mapper, IOptions<SecuritySettings> securitySettings)
         {
             _userRepository = userRepository;
             _authBusinessRules = authBusinessRules;
             _cacheService = cacheService;
             _mailService = mailService;
             _mapper = mapper;
+            _securitySettings = securitySettings.Value;
         }
 
         public async Task<RegisteredResponse> Handle(RegisterCommand command, CancellationToken cancellationToken)
@@ -39,7 +42,13 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Register
             newUser.Id = Guid.NewGuid();
             newUser.PasswordHash = passwordHash;
             newUser.PasswordSalt = passwordSalt;
-            newUser.Status = false;
+            newUser.IsEmailVerified = false;
+            newUser.IsActive = true;
+
+            newUser.UserOperationClaims.Add(new UserOperationClaim
+            {
+                OperationClaimId = _securitySettings.DefaultRoleId
+            });
 
             await _userRepository.AddAsync(newUser);
 

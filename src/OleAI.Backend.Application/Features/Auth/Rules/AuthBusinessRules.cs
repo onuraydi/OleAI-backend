@@ -1,5 +1,7 @@
+using System.Security.Cryptography;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Security.Hashing;
 using OleAI.Backend.Domain.Entities;
@@ -10,9 +12,40 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
     {
         private readonly IUserRepository _userRepository;
 
+        private static readonly byte[] DummyPasswordHash;
+        private static readonly byte[] DummyPasswordSalt;
+
+        static AuthBusinessRules()
+        {
+            HashingHelper.CreatePasswordHash(
+                Guid.NewGuid().ToString(),
+                out byte[] hash,
+                out byte[] salt);
+            DummyPasswordHash = hash;
+            DummyPasswordSalt = salt;
+        }
+
         public AuthBusinessRules(IUserRepository userRepository)
         {
             _userRepository = userRepository;
+        }
+
+        /// <summary>
+        /// Validates user credentials in a single operation, preventing User Enumeration
+        /// and Timing Attack vulnerabilities.
+        ///
+        /// Security guarantees:
+        /// 1. Returns a single generic error message for both "user not found" and "wrong password".
+        /// 2. Runs PBKDF2 regardless of whether the user exists, so response time doesn't leak info.
+        /// </summary>
+        public bool ValidateCredentials(User? user, string password)
+        {
+            byte[] hashToVerify = user?.PasswordHash ?? DummyPasswordHash;
+            byte[] saltToVerify = user?.PasswordSalt ?? DummyPasswordSalt;
+
+            bool isPasswordValid = HashingHelper.VerifyPasswordHash(password, hashToVerify, saltToVerify);
+
+            return user != null && isPasswordValid;
         }
 
         public async Task EmailCannotBeDuplicatedWhenRegistered(string email)
@@ -33,9 +66,9 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
 
         public async Task UserAlreadyVerified(string email)
         {
-            User? User = await _userRepository.GetAsync(predicate: u => u.Email == email);
+            User? user = await _userRepository.GetAsync(predicate: u => u.Email == email);
 
-            if (User!.Status)
+            if (user != null && user.IsEmailVerified)
             {
                 throw new BusinessException(AuthMessages.UserAlreadyVerified);
             }
@@ -47,11 +80,47 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
                 throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
         }
 
+        public async Task ValidateAndTrackOtpAsync(ICacheService cacheService, string redisKey, string? cachedCode, string otpCode, int maxAttempts = 3)
+        {
+            if (string.IsNullOrEmpty(cachedCode))
+                throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+
+            if (cachedCode != otpCode)
+            {
+                string attemptsKey = $"{redisKey}:Attempts";
+                var attemptsStr = await cacheService.GetAsync<string>(attemptsKey);
+                int attempts = int.TryParse(attemptsStr, out int a) ? a : 0;
+                attempts++;
+
+                if (attempts >= maxAttempts)
+                {
+                    await cacheService.RemoveAsync(redisKey);
+                    await cacheService.RemoveAsync(attemptsKey);
+                    throw new BusinessException(AuthMessages.TooManyOtpAttempts);
+                }
+
+                await cacheService.SetAsync(attemptsKey, attempts.ToString(), TimeSpan.FromMinutes(5));
+                throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+            }
+
+            // Eğer doğruysa, deneme sayacını temizleyebiliriz (gerçi handler zaten redisKey'i siliyor)
+            string attemptsKeyToClear = $"{redisKey}:Attempts";
+            await cacheService.RemoveAsync(attemptsKeyToClear);
+        }
+
         public void UserShouldBeVerifiedEmail(User? user)
         {
-            if (!user!.Status)
+            if (user != null && !user.IsEmailVerified)
             {
                 throw new BusinessException(AuthMessages.UserShouldBeVerifiedEmail);
+            }
+        }
+
+        public void UserShouldBeActive(User? user)
+        {
+            if (user != null && !user.IsActive)
+            {
+                throw new BusinessException(AuthMessages.AccountNotActiveMessage);
             }
         }
 

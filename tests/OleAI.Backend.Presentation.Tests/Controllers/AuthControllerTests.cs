@@ -8,6 +8,7 @@ using Moq;
 using OleAI.Backend.Application.Features.Auth.Commands.ChangePassword;
 using OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword;
 using OleAI.Backend.Application.Features.Auth.Commands.Login;
+using OleAI.Backend.Application.Features.Auth.Commands.Logout;
 using OleAI.Backend.Application.Features.Auth.Commands.RefreshToken;
 using OleAI.Backend.Application.Features.Auth.Commands.Register;
 using OleAI.Backend.Application.Features.Auth.Commands.ResendOtp;
@@ -157,13 +158,16 @@ public class AuthControllerTests
     // ──────────────────────────────────────────────
 
     [Fact]
-    public void Logout_ShouldDeleteCookie_AndReturnOk()
+    public async Task Logout_ShouldDeleteCookie_AndReturnOk()
     {
         // Arrange
         _controller.HttpContext.Request.Headers.Append("Cookie", "refreshToken=refresh-token");
 
+        _mockMediator.Setup(m => m.Send(It.IsAny<LogoutCommand>(), default))
+            .ReturnsAsync(new LoggedOutResponse { Message = "Logged out successfully" });
+
         // Act
-        var result = _controller.Logout();
+        var result = await _controller.Logout();
 
         // Assert
         var okResult = result as OkObjectResult;
@@ -171,6 +175,23 @@ public class AuthControllerTests
 
         var setCookieHeader = _controller.HttpContext.Response.Headers["Set-Cookie"].ToString();
         setCookieHeader.Should().Contain("refreshToken=;"); // Cookie deletion
+    }
+
+    [Fact]
+    public async Task Logout_ShouldSendCommandWithCookieTokenAndIp()
+    {
+        // Arrange
+        _controller.HttpContext.Request.Headers.Append("Cookie", "refreshToken=refresh-token");
+        _mockMediator.Setup(m => m.Send(It.IsAny<LogoutCommand>(), default))
+            .ReturnsAsync(new LoggedOutResponse { Message = AuthMessages.LogoutSuccesfullyMessage });
+
+        // Act
+        await _controller.Logout();
+
+        // Assert
+        _mockMediator.Verify(m => m.Send(
+            It.Is<LogoutCommand>(c => c.RefreshToken == "refresh-token" && c.IpAddress == "127.0.0.1"),
+            default), Times.Once);
     }
 
     // ──────────────────────────────────────────────
@@ -335,4 +356,5 @@ public class AuthControllerTests
             It.Is<ChangePasswordCommand>(cmd => cmd.UserId == userId),
             default), Times.Once);
     }
+
 }
