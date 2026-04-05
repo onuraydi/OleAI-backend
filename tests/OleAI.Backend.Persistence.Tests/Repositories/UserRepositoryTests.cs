@@ -31,7 +31,7 @@ public class UserRepositoryTests
             Email = "onur@test.com",
             PasswordHash = new byte[] { 1 },
             PasswordSalt = new byte[] { 2 },
-            Status = true
+            IsEmailVerified = true
         };
 
         await repository.AddAsync(user);
@@ -55,7 +55,7 @@ public class UserRepositoryTests
             Email = "ali@test.com",
             PasswordHash = new byte[] { 1 },
             PasswordSalt = new byte[] { 2 },
-            Status = true
+            IsEmailVerified = true
         };
 
         await context.Users.AddAsync(user);
