@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Security.Hashing;
 using OleAI.Backend.Domain.Entities;
@@ -77,6 +78,34 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
         {
             if (string.IsNullOrEmpty(cachedCode) || cachedCode != otpCode)
                 throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+        }
+
+        public async Task ValidateAndTrackOtpAsync(ICacheService cacheService, string redisKey, string? cachedCode, string otpCode, int maxAttempts = 3)
+        {
+            if (string.IsNullOrEmpty(cachedCode))
+                throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+
+            if (cachedCode != otpCode)
+            {
+                string attemptsKey = $"{redisKey}:Attempts";
+                var attemptsStr = await cacheService.GetAsync<string>(attemptsKey);
+                int attempts = int.TryParse(attemptsStr, out int a) ? a : 0;
+                attempts++;
+
+                if (attempts >= maxAttempts)
+                {
+                    await cacheService.RemoveAsync(redisKey);
+                    await cacheService.RemoveAsync(attemptsKey);
+                    throw new BusinessException(AuthMessages.TooManyOtpAttempts);
+                }
+
+                await cacheService.SetAsync(attemptsKey, attempts.ToString(), TimeSpan.FromMinutes(5));
+                throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);
+            }
+
+            // Eğer doğruysa, deneme sayacını temizleyebiliriz (gerçi handler zaten redisKey'i siliyor)
+            string attemptsKeyToClear = $"{redisKey}:Attempts";
+            await cacheService.RemoveAsync(attemptsKeyToClear);
         }
 
         public void UserShouldBeVerifiedEmail(User? user)

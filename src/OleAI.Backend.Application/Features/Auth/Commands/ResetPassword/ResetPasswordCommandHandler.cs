@@ -32,7 +32,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
             string redisKey = $"OTP:Reset{command.Request.Email}";
             var cachedCode = await _cacheService.GetAsync<string>(redisKey);
 
-            _authBusinessRules.VerificationCodeShouldBeValid(cachedCode!, command.Request.OtpCode);
+            await _authBusinessRules.ValidateAndTrackOtpAsync(_cacheService, redisKey, cachedCode!, command.Request.OtpCode);
 
             if (user == null)
                 throw new BusinessException(AuthMessages.VerificationCodeIsIncorrectOrExpired);

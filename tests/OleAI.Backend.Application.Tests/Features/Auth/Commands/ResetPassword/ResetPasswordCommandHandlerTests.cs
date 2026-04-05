@@ -84,7 +84,7 @@ public class ResetPasswordCommandHandlerTests
             .ReturnsAsync((User?)null);
 
         // Cache returns null — no OTP exists for this non-existent user
-        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+        _mockCacheService.Setup(c => c.GetAsync<string>($"OTP:Reset{command.Request.Email}"))
             .ReturnsAsync((string?)null);
 
         // Act
@@ -110,7 +110,7 @@ public class ResetPasswordCommandHandlerTests
             false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+        _mockCacheService.Setup(c => c.GetAsync<string>($"OTP:Reset{commandNoUser.Request.Email}"))
             .ReturnsAsync((string?)null);
 
         string? messageNoUser = null;
@@ -130,7 +130,7 @@ public class ResetPasswordCommandHandlerTests
             false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingUser);
 
-        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+        _mockCacheService.Setup(c => c.GetAsync<string>($"OTP:Reset{commandWrongOtp.Request.Email}"))
             .ReturnsAsync("123456"); // correct code is 123456 but user sent 999999
 
         string? messageWrongOtp = null;
@@ -158,7 +158,7 @@ public class ResetPasswordCommandHandlerTests
             .ReturnsAsync(user);
 
         // Cache returns a DIFFERENT code → OTP validation fails
-        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+        _mockCacheService.Setup(c => c.GetAsync<string>($"OTP:Reset{request.Email}"))
             .ReturnsAsync("123456");
 
         // Act
@@ -184,7 +184,7 @@ public class ResetPasswordCommandHandlerTests
             false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        _mockCacheService.Setup(c => c.GetAsync<string>(It.IsAny<string>()))
+        _mockCacheService.Setup(c => c.GetAsync<string>($"OTP:Reset{request.Email}"))
             .ReturnsAsync((string?)null); // code expired / not found in cache
 
         // Act
