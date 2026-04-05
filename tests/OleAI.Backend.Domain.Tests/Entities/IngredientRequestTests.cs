@@ -43,5 +43,32 @@ namespace OleAI.Backend.Domain.Tests.Entities
             request.Status.Should().Be(IngredientRequestStatus.MergedWithAlias);
             request.AdminNote.Should().Be("Alias olarak eklendi.");
         }
+
+        [Fact]
+        public void ResolveAsApproved_Should_ChangeStatusToApprovedAsNew()
+        {
+            // Arrange
+            var request = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Sumak");
+
+            // Act
+            request.ResolveAsApproved();
+
+            // Assert
+            request.Status.Should().Be(IngredientRequestStatus.ApprovedAsNew);
+        }
+
+        [Fact]
+        public void UpdateLlmAnalysis_Should_SetLlmAnalysisResult()
+        {
+            // Arrange
+            var request = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Sumak");
+            const string llmResult = "{\"IsNew\":true}";
+
+            // Act
+            request.UpdateLlmAnalysis(llmResult);
+
+            // Assert
+            request.LlmAnalysisResult.Should().Be(llmResult);
+        }
     }
 }

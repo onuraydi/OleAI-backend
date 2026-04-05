@@ -1,4 +1,5 @@
 using FluentAssertions;
+using OleAI.Backend.Domain;
 using OleAI.Backend.Domain.Entities;
 
 namespace OleAI.Backend.Domain.Tests.Entities
@@ -57,6 +58,33 @@ namespace OleAI.Backend.Domain.Tests.Entities
 
             // Assert
             userIngredient.IngredientId.Should().Be(masterIngredientId);
+        }
+
+        [Fact]
+        public void UpdateQuantity_Should_ThrowException_When_NewQuantityIsNegative()
+        {
+            // Arrange
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100);
+
+            // Act
+            Action action = () => userIngredient.UpdateQuantity(-1);
+
+            // Assert
+            action.Should().Throw<ArgumentException>().WithMessage(DomainConstants.AmountCannotBeNegativeMessage);
+        }
+
+        [Fact]
+        public void ApprovePendingRequest_Should_ThrowException_When_RequestIdIsNull()
+        {
+            // Arrange
+            var approvedIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
+
+            // Act
+            Action action = () => approvedIngredient.ApprovePendingRequest(Guid.NewGuid());
+
+            // Assert
+            action.Should().Throw<InvalidOperationException>()
+                .WithMessage(DomainConstants.ProductAlreadyApprovedOrRequestIdMissingMessage);
         }
     }
 }

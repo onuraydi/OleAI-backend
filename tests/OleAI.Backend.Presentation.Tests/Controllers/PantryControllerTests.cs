@@ -180,4 +180,17 @@ public class PantryControllerTests
         (result as OkObjectResult).Should().NotBeNull();
         _mockMediator.Verify(m => m.Send(It.Is<CancelIngredientRequestCommand>(c => c.RequestId == requestId && c.UserId == _userId), default), Times.Once);
     }
+
+    [Fact]
+    public async Task GetMyPantry_WhenUserClaimIsMissing_ShouldThrowUnauthorizedAccessException()
+    {
+        // Arrange
+        _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+
+        // Act
+        Func<Task> act = async () => await _controller.GetMyPantry();
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
 }
