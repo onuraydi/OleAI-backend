@@ -100,4 +100,49 @@ public class SearchIngredientQueryHandlerTests
             It.Is<TimeSpan?>(t => t == TimeSpan.FromHours(6)),
             null), Times.Once);
     }
+
+    [Fact]
+    public async Task Handle_ShouldReturnMaximum20Results()
+    {
+        // Arrange
+        var catalog = Enumerable.Range(1, 30)
+            .Select(i => new IngredientSearchResultResponse
+            {
+                MasterIngredientId = Guid.NewGuid(),
+                DisplayName = $"su-item-{i}",
+                BaseUnitType = "adet"
+            }).ToList();
+
+        _mockCacheService
+            .Setup(c => c.GetAsync<List<IngredientSearchResultResponse>>(It.IsAny<string>()))
+            .ReturnsAsync(catalog);
+
+        // Act
+        var result = await _handler.Handle(new SearchIngredientQuery { Keyword = "su" }, CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(20);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSearchCaseInsensitive()
+    {
+        // Arrange
+        var cachedCatalog = new List<IngredientSearchResultResponse>
+        {
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "SUGAR", BaseUnitType = "gram" },
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Salt", BaseUnitType = "gram" }
+        };
+
+        _mockCacheService
+            .Setup(c => c.GetAsync<List<IngredientSearchResultResponse>>(It.IsAny<string>()))
+            .ReturnsAsync(cachedCatalog);
+
+        // Act
+        var result = await _handler.Handle(new SearchIngredientQuery { Keyword = "sug" }, CancellationToken.None);
+
+        // Assert
+        result.Should().ContainSingle();
+        result[0].DisplayName.Should().Be("SUGAR");
+    }
 }
