@@ -194,4 +194,30 @@ public class ResetPasswordCommandHandlerTests
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(AuthMessages.VerificationCodeIsIncorrectOrExpired);
     }
+
+    [Fact]
+    public async Task Handle_WhenUserIsInactive_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var request = new ResetPasswordRequest { Email = "test@example.com", OtpCode = "123456", NewPassword = "newPass" };
+        var command = new ResetPasswordCommand { Request = request };
+
+        var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", IsActive = false };
+
+        _mockUserRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
+            It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>(),
+            false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _mockCacheService.Setup(c => c.GetAsync<string>($"OTP:Reset{request.Email}"))
+            .ReturnsAsync("123456");
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(AuthMessages.AccountNotActiveMessage);
+    }
 }
