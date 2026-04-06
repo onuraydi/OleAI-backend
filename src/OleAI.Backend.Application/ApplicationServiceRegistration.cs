@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Auth.Rules;
 using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Features.IngredientCategories.Rules;
@@ -21,6 +22,9 @@ namespace OleAI.Backend.Application
             {
                 configuration.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             });
+
+
+            services.Configure<SecuritySettings>(configuration.GetSection("SecuritySettings"));
 
             services.AddScoped<AuthBusinessRules>();
             services.AddScoped<RoleBusinessRules>();
