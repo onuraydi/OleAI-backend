@@ -35,7 +35,7 @@ namespace OleAI.Backend.Application.Features.Pantry.EventHandlers
                 var amountNeeded = notification.ConsumedIngredients[item.IngredientId!.Value];
 
                 // Bİten malzeme - Alışveriş listesine ekleme eklenecek
-                if (item.Quantity <= amountNeeded)
+                if (item.Amount <= amountNeeded)
                 {
                     await _userIngredientRepository.DeleteAsync(item);
 
