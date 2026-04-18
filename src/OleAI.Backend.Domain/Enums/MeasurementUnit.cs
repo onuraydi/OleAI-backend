@@ -1,6 +1,6 @@
 namespace OleAI.Backend.Domain.Enums
 {
-    public enum MeasuremenetUnit
+    public enum MeasurementUnit
     {
         Piece = 1,
         Kilogram = 2,
