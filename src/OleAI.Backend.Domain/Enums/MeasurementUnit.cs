@@ -10,6 +10,7 @@ namespace OleAI.Backend.Domain.Enums
         Packet = 6,
         Bunch = 7,
         Slice = 8,
+        Pinch = 9,
         Other = 99
     }
 }
