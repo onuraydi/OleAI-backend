@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OleAI.Backend.Application.Features.Pantry.Dtos.Responses;
 using OleAI.Backend.Application.Features.Pantry.Profiles;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Profiles;
@@ -25,7 +26,7 @@ public class PantryMappingProfileTests
     [Fact]
     public void Construct_ShouldHaveValidConfiguration()
     {
-        var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2);
+        var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2, MeasurementUnit.Gram);
         var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Domat");
 
         var act1 = () => _mapper.Map<PantryItemResponse>(userIngredient);
@@ -40,10 +41,10 @@ public class PantryMappingProfileTests
     {
         // Arrange
         var category = new Category(Guid.NewGuid(), "Sebze");
-        var ingredient = new Ingredient(Guid.NewGuid(), "Domates", category.Id, "adet");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Domates", category.Id, MeasurementCategory.Count);
         SetPrivateProperty(ingredient, nameof(Ingredient.Category), category);
 
-        var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), ingredient.Id, 3);
+        var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), ingredient.Id, 3, MeasurementUnit.Gram);
         SetPrivateProperty(userIngredient, nameof(UserIngredient.Ingredient), ingredient);
 
         // Act
@@ -53,7 +54,7 @@ public class PantryMappingProfileTests
         result.MasterIngredientId.Should().Be(ingredient.Id);
         result.Name.Should().Be("Domates");
         result.CategoryName.Should().Be("Sebze");
-        result.Unit.Should().Be("adet");
+        result.Unit.Should().Be("Gram");
         result.IsPendingApproval.Should().BeFalse();
     }
 
@@ -62,7 +63,7 @@ public class PantryMappingProfileTests
     {
         // Arrange
         var request = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Yeni Ürün");
-        var userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), Guid.NewGuid(), request.Id, 1);
+        var userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), Guid.NewGuid(), request.Id, 1, MeasurementUnit.Piece);
         SetPrivateProperty(userIngredient, nameof(UserIngredient.IngredientRequest), request);
 
         // Act
@@ -71,6 +72,7 @@ public class PantryMappingProfileTests
         // Assert
         result.MasterIngredientId.Should().BeNull();
         result.Name.Should().Be("Yeni Ürün");
+        result.Unit.Should().Be("Piece");
         result.IsPendingApproval.Should().BeTrue();
     }
 
@@ -78,7 +80,7 @@ public class PantryMappingProfileTests
     public void Map_UserIngredient_WithMissingRelations_ShouldUseFallbackValues()
     {
         // Arrange
-        var userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
+        var userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
 
         // Act
         var result = _mapper.Map<PantryItemResponse>(userIngredient);
@@ -86,7 +88,7 @@ public class PantryMappingProfileTests
         // Assert
         result.Name.Should().Be("Bilinmeyen Ürün");
         result.CategoryName.Should().Be("Kategorisiz");
-        result.Unit.Should().Be("Adet/Gr");
+        result.Unit.Should().Be("Piece");
     }
 
     private static void SetPrivateProperty<T>(T target, string propertyName, object value)

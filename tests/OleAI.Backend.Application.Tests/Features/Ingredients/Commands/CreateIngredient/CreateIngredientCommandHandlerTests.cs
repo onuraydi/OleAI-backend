@@ -10,6 +10,7 @@ using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Commands.CreateIngredient;
@@ -36,12 +37,12 @@ public class CreateIngredientCommandHandlerTests
         // Arrange
         var command = new CreateIngredientCommand
         {
-            Request = new CreateIngredientRequest { Name = "Tuz", CategoryId = Guid.NewGuid(), BaseUnitType = "gram" }
+            Request = new CreateIngredientRequest { Name = "Tuz", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Weight }
         };
 
         _mockIngredientRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram"));
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight));
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -57,10 +58,10 @@ public class CreateIngredientCommandHandlerTests
         // Arrange
         var command = new CreateIngredientCommand
         {
-            Request = new CreateIngredientRequest { Name = "Tuz", CategoryId = Guid.NewGuid(), BaseUnitType = "gram" }
+            Request = new CreateIngredientRequest { Name = "Tuz", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Weight }
         };
 
-        var mappedIngredient = new Ingredient(Guid.NewGuid(), "Tuz", command.Request.CategoryId, "gram");
+        var mappedIngredient = new Ingredient(Guid.NewGuid(), "Tuz", command.Request.CategoryId, MeasurementCategory.Weight);
         var mappedResponse = new CreatedIngredientResponse { Id = mappedIngredient.Id, Name = mappedIngredient.Name };
 
         _mockIngredientRepository

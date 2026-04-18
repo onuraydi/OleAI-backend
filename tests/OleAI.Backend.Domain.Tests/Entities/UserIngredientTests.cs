@@ -1,6 +1,7 @@
 using FluentAssertions;
 using OleAI.Backend.Domain;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Domain.Tests.Entities
 {
@@ -10,20 +11,20 @@ namespace OleAI.Backend.Domain.Tests.Entities
         public void Consume_Should_DevreaseQuantity_When_AmountIsValid()
         {
             // Arrange
-            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1000);
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1000, MeasurementUnit.Gram);
 
             // Act
             userIngredient.Consume(250);
 
             // Assert
-            userIngredient.Quantity.Should().Be(750);
+            userIngredient.Amount.Should().Be(750);
         }
 
         [Fact]
         public void Consume_Should_ThrowException_When_NotEnoughtQuantity()
         {
             // Arrange
-            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100);
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100, MeasurementUnit.Gram);
 
             // Act
             Action action = () => userIngredient.Consume(250);
@@ -36,13 +37,13 @@ namespace OleAI.Backend.Domain.Tests.Entities
         public void AddQuantity_Should_IncreaseQuantity_When_AmountIsValid()
         {
             // Arrange
-            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 500);
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 500, MeasurementUnit.Gram);
 
             // Act
             userIngredient.AddQuantity(200);
 
             // Assert
-            userIngredient.Quantity.Should().Be(700);
+            userIngredient.Amount.Should().Be(700);
         }
 
         [Fact]
@@ -50,7 +51,7 @@ namespace OleAI.Backend.Domain.Tests.Entities
         {
             // Arrange
             var pendingId = Guid.NewGuid();
-            var userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), Guid.NewGuid(), pendingId, 1);
+            var userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), Guid.NewGuid(), pendingId, 1, MeasurementUnit.Piece);
             var masterIngredientId = Guid.NewGuid();
 
             // Act
@@ -64,10 +65,10 @@ namespace OleAI.Backend.Domain.Tests.Entities
         public void UpdateQuantity_Should_ThrowException_When_NewQuantityIsNegative()
         {
             // Arrange
-            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100);
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100, MeasurementUnit.Gram);
 
             // Act
-            Action action = () => userIngredient.UpdateQuantity(-1);
+            Action action = () => userIngredient.UpdateQuantity(-1, MeasurementUnit.Gram);
 
             // Assert
             action.Should().Throw<ArgumentException>().WithMessage(DomainConstants.AmountCannotBeNegativeMessage);
@@ -77,7 +78,7 @@ namespace OleAI.Backend.Domain.Tests.Entities
         public void ApprovePendingRequest_Should_ThrowException_When_RequestIdIsNull()
         {
             // Arrange
-            var approvedIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
+            var approvedIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
 
             // Act
             Action action = () => approvedIngredient.ApprovePendingRequest(Guid.NewGuid());

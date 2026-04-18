@@ -60,7 +60,7 @@ public class ResolveIngredientRequestCommandHandlerTests
         var command = CreateCommand(ResolutionAction.ApproveAsNew);
         command.Request.RequestId = ingredientRequest.Id;
         command.Request.NewCategoryId = null;
-        command.Request.NewBaseUnitType = null;
+        command.Request.NewUnitFamily = null;
 
         _mockIngredientRequestRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<IngredientRequest, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
@@ -79,13 +79,13 @@ public class ResolveIngredientRequestCommandHandlerTests
     {
         // Arrange
         var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Acuka");
-        var pendingInventoryItem = UserIngredient.CreatePending(Guid.NewGuid(), ingredientRequest.UserId, ingredientRequest.Id, 2);
+        var pendingInventoryItem = UserIngredient.CreatePending(Guid.NewGuid(), ingredientRequest.UserId, ingredientRequest.Id, 2, MeasurementUnit.Piece);
         var categoryId = Guid.NewGuid();
 
         var command = CreateCommand(ResolutionAction.ApproveAsNew);
         command.Request.RequestId = ingredientRequest.Id;
         command.Request.NewCategoryId = categoryId;
-        command.Request.NewBaseUnitType = "gram";
+        command.Request.NewUnitFamily = MeasurementCategory.Weight;
 
         Ingredient? addedIngredient = null;
 
@@ -118,7 +118,7 @@ public class ResolveIngredientRequestCommandHandlerTests
         ingredientRequest.Status.Should().Be(IngredientRequestStatus.ApprovedAsNew);
         addedIngredient.Should().NotBeNull();
         addedIngredient!.Name.Should().Be("Acuka");
-        addedIngredient.BaseUnitType.Should().Be("gram");
+        addedIngredient.UnitFamily.Should().Be(MeasurementCategory.Weight);
         addedIngredient.CategoryId.Should().Be(categoryId);
 
         pendingInventoryItem.IngredientId.Should().Be(addedIngredient.Id);
@@ -155,7 +155,7 @@ public class ResolveIngredientRequestCommandHandlerTests
     {
         // Arrange
         var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "Kırmızı Biber Tozu");
-        var pendingInventoryItem = UserIngredient.CreatePending(Guid.NewGuid(), ingredientRequest.UserId, ingredientRequest.Id, 1);
+        var pendingInventoryItem = UserIngredient.CreatePending(Guid.NewGuid(), ingredientRequest.UserId, ingredientRequest.Id, 1, MeasurementUnit.Piece);
         var masterIngredientId = Guid.NewGuid();
 
         var command = CreateCommand(ResolutionAction.MergeAsAlias);
@@ -298,7 +298,7 @@ public class ResolveIngredientRequestCommandHandlerTests
         var command = CreateCommand(ResolutionAction.ApproveAsNew);
         command.Request.RequestId = ingredientRequest.Id;
         command.Request.NewCategoryId = categoryId;
-        command.Request.NewBaseUnitType = "gram";
+        command.Request.NewUnitFamily = MeasurementCategory.Weight;
 
         _mockIngredientRequestRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<IngredientRequest, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))

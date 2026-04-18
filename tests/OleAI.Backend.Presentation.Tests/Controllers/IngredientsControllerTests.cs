@@ -17,6 +17,7 @@ using OleAI.Backend.Application.Features.Ingredients.Dtos.Responses;
 using OleAI.Backend.Application.Features.Ingredients.Queries.GetIngredientById;
 using OleAI.Backend.Application.Features.Ingredients.Queries.GetIngredientList;
 using OleAI.Backend.Core.Repositories.Pagination;
+using OleAI.Backend.Domain.Enums;
 using OleAI.Backend.Presentation.Controllers;
 using Xunit;
 
@@ -63,7 +64,7 @@ public class IngredientsControllerTests
     {
         var command = new CreateIngredientCommand
         {
-            Request = new CreateIngredientRequest { Name = "Tuz", CategoryId = Guid.NewGuid(), BaseUnitType = "gram" }
+            Request = new CreateIngredientRequest { Name = "Tuz", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Weight }
         };
         var response = new CreatedIngredientResponse { Id = Guid.NewGuid(), Name = "Tuz" };
 
@@ -93,7 +94,7 @@ public class IngredientsControllerTests
         var routeId = Guid.NewGuid();
         var command = new UpdateIngredientCommand
         {
-            Request = new UpdateIngredientRequest { Id = Guid.NewGuid(), Name = "Yeni", CategoryId = Guid.NewGuid(), BaseUnitType = "adet" }
+            Request = new UpdateIngredientRequest { Id = Guid.NewGuid(), Name = "Yeni", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Count }
         };
 
         _mockMediator.Setup(m => m.Send(It.IsAny<UpdateIngredientCommand>(), default)).ReturnsAsync("updated");

@@ -10,6 +10,7 @@ using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.IngredientAliases.Commands.CreateIngredientAlias;
@@ -64,7 +65,7 @@ public class CreateIngredientAliasCommandHandlerTests
 
         _mockIngredientRepository
             .SetupSequence(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(ingredientId, "Domates", Guid.NewGuid(), "adet"))
+            .ReturnsAsync(new Ingredient(ingredientId, "Domates", Guid.NewGuid(), MeasurementCategory.Count))
             .ReturnsAsync((Ingredient?)null);
 
         _mockAliasRepository

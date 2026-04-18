@@ -5,6 +5,7 @@ using OleAI.Backend.Application.Features.Ingredients.Dtos.Requests;
 using OleAI.Backend.Application.Features.Ingredients.Dtos.Responses;
 using OleAI.Backend.Application.Features.Ingredients.Profiles;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Profiles;
@@ -26,9 +27,9 @@ public class IngredientMappingProfileTests
     public void Construct_ShouldHaveValidConfiguration()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram");
-        var createRequest = new CreateIngredientRequest { Name = "Karabiber", CategoryId = Guid.NewGuid(), BaseUnitType = "gram" };
-        var updateRequest = new UpdateIngredientRequest { Id = ingredient.Id, Name = "Yeni", CategoryId = Guid.NewGuid(), BaseUnitType = "adet" };
+        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight);
+        var createRequest = new CreateIngredientRequest { Name = "Karabiber", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Weight };
+        var updateRequest = new UpdateIngredientRequest { Id = ingredient.Id, Name = "Yeni", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Count };
 
         // Act
         var act1 = () => _mapper.Map<CreatedIngredientResponse>(ingredient);
@@ -49,7 +50,7 @@ public class IngredientMappingProfileTests
         {
             Name = "Tuz",
             CategoryId = Guid.NewGuid(),
-            BaseUnitType = "gram"
+            UnitFamily = MeasurementCategory.Weight
         };
 
         // Act
@@ -58,14 +59,14 @@ public class IngredientMappingProfileTests
         // Assert
         ingredient.Name.Should().Be(request.Name);
         ingredient.CategoryId.Should().Be(request.CategoryId);
-        ingredient.BaseUnitType.Should().Be(request.BaseUnitType);
+        ingredient.UnitFamily.Should().Be(request.UnitFamily);
     }
 
     [Fact]
     public void Map_Ingredient_To_CreatedIngredientResponse_ShouldMapCorrectly()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight);
 
         // Act
         var response = _mapper.Map<CreatedIngredientResponse>(ingredient);

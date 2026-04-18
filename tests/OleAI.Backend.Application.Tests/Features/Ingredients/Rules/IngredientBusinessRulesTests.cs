@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Rules;
@@ -36,7 +37,7 @@ public class IngredientBusinessRulesTests
     public void IngredientMustExistWhenRequested_WhenIngredientExists_ShouldNotThrow()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), "adet");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), MeasurementCategory.Count);
 
         // Act
         Action act = () => _rules.IngredientMustExistWhenRequested(ingredient);
@@ -51,7 +52,7 @@ public class IngredientBusinessRulesTests
         // Arrange
         _mockIngredientRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), "adet"));
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), MeasurementCategory.Count));
 
         // Act
         Func<Task> act = async () => await _rules.IngredientNameCannotBeDuplicatedWhenInserted("domates");

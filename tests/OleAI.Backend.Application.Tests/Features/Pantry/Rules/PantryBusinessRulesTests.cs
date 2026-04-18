@@ -55,7 +55,7 @@ public class PantryBusinessRulesTests
         _mockIngredientRepository.Setup(r => r.GetAsync(
             It.IsAny<Expression<Func<Ingredient, bool>>>(),
             null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(ingredientId, "Tomato", Guid.NewGuid(), "kg"));
+            .ReturnsAsync(new Ingredient(ingredientId, "Tomato", Guid.NewGuid(), MeasurementCategory.Weight));
 
         // Act
         Func<Task> action = async () => await _rules.IngredientMustExistWhenSelectedFromList(ingredientId);

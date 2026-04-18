@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using OleAI.Backend.Persistence.Contexts;
 using OleAI.Backend.Persistence.Repositories;
 
@@ -23,7 +24,7 @@ public class IngredientAliasRepositoryTests
         using var context = CreateContext();
         var repository = new IngredientAliasRepository(context);
 
-        var ingredient = new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), "adet");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), MeasurementCategory.Count);
         await context.Ingredients.AddAsync(ingredient);
         await context.SaveChangesAsync();
 
@@ -41,7 +42,7 @@ public class IngredientAliasRepositoryTests
         using var context = CreateContext();
         var repository = new IngredientAliasRepository(context);
 
-        var ingredient = new Ingredient(Guid.NewGuid(), "Biber", Guid.NewGuid(), "gram");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Biber", Guid.NewGuid(), MeasurementCategory.Weight);
         var alias = new IngredientAlias(Guid.NewGuid(), ingredient.Id, "Pul biber");
 
         await context.Ingredients.AddAsync(ingredient);
