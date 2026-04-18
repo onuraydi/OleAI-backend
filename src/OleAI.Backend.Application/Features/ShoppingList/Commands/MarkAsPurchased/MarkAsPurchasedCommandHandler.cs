@@ -1,5 +1,6 @@
 using MediatR;
 using OleAI.Backend.Application.Features.ShoppingList.Constants;
+using OleAI.Backend.Application.Features.ShoppingList.Events;
 using OleAI.Backend.Application.Features.ShoppingList.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 
@@ -9,22 +10,35 @@ public class MarkAsPurchasedCommandHandler : IRequestHandler<MarkAsPurchasedComm
 {
     private readonly IShoppingListItemRepository _shoppingListItemRepository;
     private readonly ShoppingListBusinessRules _businessRules;
+    private readonly IMediator _mediator;
 
     public MarkAsPurchasedCommandHandler(
         IShoppingListItemRepository shoppingListItemRepository,
-        ShoppingListBusinessRules businessRules)
+        ShoppingListBusinessRules businessRules,
+        IMediator mediator)
     {
         _shoppingListItemRepository = shoppingListItemRepository;
         _businessRules = businessRules;
+        _mediator = mediator;
     }
 
     public async Task<string> Handle(MarkAsPurchasedCommand command, CancellationToken cancellationToken)
     {
         var item = await _businessRules.GetItemOrThrow(command.ItemId, command.UserId, cancellationToken);
 
+        // Domain davranışı — zaten satın alınmışsa BusinessException fırlatır
         item.MarkAsPurchased();
 
         await _shoppingListItemRepository.UpdateAsync(item, cancellationToken);
+
+        // Cross-module event: PantryAdditionEventHandler dolaba otomatik ekleyecek
+        await _mediator.Publish(new ItemPurchasedEvent
+        {
+            UserId = item.UserId,
+            IngredientId = item.IngredientId,
+            Quantity = item.Quantity,
+            Unit = item.Unit
+        }, cancellationToken);
 
         return ShoppingListMessages.ItemMarkedAsPurchased;
     }
