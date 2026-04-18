@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Features.IngredientCategories.Rules;
 using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Features.Pantry.Rules;
+using OleAI.Backend.Application.Features.ShoppingList.Rules;
 using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.Llm;
 
@@ -42,6 +43,7 @@ namespace OleAI.Backend.Application
             services.AddScoped<CategoryBusinessRules>();
             services.AddScoped<IngredientBusinessRules>();
             services.AddScoped<IngredientAliasBusinessRules>();
+            services.AddScoped<ShoppingListBusinessRules>();
 
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();

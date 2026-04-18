@@ -1,34 +1,73 @@
 using MediatR;
 using OleAI.Backend.Application.Features.Pantry.Events;
-// Not: IShoppingListItemRepository eklendiğinde açılacak
+using OleAI.Backend.Application.Features.ShoppingList.Constants;
+using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
+using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Services;
 
 namespace OleAI.Backend.Application.Features.Pantry.EventHandlers;
 
+/// <summary>
+/// IngredientDepletedEvent'i yakalar; stoku biten malzemeyi kullanıcının
+/// alışveriş listesine otomatik olarak ekler. Aynı malzeme zaten listede
+/// (satın alınmamış) varsa tekrar eklenmez (idempotent).
+/// </summary>
 public class ShoppingListEventHandler : INotificationHandler<IngredientDepletedEvent>
 {
-    // private readonly IShoppingListItemRepository _shoppingListRepository;
+    private readonly IShoppingListItemRepository _shoppingListItemRepository;
+    private readonly IIngredientRepository _ingredientRepository;
+    private readonly ICacheService _cacheService;
 
-    public ShoppingListEventHandler(/* IShoppingListItemRepository shoppingListRepository */)
+    private const string IngredientCacheKeyPrefix = "ingredient:";
+
+    public ShoppingListEventHandler(
+        IShoppingListItemRepository shoppingListItemRepository,
+        IIngredientRepository ingredientRepository,
+        ICacheService cacheService)
     {
-        // _shoppingListRepository = shoppingListRepository;
+        _shoppingListItemRepository = shoppingListItemRepository;
+        _ingredientRepository = ingredientRepository;
+        _cacheService = cacheService;
     }
 
     public async Task Handle(IngredientDepletedEvent notification, CancellationToken cancellationToken)
     {
-        // TODO: Gerçek ShoppingList entity'si eklendiğinde burası aktif edilecek.
+        var exists = await _shoppingListItemRepository.GetAsync(
+            predicate: s => s.UserId == notification.UserId &&
+                            s.IngredientId == notification.MasterIngredientId &&
+                            !s.IsPurchased,
+            enableTracking: false,
+            cancellationToken: cancellationToken);
 
-        /* var existingItem = await _shoppingListRepository.GetAsync(s => s.UserId == notification.UserId && s.IngredientId == notification.MasterIngredientId);
-        
-        if (existingItem == null)
+        if (exists != null) return;
+
+        var cacheKey = $"{IngredientCacheKeyPrefix}{notification.MasterIngredientId}";
+        var ingredient = await _cacheService.GetAsync<Ingredient>(cacheKey);
+
+        if (ingredient == null)
         {
-            var newItem = new ShoppingListItem(Guid.NewGuid(), notification.UserId, notification.MasterIngredientId);
-            await _shoppingListRepository.AddAsync(newItem);
+            ingredient = await _ingredientRepository.GetAsync(
+                predicate: i => i.Id == notification.MasterIngredientId,
+                enableTracking: false,
+                cancellationToken: cancellationToken);
+
+            if (ingredient == null) return;
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                ingredient,
+                absoluteExpiration: TimeSpan.FromHours(24));
         }
-        */
 
-        // Şimdilik sistemin düzgün çalıştığını görmek için Console/Log basıyoruz.
-        Console.WriteLine($"[AKILLI ASİSTAN] {notification.UserId} ID'li kullanıcının dolabında {notification.IngredientName} bitti. Alışveriş listesine otomatik eklendi!");
+        var defaultUnit = MeasurementUnitHelper.GetDefaultUnitForCategory(ingredient.UnitFamily);
 
-        await Task.CompletedTask;
+        var newItem = new ShoppingListItem(
+            userId: notification.UserId,
+            ingredientId: ingredient.Id,
+            quantity: 1,
+            unit: defaultUnit);
+
+        await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
     }
 }
