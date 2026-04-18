@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<IngredientAlias> IngredientAliases { get; set; }
     public DbSet<UserIngredient> UserIngredients { get; set; }
     public DbSet<IngredientRequest> IngredientRequests { get; set; }
+    public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
