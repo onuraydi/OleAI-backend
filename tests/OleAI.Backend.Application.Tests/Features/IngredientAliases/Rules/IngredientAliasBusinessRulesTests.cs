@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.IngredientAliases.Rules;
@@ -67,7 +68,7 @@ public class IngredientAliasBusinessRulesTests
 
         _mockIngredientRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Domat", Guid.NewGuid(), "adet"));
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Domat", Guid.NewGuid(), MeasurementCategory.Count));
 
         Func<Task> act = async () => await _rules.AliasNameCannotBeDuplicated("Domat");
 

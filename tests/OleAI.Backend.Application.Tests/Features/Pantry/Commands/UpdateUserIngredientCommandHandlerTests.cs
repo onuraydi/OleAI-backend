@@ -8,6 +8,7 @@ using OleAI.Backend.Application.Features.Pantry.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands;
@@ -61,7 +62,7 @@ public class UpdateUserIngredientCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         var inventoryId = Guid.NewGuid();
-        var existing = UserIngredient.CreateStandard(inventoryId, userId, Guid.NewGuid(), 3);
+        var existing = UserIngredient.CreateStandard(inventoryId, userId, Guid.NewGuid(), 3, MeasurementUnit.Gram);
 
         var command = new UpdateUserIngredientCommand
         {
@@ -81,7 +82,7 @@ public class UpdateUserIngredientCommandHandlerTests
 
         // Assert
         result.Should().Be(PantryMessages.IngredientQuantityUpdatedMessage);
-        existing.Quantity.Should().Be(7.5);
+        existing.Amount.Should().Be(7.5);
 
         _mockUserIngredientRepository.Verify(r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()), Times.Once);
     }

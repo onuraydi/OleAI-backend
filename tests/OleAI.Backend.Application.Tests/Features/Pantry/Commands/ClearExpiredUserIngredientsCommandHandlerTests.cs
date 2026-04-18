@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands;
@@ -46,8 +47,8 @@ public class ClearExpiredUserIngredientsCommandHandlerTests
         var userId = Guid.NewGuid();
         var expiredItems = new List<UserIngredient>
         {
-            UserIngredient.CreateStandard(Guid.NewGuid(), userId, Guid.NewGuid(), 1, DateTime.UtcNow.AddDays(-2)),
-            UserIngredient.CreateStandard(Guid.NewGuid(), userId, Guid.NewGuid(), 3, DateTime.UtcNow.AddDays(-1))
+            UserIngredient.CreateStandard(Guid.NewGuid(), userId, Guid.NewGuid(), 1, MeasurementUnit.Gram, DateTime.UtcNow.AddDays(-2)),
+            UserIngredient.CreateStandard(Guid.NewGuid(), userId, Guid.NewGuid(), 3, MeasurementUnit.Gram, DateTime.UtcNow.AddDays(-1))
         };
 
         var command = new ClearExpiredUserIngredientsCommand { userId = userId };

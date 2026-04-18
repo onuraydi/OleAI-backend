@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Features.IngredientCategories.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.IngredientCategories.Commands.DeleteCategory;
@@ -58,7 +59,7 @@ public class DeleteCategoryCommandHandlerTests
 
         _mockIngredientRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Mercimek", category.Id, "kg"));
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Mercimek", category.Id, MeasurementCategory.Weight));
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);

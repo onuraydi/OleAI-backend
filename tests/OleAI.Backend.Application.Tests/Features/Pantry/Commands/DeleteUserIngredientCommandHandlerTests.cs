@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Features.Pantry.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands;
@@ -57,7 +58,7 @@ public class DeleteUserIngredientCommandHandlerTests
     public async Task Handle_WhenInventoryItemExists_ShouldDeleteAndReturnSuccessMessage()
     {
         // Arrange
-        var item = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2);
+        var item = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2, MeasurementUnit.Gram);
         var command = new DeleteUserIngredientCommand { Id = item.Id, UserId = item.UserId };
 
         _mockUserIngredientRepository

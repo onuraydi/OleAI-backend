@@ -10,6 +10,7 @@ using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Queries;
@@ -38,7 +39,7 @@ public class GetMyPantryQueryHandlerTests
         // 1. Veritabanından dönecek (Mocklanmış) entity listesini hazırlıyoruz
         var userIngredients = new List<UserIngredient>
         {
-            UserIngredient.CreateStandard(Guid.NewGuid(), query.UserId, masterIngredientId, 500)
+            UserIngredient.CreateStandard(Guid.NewGuid(), query.UserId, masterIngredientId, 500, MeasurementUnit.Gram)
         };
 
         // GetListAsync metodu IPaginate döndüğü için sahte bir Paginate objesi oluşturuyoruz

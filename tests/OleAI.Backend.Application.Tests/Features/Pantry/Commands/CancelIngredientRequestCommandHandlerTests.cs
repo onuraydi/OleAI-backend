@@ -87,7 +87,7 @@ public class CancelIngredientRequestCommandHandlerTests
         var requestId = Guid.NewGuid();
 
         var request = new IngredientRequest(requestId, userId, "Sutto");
-        var pendingInventoryItem = UserIngredient.CreatePending(Guid.NewGuid(), userId, requestId, 2);
+        var pendingInventoryItem = UserIngredient.CreatePending(Guid.NewGuid(), userId, requestId, 2, MeasurementUnit.Piece);
 
         var command = new CancelIngredientRequestCommand { RequestId = requestId, UserId = userId };
 
