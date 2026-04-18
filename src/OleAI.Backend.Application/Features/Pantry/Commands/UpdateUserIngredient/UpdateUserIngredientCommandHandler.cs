@@ -25,7 +25,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
                 await _pantryBusinessRules.InventoryItemNotFound(command.Request.Id); // Trigger the expected exception
             }
 
-            item!.UpdateQuantity(command.Request.NewQuantity);
+            item!.UpdateQuantity(command.Request.NewQuantity, command.Request.NewUnit);
             await _userIngredientRepository.UpdateAsync(item);
 
             return PantryMessages.IngredientQuantityUpdatedMessage;

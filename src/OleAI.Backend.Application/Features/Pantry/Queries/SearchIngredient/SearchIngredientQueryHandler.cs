@@ -68,7 +68,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                     MasterIngredientId = ingredient.Id,
                     DisplayName = ingredient.Name,
                     IsAlias = false,
-                    BaseUnitType = ingredient.BaseUnitType,
+                    UnitFamily = ingredient.UnitFamily,
                 });
 
                 // Arama havuzuna Eşanlamlı (Alias) kelimeleri ekle
@@ -79,7 +79,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                         MasterIngredientId = ingredient.Id, // Kritik: Alias da seçilse Master ID dönüyor!
                         DisplayName = alias.AliasName,
                         IsAlias = true,
-                        BaseUnitType = ingredient.BaseUnitType
+                        UnitFamily = ingredient.UnitFamily
                     });
                 }
             }
