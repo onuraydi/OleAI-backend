@@ -77,4 +77,13 @@ public class ShoppingListBusinessRules
         if (ingredient == null)
             throw new BusinessException(ShoppingListMessages.IngredientNotFound);
     }
+
+    /// <summary>
+    /// Zaten satın alınmış bir item'ın yeniden işaretlenmesini engeller.
+    /// </summary>
+    public static void ItemMustNotBeAlreadyPurchased(ShoppingListItem item)
+    {
+        if (item.IsPurchased)
+            throw new BusinessException(ShoppingListMessages.AlreadyPurchased);
+    }
 }
