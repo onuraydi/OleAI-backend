@@ -9,7 +9,7 @@ namespace OleAI.Backend.Domain.Entities
         public Guid UserId { get; private set; }
         public Guid IngredientId { get; private set; }
 
-        public double Amount { get; private set; }
+        public double Quantity { get; private set; }
         public MeasurementUnit Unit { get; private set; }
 
         public bool IsPurchased { get; private set; }
@@ -18,22 +18,18 @@ namespace OleAI.Backend.Domain.Entities
         public virtual User User { get; private set; } = null!;
         public virtual Ingredient Ingredient { get; private set; } = null!;
 
-        // ORM (Entity Framework) için boş constructor
-        public ShoppingListItem()
-        {
-        }
+        // EF Core için gerekli; encapsulation'ı korumak adına protected
+        protected ShoppingListItem() { }
 
-        // Yeni kayıt oluşturulurken kullanılacak Constructor
-        public ShoppingListItem(Guid userId, Guid ingredientId, double amount, MeasurementUnit unit)
+        public ShoppingListItem(Guid userId, Guid ingredientId, double quantity, MeasurementUnit unit)
         {
             Id = Guid.NewGuid();
             UserId = userId;
             IngredientId = ingredientId;
-            SetAmountAndUnit(amount, unit);
+            SetQuantityAndUnit(quantity, unit);
             IsPurchased = false;
         }
 
-        // Davranış 1: Ürünün alındığını işaretleme
         public void MarkAsPurchased()
         {
             if (IsPurchased)
@@ -42,22 +38,20 @@ namespace OleAI.Backend.Domain.Entities
             IsPurchased = true;
         }
 
-        // Davranış 2: Miktar ve birim güncelleme
-        public void UpdateQuantity(double newAmount, MeasurementUnit newUnit)
+        public void UpdateQuantity(double newQuantity, MeasurementUnit newUnit)
         {
             if (IsPurchased)
                 throw new BusinessException(DomainConstants.CannotChangePurchasedProductQuantity);
 
-            SetAmountAndUnit(newAmount, newUnit);
+            SetQuantityAndUnit(newQuantity, newUnit);
         }
 
-        // Kapsülleme (Encapsulation): Miktar validasyonu
-        private void SetAmountAndUnit(double amount, MeasurementUnit unit)
+        private void SetQuantityAndUnit(double quantity, MeasurementUnit unit)
         {
-            if (amount <= 0)
+            if (quantity <= 0)
                 throw new BusinessException(DomainConstants.InvalidProductQuantityInList);
 
-            Amount = amount;
+            Quantity = quantity;
             Unit = unit;
         }
     }

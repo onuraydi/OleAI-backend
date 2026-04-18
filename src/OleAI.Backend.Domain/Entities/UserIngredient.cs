@@ -1,4 +1,5 @@
 using OleAI.Backend.Core.Repositories;
+using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Domain.Entities
 {
@@ -7,52 +8,78 @@ namespace OleAI.Backend.Domain.Entities
         public Guid UserId { get; private set; }
         public Guid? IngredientId { get; private set; }
         public Guid? IngredientRequestId { get; private set; }
-        public double Quantity { get; private set; }
-        public DateTime? ExpirationDate { get; private set; }
 
+        public double Amount { get; private set; }
+
+        /// <summary>
+        /// Kullanıcının bu malzemeyi hangi birimde takip ettiğini belirtir.
+        /// Ingredient.UnitFamily ile uyumlu bir birim olmalıdır.
+        /// </summary>
+        public MeasurementUnit Unit { get; private set; }
+
+        public DateTime? ExpirationDate { get; private set; }
 
         public virtual User User { get; private set; } = null!;
         public virtual Ingredient? Ingredient { get; private set; }
-        public virtual IngredientRequest IngredientRequest { get; private set; }
+        public virtual IngredientRequest? IngredientRequest { get; private set; }
 
         protected UserIngredient() { }
 
-        // Onay bekleyen ürün ekleme (Sistemde olmayan)
-        public static UserIngredient CreateStandard(Guid id, Guid userId, Guid ingredientId, double quantity, DateTime? expirationDate = null)
+        /// <summary>
+        /// Sistemde var olan (onaylı) bir malzeme için pantry girişi oluşturur.
+        /// </summary>
+        public static UserIngredient CreateStandard(
+            Guid id,
+            Guid userId,
+            Guid ingredientId,
+            double amount,
+            MeasurementUnit unit,
+            DateTime? expirationDate = null)
         {
             return new UserIngredient
             {
                 Id = id,
                 UserId = userId,
                 IngredientId = ingredientId,
-                Quantity = quantity,
+                Amount = amount,
+                Unit = unit,
                 ExpirationDate = expirationDate
             };
         }
 
-        // Onay bekleyen ürün ekleme (Sistemde olmayan)
-        public static UserIngredient CreatePending(Guid id, Guid userId, Guid ingredientRequestId, double quantity, DateTime? expirationDate = null)
+        /// <summary>
+        /// Sistemde henüz tanımlı olmayan (onay bekleyen) bir malzeme için pantry girişi oluşturur.
+        /// </summary>
+        public static UserIngredient CreatePending(
+            Guid id,
+            Guid userId,
+            Guid ingredientRequestId,
+            double amount,
+            MeasurementUnit unit,
+            DateTime? expirationDate = null)
         {
             return new UserIngredient
             {
                 Id = id,
                 UserId = userId,
                 IngredientRequestId = ingredientRequestId,
-                Quantity = quantity,
+                Amount = amount,
+                Unit = unit,
                 ExpirationDate = expirationDate
             };
         }
 
-        // Domain Behaviors
+        // ── Domain Behaviors ─────────────────────────────────────────────────────
+
         public void Consume(double amountToConsume)
         {
             if (amountToConsume <= 0)
                 throw new ArgumentException(DomainConstants.InvalidConsumptionAmountMessage);
 
-            if (Quantity < amountToConsume)
+            if (amountToConsume > Amount)
                 throw new InvalidOperationException(DomainConstants.InsufficientIngredientMessage);
 
-            Quantity -= amountToConsume;
+            Amount -= amountToConsume;
         }
 
         public void AddQuantity(double amountToAdd)
@@ -60,15 +87,16 @@ namespace OleAI.Backend.Domain.Entities
             if (amountToAdd <= 0)
                 throw new ArgumentException(DomainConstants.InvalidAdditionAmountMessage);
 
-            Quantity += amountToAdd;
+            Amount += amountToAdd;
         }
 
-        public void UpdateQuantity(double newQuantity)
+        public void UpdateQuantity(double newQuantity, MeasurementUnit newUnit)
         {
             if (newQuantity < 0)
                 throw new ArgumentException(DomainConstants.AmountCannotBeNegativeMessage);
 
-            Quantity = newQuantity;
+            Amount = newQuantity;
+            Unit = newUnit;
         }
 
         public void ApprovePendingRequest(Guid masterIngredientId)
@@ -77,8 +105,7 @@ namespace OleAI.Backend.Domain.Entities
                 throw new InvalidOperationException(DomainConstants.ProductAlreadyApprovedOrRequestIdMissingMessage);
 
             IngredientId = masterIngredientId;
-            // Onaylandığı için request bağlantısını koparabilir veya log için tutabiliriz.
-            // Şimdilik dolapta aktif hale gelmesi için Master ID'yi set ediyoruz.
+            // IngredientRequestId bağlantısı audit trail için tutulmaktadır.
         }
     }
 }
