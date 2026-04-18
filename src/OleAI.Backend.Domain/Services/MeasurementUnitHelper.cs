@@ -46,5 +46,18 @@ namespace OleAI.Backend.Domain.Services
         /// </summary>
         public static IReadOnlySet<MeasurementUnit> GetUnitsForCategory(MeasurementCategory category)
             => _families.TryGetValue(category, out var units) ? units : new HashSet<MeasurementUnit>();
+
+        /// <summary>
+        /// Bir kategori için semantik olarak en anlamlı varsayılan birimi döner.
+        /// Otomatik oluşturulan kayıtlarda (örn. ShoppingList auto-add) kullanılır.
+        /// </summary>
+        public static MeasurementUnit GetDefaultUnitForCategory(MeasurementCategory category)
+            => category switch
+            {
+                MeasurementCategory.Weight => MeasurementUnit.Gram,
+                MeasurementCategory.Volume => MeasurementUnit.Liter,
+                MeasurementCategory.Count => MeasurementUnit.Piece,
+                _ => MeasurementUnit.Piece
+            };
     }
 }
