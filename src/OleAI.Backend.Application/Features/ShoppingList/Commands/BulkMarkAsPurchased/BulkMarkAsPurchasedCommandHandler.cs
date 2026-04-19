@@ -38,24 +38,23 @@ public class BulkMarkAsPurchasedCommandHandler : IRequestHandler<BulkMarkAsPurch
         if (items.Count == 0)
             throw new NotFoundException(ShoppingListMessages.ItemNotFoundOrUnauthorized);
 
-        var publishTasks = new List<Task>(items.Count);
-
         foreach (var item in items)
         {
             item.MarkAsPurchased();
+        }
 
-            publishTasks.Add(_mediator.Publish(new ItemPurchasedEvent
+        await _shoppingListItemRepository.UpdateRangeAsync(items, cancellationToken);
+
+        foreach (var item in items)
+        {
+            await _mediator.Publish(new ItemPurchasedEvent
             {
                 UserId = item.UserId,
                 IngredientId = item.IngredientId,
                 Quantity = item.Quantity,
                 Unit = item.Unit
-            }, cancellationToken));
+            }, cancellationToken);
         }
-
-        await _shoppingListItemRepository.UpdateRangeAsync(items, cancellationToken);
-
-        await Task.WhenAll(publishTasks);
 
         return string.Format(ShoppingListMessages.BulkMarkedAsPurchased, items.Count);
     }

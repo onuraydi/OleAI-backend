@@ -24,14 +24,23 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
         var existing = await _userIngredientRepository.GetAsync(
             predicate: ui => ui.UserId == notification.UserId &&
                              ui.IngredientId == notification.IngredientId &&
-                             ui.IngredientRequestId == null,   // sadece onaylı kayıtları eşleştir
+                             ui.IngredientRequestId == null,
+            withDeleted: true,
             enableTracking: true,
             cancellationToken: cancellationToken);
 
         if (existing != null)
         {
-            // Mevcut girişte miktarı artır (AddQuantity domain davranışı)
-            existing.AddQuantity(notification.Quantity);
+            if (existing.DeletedDate != null)
+            {
+                existing.DeletedDate = null;
+                existing.UpdateQuantity(notification.Quantity, notification.Unit);
+            }
+            else
+            {
+                existing.AddQuantity(notification.Quantity);
+            }
+
             await _userIngredientRepository.UpdateAsync(existing, cancellationToken);
         }
         else
