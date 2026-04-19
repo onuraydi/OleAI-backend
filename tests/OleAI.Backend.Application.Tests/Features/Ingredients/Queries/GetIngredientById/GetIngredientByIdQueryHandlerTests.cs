@@ -9,6 +9,7 @@ using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Queries.GetIngredientById;
@@ -50,14 +51,14 @@ public class GetIngredientByIdQueryHandlerTests
     public async Task Handle_WhenIngredientExists_ShouldMapAndReturnResponse()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight);
         var query = new GetIngredientByIdQuery { Id = ingredient.Id };
 
         var mappedResponse = new IngredientResponse
         {
             Id = ingredient.Id,
             Name = ingredient.Name,
-            BaseUnitType = ingredient.BaseUnitType,
+            UnitFamily = ingredient.UnitFamily,
             CategoryName = "Baharat"
         };
 

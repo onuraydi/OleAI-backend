@@ -9,6 +9,7 @@ using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Commands.UpdateIngredient;
@@ -35,7 +36,7 @@ public class UpdateIngredientCommandHandlerTests
         // Arrange
         var command = new UpdateIngredientCommand
         {
-            Request = new UpdateIngredientRequest { Id = Guid.NewGuid(), Name = "Yeni", CategoryId = Guid.NewGuid(), BaseUnitType = "gram" }
+            Request = new UpdateIngredientRequest { Id = Guid.NewGuid(), Name = "Yeni", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Weight }
         };
 
         _mockIngredientRepository
@@ -55,17 +56,17 @@ public class UpdateIngredientCommandHandlerTests
     {
         // Arrange
         var ingredientId = Guid.NewGuid();
-        var existingIngredient = new Ingredient(ingredientId, "Eski", Guid.NewGuid(), "gram");
+        var existingIngredient = new Ingredient(ingredientId, "Eski", Guid.NewGuid(), MeasurementCategory.Weight);
 
         var command = new UpdateIngredientCommand
         {
-            Request = new UpdateIngredientRequest { Id = ingredientId, Name = "Yeni", CategoryId = Guid.NewGuid(), BaseUnitType = "gram" }
+            Request = new UpdateIngredientRequest { Id = ingredientId, Name = "Yeni", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Weight }
         };
 
         _mockIngredientRepository
             .SetupSequence(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingIngredient)
-            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Yeni", Guid.NewGuid(), "gram"));
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Yeni", Guid.NewGuid(), MeasurementCategory.Weight));
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -82,11 +83,11 @@ public class UpdateIngredientCommandHandlerTests
     {
         // Arrange
         var ingredientId = Guid.NewGuid();
-        var existingIngredient = new Ingredient(ingredientId, "Eski", Guid.NewGuid(), "gram");
+        var existingIngredient = new Ingredient(ingredientId, "Eski", Guid.NewGuid(), MeasurementCategory.Weight);
 
         var command = new UpdateIngredientCommand
         {
-            Request = new UpdateIngredientRequest { Id = ingredientId, Name = "Yeni", CategoryId = Guid.NewGuid(), BaseUnitType = "adet" }
+            Request = new UpdateIngredientRequest { Id = ingredientId, Name = "Yeni", CategoryId = Guid.NewGuid(), UnitFamily = MeasurementCategory.Count }
         };
 
         _mockIngredientRepository

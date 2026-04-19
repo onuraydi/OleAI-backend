@@ -12,6 +12,8 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Profiles
             CreateMap<IngredientAlias, IngredientAliasResponse>().ReverseMap();
             CreateMap<CreateIngredientAliasRequest, IngredientAlias>();
             CreateMap<UpdateIngredientAliasRequest, IngredientAlias>();
+            CreateMap<IngredientAlias, CreatedIngredientAliasResponse>();
+            CreateMap<IngredientAlias, UpdatedIngredientAliasResponse>();
         }
     }
 }

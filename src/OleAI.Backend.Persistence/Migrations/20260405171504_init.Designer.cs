@@ -12,8 +12,8 @@ using OleAI.Backend.Persistence.Contexts;
 namespace OleAI.Backend.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260329175127_AddPantryModuleInit")]
-    partial class AddPantryModuleInit
+    [Migration("20260405171504_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -193,6 +193,20 @@ namespace OleAI.Backend.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("OperationClaims", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("5f9b3b1e-7b1e-4b1e-8b1e-7b1e4b1e5f9b"),
+                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "User"
+                        },
+                        new
+                        {
+                            Id = new Guid("1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"),
+                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Admin"
+                        });
                 });
 
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.RefreshToken", b =>
@@ -268,15 +282,29 @@ namespace OleAI.Backend.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("int");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEmailVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("LockoutEnd")
+                        .HasColumnType("datetime2");
 
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
@@ -285,11 +313,6 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Property<byte[]>("PasswordSalt")
                         .IsRequired()
                         .HasColumnType("varbinary(max)");
-
-                    b.Property<bool>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");

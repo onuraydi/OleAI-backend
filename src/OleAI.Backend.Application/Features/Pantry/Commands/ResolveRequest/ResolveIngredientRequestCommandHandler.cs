@@ -33,10 +33,10 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
             // Aksiyon 1: Yepyeni Bir Malzeme Olarak Ekle
             if (command.Request.Action == ResolutionAction.ApproveAsNew)
             {
-                if (!command.Request.NewCategoryId.HasValue || string.IsNullOrEmpty(command.Request.NewBaseUnitType))
+                if (!command.Request.NewCategoryId.HasValue || !command.Request.NewUnitFamily.HasValue)
                     throw new BusinessException(PantryMessages.CategoryAndUnitTypeRequiredMessage);
 
-                var newIngredient = new Ingredient(Guid.NewGuid(), ingredientRequest.RequestedName, command.Request.NewCategoryId.Value, command.Request.NewBaseUnitType);
+                var newIngredient = new Ingredient(Guid.NewGuid(), ingredientRequest.RequestedName, command.Request.NewCategoryId.Value, command.Request.NewUnitFamily.Value);
                 await _ingredientRepository.AddAsync(newIngredient);
 
                 targetMasterIngredientId = newIngredient.Id;

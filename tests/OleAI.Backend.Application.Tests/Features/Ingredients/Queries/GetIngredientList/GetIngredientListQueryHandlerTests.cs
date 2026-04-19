@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Queries.GetIngredientList;
@@ -32,7 +33,7 @@ public class GetIngredientListQueryHandlerTests
 
         var repositoryResult = new Paginate<Ingredient>
         {
-            Items = new List<Ingredient> { new(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram") },
+            Items = new List<Ingredient> { new(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight) },
             PageNumber = 1,
             PageSize = 15,
             TotalItems = 40,
@@ -41,7 +42,7 @@ public class GetIngredientListQueryHandlerTests
 
         var mappedResult = new Paginate<IngredientResponse>
         {
-            Items = new List<IngredientResponse> { new() { Name = "Tuz", BaseUnitType = "gram", CategoryName = "Baharat" } },
+            Items = new List<IngredientResponse> { new() { Name = "Tuz", UnitFamily = MeasurementCategory.Weight, CategoryName = "Baharat" } },
             PageNumber = 1,
             PageSize = 15,
             TotalItems = 40,

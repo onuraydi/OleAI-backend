@@ -10,7 +10,8 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
         {
             builder.ToTable("UserIngredients").HasKey(ui => ui.Id);
 
-            builder.Property(ui => ui.Quantity).HasColumnName("Quantity").IsRequired();
+            builder.Property(ui => ui.Amount).HasColumnName("Amount").IsRequired();
+            builder.Property(ui => ui.Unit).HasColumnName("Unit").IsRequired().HasConversion<int>();
 
             // Performans Kritik İndeks: Kullanıcının dolabını çekerken sürekli UserId'ye göre sorgu atacağız.
             builder.HasIndex(u => u.UserId).HasDatabaseName("IX_UserIngredients_UserId");

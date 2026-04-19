@@ -9,7 +9,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Dtos.Requests
 
         // Eğer yeni olarak onaylanıyorsa girilmesi gereken alanlar (Admin LLM'in önerisini düzeltip girebilir)
         public Guid? NewCategoryId { get; set; }
-        public string? NewBaseUnitType { get; set; }
+        public MeasurementCategory? NewUnitFamily { get; set; }
 
         // Eğer alias olarak birleştiriliyorsa, var olan Master Ürünün ID'si
         public Guid? MasterIngredientId { get; set; }

@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.IngredientCategories.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.IngredientCategories.Rules;
@@ -84,7 +85,7 @@ public class CategoryBusinessRulesTests
         // Arrange
         _mockIngredientRepository
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Mercimek", Guid.NewGuid(), "kg"));
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Mercimek", Guid.NewGuid(), MeasurementCategory.Weight));
 
         // Act
         Func<Task> act = async () => await _rules.CategoryCannotBeDeletedIfHasIngredients(Guid.NewGuid());

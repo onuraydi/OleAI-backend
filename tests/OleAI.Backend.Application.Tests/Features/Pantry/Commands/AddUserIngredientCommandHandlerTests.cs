@@ -9,6 +9,7 @@ using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Pantry.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
 {
@@ -59,10 +60,10 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
                     false,
                     true,
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Ingredient(command.Request.IngredientId.Value, "Domates", Guid.NewGuid(), "Gr"));
+                .ReturnsAsync(new Ingredient(command.Request.IngredientId.Value, "Domates", Guid.NewGuid(), MeasurementCategory.Weight));
 
             // Dolapta aynı ürün varmış gibi davran (İçinde 200 gram var)
-            var existingPantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, 200);
+            var existingPantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, 200, MeasurementUnit.Gram);
 
             // Mock GetAsync to return the existing item
             _mockUserIngredientRepository.Setup(r => r.GetAsync(
@@ -82,7 +83,7 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
             result.Message.Should().Be(PantryMessages.IngredientQuantityUpdatedMessage);
 
             // Dolaptaki ürünün miktarı 200 + 500 = 700 olmuş mu?
-            existingPantryItem.Quantity.Should().Be(700);
+            existingPantryItem.Amount.Should().Be(700);
 
             _mockUserIngredientRepository.Verify(r => r.UpdateAsync(existingPantryItem, It.IsAny<CancellationToken>()), Times.Once);
             _mockUserIngredientRepository.Verify(r => r.AddAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -116,7 +117,7 @@ namespace OleAI.Backend.Application.Tests.Features.Pantry.Commands
 
             // Verify UserIngredient was added with Pending status (IngredientRequestId set)
             _mockUserIngredientRepository.Verify(r => r.AddAsync(
-                It.Is<UserIngredient>(ui => ui.IngredientId == null && ui.IngredientRequestId != null && ui.Quantity == 2),
+                It.Is<UserIngredient>(ui => ui.IngredientId == null && ui.IngredientRequestId != null && ui.Amount == 2),
                 It.IsAny<CancellationToken>()), Times.Once);
 
             // Verify Event published

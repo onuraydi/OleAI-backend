@@ -9,6 +9,7 @@ using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Commands.DeleteIngredient;
@@ -51,7 +52,7 @@ public class DeleteIngredientCommandHandlerTests
     public async Task Handle_WhenIngredientUsedInInventory_ShouldSoftDeleteAndReturnSoftDeleteMessage()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight);
         var command = new DeleteIngredientCommand { Id = ingredient.Id };
 
         _mockIngredientRepository
@@ -64,7 +65,7 @@ public class DeleteIngredientCommandHandlerTests
             {
                 Items = new List<UserIngredient>
                 {
-                    UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), ingredient.Id, 2)
+                    UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), ingredient.Id, 2, MeasurementUnit.Gram)
                 }
             });
 
@@ -85,7 +86,7 @@ public class DeleteIngredientCommandHandlerTests
     public async Task Handle_WhenIngredientNotUsedInInventory_ShouldHardDeleteAndReturnDeletedMessage()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), "gram");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Tuz", Guid.NewGuid(), MeasurementCategory.Weight);
         var command = new DeleteIngredientCommand { Id = ingredient.Id };
 
         _mockIngredientRepository
