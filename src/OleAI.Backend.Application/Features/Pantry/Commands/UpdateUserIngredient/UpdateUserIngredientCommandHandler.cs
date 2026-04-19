@@ -8,6 +8,8 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
 {
     public class UpdateUserIngredientCommandHandler : IRequestHandler<UpdateUserIngredientCommand, string>
     {
+        private const double ZeroAmountTolerance = 0.0001d;
+
         private readonly IUserIngredientRepository _userIngredientRepository;
         private readonly PantryBusinessRules _pantryBusinessRules;
         private readonly IMediator _mediator;
@@ -34,7 +36,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
             item!.UpdateQuantity(command.Request.NewQuantity, command.Request.NewUnit);
 
             // Miktar 0'a düşünce (kullanıcı manuel sıfırladı) alışveriş listesini tetikle
-            if (item.Amount == 0 && item.IngredientId.HasValue)
+            if (Math.Abs(item.Amount) <= ZeroAmountTolerance && item.IngredientId.HasValue)
             {
                 await _userIngredientRepository.DeleteAsync(item, cancellationToken: cancellationToken);
 
