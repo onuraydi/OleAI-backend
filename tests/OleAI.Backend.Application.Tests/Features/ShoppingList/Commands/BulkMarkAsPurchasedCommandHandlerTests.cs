@@ -81,6 +81,26 @@ public class BulkMarkAsPurchasedCommandHandlerTests
             m => m.Publish(It.IsAny<ItemPurchasedEvent>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2));
 
+        _mockMediator.Verify(
+            m => m.Publish(
+                It.Is<ItemPurchasedEvent>(e =>
+                    e.UserId == item1.UserId &&
+                    e.IngredientId == item1.IngredientId &&
+                    Math.Abs(e.Quantity - item1.Quantity) < 0.0001d &&
+                    e.Unit == item1.Unit),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockMediator.Verify(
+            m => m.Publish(
+                It.Is<ItemPurchasedEvent>(e =>
+                    e.UserId == item2.UserId &&
+                    e.IngredientId == item2.IngredientId &&
+                    Math.Abs(e.Quantity - item2.Quantity) < 0.0001d &&
+                    e.Unit == item2.Unit),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
         // Assert: UpdateRangeAsync bir kez çağrıldı
         _mockShoppingListRepo.Verify(
             r => r.UpdateRangeAsync(It.IsAny<IEnumerable<ShoppingListItem>>(), It.IsAny<CancellationToken>()),
@@ -107,6 +127,10 @@ public class BulkMarkAsPurchasedCommandHandlerTests
         await FluentActions.Invoking(() => _handler.Handle(command, CancellationToken.None))
             .Should().ThrowAsync<NotFoundException>()
             .WithMessage(ShoppingListMessages.ItemNotFoundOrUnauthorized);
+
+        _mockMediator.Verify(
+            m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

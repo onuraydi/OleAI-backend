@@ -63,7 +63,7 @@ public class UpdateShoppingListItemCommandHandlerTests
 
         // Assert
         result.Should().Be(ShoppingListMessages.ItemUpdated);
-        item.Quantity.Should().Be(3);
+        item.Quantity.Should().BeApproximately(3d, 0.0001d);
         _mockShoppingListRepo.Verify(
             r => r.UpdateAsync(item, It.IsAny<CancellationToken>()),
             Times.Once);
