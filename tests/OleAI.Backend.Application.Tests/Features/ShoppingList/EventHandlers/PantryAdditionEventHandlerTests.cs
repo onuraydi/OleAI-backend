@@ -31,7 +31,7 @@ public class PantryAdditionEventHandlerTests
         _mockUserIngredientRepo
             .Setup(r => r.GetAsync(
                 It.IsAny<Expression<Func<UserIngredient, bool>>>(),
-                null, false, true, It.IsAny<CancellationToken>()))
+                null, It.IsAny<bool>(), true, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserIngredient?)null);
 
         var notification = new ItemPurchasedEvent
@@ -68,7 +68,7 @@ public class PantryAdditionEventHandlerTests
         _mockUserIngredientRepo
             .Setup(r => r.GetAsync(
                 It.IsAny<Expression<Func<UserIngredient, bool>>>(),
-                null, false, true, It.IsAny<CancellationToken>()))
+                null, It.IsAny<bool>(), true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         _mockUserIngredientRepo

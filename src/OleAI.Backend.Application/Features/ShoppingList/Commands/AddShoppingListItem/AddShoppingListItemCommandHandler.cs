@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OleAI.Backend.Application.Features.Pantry.Dtos;
 using OleAI.Backend.Application.Features.ShoppingList.Dtos.Responses;
 using OleAI.Backend.Application.Features.ShoppingList.Rules;
 using OleAI.Backend.Application.Services.Repositories;
@@ -41,29 +42,33 @@ public class AddShoppingListItemCommandHandler
     {
         var req = command.Request;
 
-        await _businessRules.IngredientMustExist(req.IngredientId, cancellationToken);
-
         await _businessRules.ItemMustNotAlreadyExistInActiveList(
             req.UserId, req.IngredientId, cancellationToken);
 
         var cacheKey = $"{IngredientCacheKeyPrefix}{req.IngredientId}";
-        var ingredient = await _cacheService.GetAsync<Ingredient>(cacheKey);
+        var cachedIngredient = await _cacheService.GetAsync<IngredientCacheModel>(cacheKey);
 
-        if (ingredient == null)
+        if (cachedIngredient == null)
         {
-            ingredient = await _ingredientRepository.GetAsync(
+            var ingredient = await _ingredientRepository.GetAsync(
                 predicate: i => i.Id == req.IngredientId,
                 include: q => q.Include(i => i.Category),
                 enableTracking: false,
                 cancellationToken: cancellationToken);
 
-            if (ingredient != null)
-                await _cacheService.SetAsync(cacheKey, ingredient, absoluteExpiration: TimeSpan.FromHours(24));
+            if (ingredient == null)
+            {
+                throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
+                    Features.ShoppingList.Constants.ShoppingListMessages.IngredientNotFound);
+            }
+
+            cachedIngredient = _mapper.Map<IngredientCacheModel>(ingredient);
+            await _cacheService.SetAsync(cacheKey, cachedIngredient, absoluteExpiration: TimeSpan.FromHours(24));
         }
 
-        if (ingredient != null && !MeasurementUnitHelper.IsCompatible(ingredient.UnitFamily, req.Unit))
+        if (!MeasurementUnitHelper.IsCompatible(cachedIngredient.UnitFamily, req.Unit))
             throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
-                $"'{req.Unit}' birimi bu malzeme için geçerli değil. Uygun aile: {ingredient.UnitFamily}.");
+                $"'{req.Unit}' birimi bu malzeme için geçerli değil. Uygun aile: {cachedIngredient.UnitFamily}.");
 
         var newItem = new ShoppingListItem(
             userId: req.UserId,
@@ -73,12 +78,15 @@ public class AddShoppingListItemCommandHandler
 
         await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
 
-        newItem = await _shoppingListItemRepository.GetAsync(
-            predicate: s => s.Id == newItem.Id,
-            include: q => q.Include(s => s.Ingredient).ThenInclude(i => i!.Category),
-            enableTracking: false,
-            cancellationToken: cancellationToken);
-
-        return _mapper.Map<ShoppingListItemResponse>(newItem);
+        return new ShoppingListItemResponse
+        {
+            Id = newItem.Id,
+            IngredientId = newItem.IngredientId,
+            IngredientName = cachedIngredient.Name,
+            CategoryName = cachedIngredient.CategoryName,
+            Quantity = newItem.Quantity,
+            Unit = newItem.Unit,
+            IsPurchased = newItem.IsPurchased
+        };
     }
 }

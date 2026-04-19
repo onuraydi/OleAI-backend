@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using AutoMapper;
 using FluentAssertions;
 using Moq;
+using OleAI.Backend.Application.Features.Pantry.Dtos;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.AddShoppingListItem;
 using OleAI.Backend.Application.Features.ShoppingList.Constants;
 using OleAI.Backend.Application.Features.ShoppingList.Dtos.Requests;
@@ -61,8 +62,12 @@ public class AddShoppingListItemCommandHandlerTests
             .ReturnsAsync(ingredient);
 
         _mockCache
-            .Setup(c => c.GetAsync<Ingredient>(It.IsAny<string>()))
-            .ReturnsAsync((Ingredient?)null);
+            .Setup(c => c.GetAsync<IngredientCacheModel>(It.IsAny<string>()))
+            .ReturnsAsync((IngredientCacheModel?)null);
+
+        _mockMapper
+            .Setup(m => m.Map<IngredientCacheModel>(It.IsAny<Ingredient>()))
+            .Returns(new IngredientCacheModel { Id = ingredient.Id, Name = ingredient.Name, CategoryName = "Kategorisiz", UnitFamily = family });
     }
 
     private void SetupNoExistingListItem()
@@ -86,26 +91,14 @@ public class AddShoppingListItemCommandHandlerTests
             .Setup(r => r.AddAsync(It.IsAny<ShoppingListItem>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(addedItem);
 
-        // Second GetAsync for mapping
         _mockShoppingListRepo
-            .SetupSequence(r => r.GetAsync(
+            .Setup(r => r.GetAsync(
                 It.IsAny<Expression<Func<ShoppingListItem, bool>>>(),
                 It.IsAny<Func<IQueryable<ShoppingListItem>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<ShoppingListItem, object>>?>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ShoppingListItem?)null)
-            .ReturnsAsync(addedItem);
-
-        var expectedResponse = new ShoppingListItemResponse
-        {
-            Id = addedItem.Id,
-            IngredientId = _ingredientId,
-            IngredientName = "Un",
-            Quantity = 500,
-            Unit = MeasurementUnit.Gram
-        };
-        _mockMapper.Setup(m => m.Map<ShoppingListItemResponse>(addedItem)).Returns(expectedResponse);
+            .ReturnsAsync((ShoppingListItem?)null);
 
         var command = new AddShoppingListItemCommand
         {
@@ -143,8 +136,8 @@ public class AddShoppingListItemCommandHandlerTests
             .ReturnsAsync((Ingredient?)null);
 
         _mockCache
-            .Setup(c => c.GetAsync<Ingredient>(It.IsAny<string>()))
-            .ReturnsAsync((Ingredient?)null);
+            .Setup(c => c.GetAsync<IngredientCacheModel>(It.IsAny<string>()))
+            .ReturnsAsync((IngredientCacheModel?)null);
 
         var command = new AddShoppingListItemCommand
         {

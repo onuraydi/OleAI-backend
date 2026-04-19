@@ -39,13 +39,24 @@ namespace OleAI.Backend.Domain.Services
         /// uygun olup olmadığını kontrol eder.
         /// </summary>
         public static bool IsCompatible(MeasurementCategory category, MeasurementUnit unit)
-            => _families.TryGetValue(category, out var units) && units.Contains(unit);
+        {
+            if (!_families.TryGetValue(category, out var units))
+            {
+                // Enum was mapped to an undefined integer (e.g. legacy cache or DB value)
+                return _families[MeasurementCategory.Other].Contains(unit);
+            }
+            return units.Contains(unit);
+        }
 
         /// <summary>
         /// Verilen <paramref name="category"/> için geçerli tüm birimleri döner.
         /// </summary>
         public static IReadOnlySet<MeasurementUnit> GetUnitsForCategory(MeasurementCategory category)
-            => _families.TryGetValue(category, out var units) ? units : new HashSet<MeasurementUnit>();
+        {
+            if (_families.TryGetValue(category, out var units))
+                return units;
+            return _families[MeasurementCategory.Other];
+        }
 
         /// <summary>
         /// Bir kategori için semantik olarak en anlamlı varsayılan birimi döner.

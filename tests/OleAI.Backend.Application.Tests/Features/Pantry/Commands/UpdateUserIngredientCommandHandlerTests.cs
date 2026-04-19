@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentAssertions;
+using MediatR;
 using Moq;
 using OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredient;
 using OleAI.Backend.Application.Features.Pantry.Constants;
@@ -18,6 +19,7 @@ public class UpdateUserIngredientCommandHandlerTests
     private readonly Mock<IUserIngredientRepository> _mockUserIngredientRepository;
     private readonly Mock<IIngredientRepository> _mockIngredientRepository;
     private readonly Mock<IIngredientRequestRepository> _mockIngredientRequestRepository;
+    private readonly Mock<IMediator> _mockMediator;
     private readonly PantryBusinessRules _businessRules;
     private readonly UpdateUserIngredientCommandHandler _handler;
 
@@ -26,13 +28,17 @@ public class UpdateUserIngredientCommandHandlerTests
         _mockUserIngredientRepository = new Mock<IUserIngredientRepository>();
         _mockIngredientRepository = new Mock<IIngredientRepository>();
         _mockIngredientRequestRepository = new Mock<IIngredientRequestRepository>();
+        _mockMediator = new Mock<IMediator>();
 
         _businessRules = new PantryBusinessRules(
             _mockIngredientRepository.Object,
             _mockUserIngredientRepository.Object,
             _mockIngredientRequestRepository.Object);
 
-        _handler = new UpdateUserIngredientCommandHandler(_mockUserIngredientRepository.Object, _businessRules);
+        _handler = new UpdateUserIngredientCommandHandler(
+            _mockUserIngredientRepository.Object,
+            _businessRules,
+            _mockMediator.Object);
     }
 
     [Fact]
