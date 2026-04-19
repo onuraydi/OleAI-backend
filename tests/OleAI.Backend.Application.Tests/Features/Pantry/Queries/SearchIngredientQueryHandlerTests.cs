@@ -7,6 +7,7 @@ using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.Queries;
@@ -45,9 +46,9 @@ public class SearchIngredientQueryHandlerTests
         // Arrange
         var cachedCatalog = new List<IngredientSearchResultResponse>
         {
-            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Brown sugar", BaseUnitType = "gram" },
-            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Sugar", BaseUnitType = "gram" },
-            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Super sweet", BaseUnitType = "gram" }
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Brown sugar", UnitFamily = MeasurementCategory.Weight },
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Sugar", UnitFamily = MeasurementCategory.Weight },
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Super sweet", UnitFamily = MeasurementCategory.Weight }
         };
 
         _mockCacheService
@@ -73,7 +74,7 @@ public class SearchIngredientQueryHandlerTests
     public async Task Handle_WhenCacheMiss_ShouldLoadFromDatabaseAndCacheCatalog()
     {
         // Arrange
-        var ingredient = new Ingredient(Guid.NewGuid(), "Tomato", Guid.NewGuid(), "piece");
+        var ingredient = new Ingredient(Guid.NewGuid(), "Tomato", Guid.NewGuid(), MeasurementCategory.Count);
         ingredient.Aliases.Add(new IngredientAlias(Guid.NewGuid(), ingredient.Id, "Domates"));
 
         _mockCacheService
@@ -110,7 +111,7 @@ public class SearchIngredientQueryHandlerTests
             {
                 MasterIngredientId = Guid.NewGuid(),
                 DisplayName = $"su-item-{i}",
-                BaseUnitType = "adet"
+                UnitFamily = MeasurementCategory.Count
             }).ToList();
 
         _mockCacheService
@@ -130,8 +131,8 @@ public class SearchIngredientQueryHandlerTests
         // Arrange
         var cachedCatalog = new List<IngredientSearchResultResponse>
         {
-            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "SUGAR", BaseUnitType = "gram" },
-            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Salt", BaseUnitType = "gram" }
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "SUGAR", UnitFamily = MeasurementCategory.Weight },
+            new() { MasterIngredientId = Guid.NewGuid(), DisplayName = "Salt", UnitFamily = MeasurementCategory.Weight }
         };
 
         _mockCacheService

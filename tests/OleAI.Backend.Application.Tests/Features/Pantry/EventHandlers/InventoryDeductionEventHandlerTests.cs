@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Pantry.EventHandlers;
@@ -31,7 +32,7 @@ public class InventoryDeductionEventHandlerTests
         var userId = Guid.NewGuid();
         var ingredientId = Guid.NewGuid();
 
-        var pantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), userId, ingredientId, 10);
+        var pantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), userId, ingredientId, 10, MeasurementUnit.Gram);
 
         var notification = new RecipeConsumedEvent
         {
@@ -52,7 +53,7 @@ public class InventoryDeductionEventHandlerTests
         await _handler.Handle(notification, CancellationToken.None);
 
         // Assert
-        pantryItem.Quantity.Should().Be(7);
+        pantryItem.Amount.Should().Be(7);
         _mockUserIngredientRepository.Verify(r => r.UpdateAsync(pantryItem, It.IsAny<CancellationToken>()), Times.Once);
         _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), false, It.IsAny<CancellationToken>()), Times.Never);
         _mockMediator.Verify(m => m.Publish(It.IsAny<IngredientDepletedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -65,7 +66,7 @@ public class InventoryDeductionEventHandlerTests
         var userId = Guid.NewGuid();
         var ingredientId = Guid.NewGuid();
 
-        var pantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), userId, ingredientId, 2);
+        var pantryItem = UserIngredient.CreateStandard(Guid.NewGuid(), userId, ingredientId, 2, MeasurementUnit.Gram);
 
         var notification = new RecipeConsumedEvent
         {

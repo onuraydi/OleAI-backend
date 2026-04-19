@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using OleAI.Backend.Persistence.Contexts;
 using OleAI.Backend.Persistence.Repositories;
 
@@ -28,10 +29,10 @@ namespace OleAI.Backend.Persistence.Tests.Repositories
             var targetUserId = Guid.NewGuid();
             var otherUserId = Guid.NewGuid();
 
-            await context.UserIngredients.AddAsync(UserIngredient.CreateStandard(Guid.NewGuid(), targetUserId, Guid.NewGuid(), 500));
-            await context.UserIngredients.AddAsync(UserIngredient.CreatePending(Guid.NewGuid(), targetUserId, Guid.NewGuid(), 2));
+            await context.UserIngredients.AddAsync(UserIngredient.CreateStandard(Guid.NewGuid(), targetUserId, Guid.NewGuid(), 500, MeasurementUnit.Gram));
+            await context.UserIngredients.AddAsync(UserIngredient.CreatePending(Guid.NewGuid(), targetUserId, Guid.NewGuid(), 2, MeasurementUnit.Piece));
 
-            await context.UserIngredients.AddAsync(UserIngredient.CreateStandard(Guid.NewGuid(), otherUserId, Guid.NewGuid(), 100));
+            await context.UserIngredients.AddAsync(UserIngredient.CreateStandard(Guid.NewGuid(), otherUserId, Guid.NewGuid(), 100, MeasurementUnit.Gram));
             await context.SaveChangesAsync();
 
             // Act

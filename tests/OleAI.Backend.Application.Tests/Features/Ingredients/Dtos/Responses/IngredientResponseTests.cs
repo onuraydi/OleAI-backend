@@ -1,5 +1,6 @@
 using FluentAssertions;
 using OleAI.Backend.Application.Features.Ingredients.Dtos.Responses;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Ingredients.Dtos.Responses;
@@ -15,13 +16,13 @@ public class IngredientResponseTests
             Id = Guid.NewGuid(),
             Name = "Domates",
             CategoryName = "Sebze",
-            BaseUnitType = "adet",
+            UnitFamily = MeasurementCategory.Count,
             DeletedDate = deletedDate
         };
 
         dto.Name.Should().Be("Domates");
         dto.CategoryName.Should().Be("Sebze");
-        dto.BaseUnitType.Should().Be("adet");
+        dto.UnitFamily.Should().Be(MeasurementCategory.Count);
         dto.DeletedDate.Should().Be(deletedDate);
     }
 }

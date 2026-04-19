@@ -50,7 +50,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
                 }
                 else
                 {
-                    userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, command.Request.Quantity, command.Request.ExpirationDate);
+                    userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, command.Request.Quantity, command.Request.Unit, command.Request.ExpirationDate);
                     await _userIngredientRepository.AddAsync(userIngredient, cancellationToken);
                     message = PantryMessages.IngredientAddedPantryMessage;
                 }
@@ -62,7 +62,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
                 var ingredientRequest = new IngredientRequest(Guid.NewGuid(), command.Request.UserId, command.Request.RequestedName!);
                 await _ingredientRequestRepository.AddAsync(ingredientRequest, cancellationToken);
 
-                userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), command.Request.UserId, ingredientRequest.Id, command.Request.Quantity, command.Request.ExpirationDate);
+                userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), command.Request.UserId, ingredientRequest.Id, command.Request.Quantity, command.Request.Unit, command.Request.ExpirationDate);
                 await _userIngredientRepository.AddAsync(userIngredient, cancellationToken);
 
                 isPending = true;
