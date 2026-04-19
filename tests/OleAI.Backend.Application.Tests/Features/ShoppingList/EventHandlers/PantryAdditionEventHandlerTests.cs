@@ -51,7 +51,7 @@ public class PantryAdditionEventHandlerTests
                 It.Is<UserIngredient>(ui =>
                     ui.UserId == userId &&
                     ui.IngredientId == ingredientId &&
-                    ui.Amount == 500 &&
+                    Math.Abs(ui.Amount - 500d) < 0.0001d &&
                     ui.Unit == MeasurementUnit.Gram),
                 It.IsAny<CancellationToken>()),
             Times.Once);
@@ -87,7 +87,48 @@ public class PantryAdditionEventHandlerTests
         await _handler.Handle(notification, CancellationToken.None);
 
         // Assert: miktar 300+200=500 olmalı, AddAsync çağrılmamalı
-        existing.Amount.Should().Be(500);
+        existing.Amount.Should().BeApproximately(500d, 0.0001d);
+        _mockUserIngredientRepo.Verify(
+            r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mockUserIngredientRepo.Verify(
+            r => r.AddAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenIngredientExistsButDeleted_ShouldRestoreAndSetQuantity()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var ingredientId = Guid.NewGuid();
+        var existing = UserIngredient.CreateStandard(Guid.NewGuid(), userId, ingredientId, 300, MeasurementUnit.Gram);
+        existing.DeletedDate = DateTime.UtcNow;
+
+        _mockUserIngredientRepo
+            .Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<UserIngredient, bool>>>(),
+                null, It.IsAny<bool>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        _mockUserIngredientRepo
+            .Setup(r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var notification = new ItemPurchasedEvent
+        {
+            UserId = userId,
+            IngredientId = ingredientId,
+            Quantity = 200,
+            Unit = MeasurementUnit.Gram
+        };
+
+        // Act
+        await _handler.Handle(notification, CancellationToken.None);
+
+        // Assert
+        existing.DeletedDate.Should().BeNull();
+        existing.Amount.Should().BeApproximately(200d, 0.0001d);
         _mockUserIngredientRepo.Verify(
             r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()),
             Times.Once);

@@ -47,13 +47,7 @@ public class BulkMarkAsPurchasedCommandHandler : IRequestHandler<BulkMarkAsPurch
 
         foreach (var item in items)
         {
-            await _mediator.Publish(new ItemPurchasedEvent
-            {
-                UserId = item.UserId,
-                IngredientId = item.IngredientId,
-                Quantity = item.Quantity,
-                Unit = item.Unit
-            }, cancellationToken);
+            await _mediator.Publish(ItemPurchasedEventFactory.Create(item), cancellationToken);
         }
 
         return string.Format(ShoppingListMessages.BulkMarkedAsPurchased, items.Count);

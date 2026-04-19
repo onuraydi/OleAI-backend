@@ -68,7 +68,7 @@ public class GetMyShoppingListQueryHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
-        result[0].Quantity.Should().Be(2);
+        result[0].Quantity.Should().BeApproximately(2d, 0.0001d);
     }
 
     [Fact]

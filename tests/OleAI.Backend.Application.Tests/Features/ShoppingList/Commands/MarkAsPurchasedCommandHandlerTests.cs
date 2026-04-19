@@ -71,10 +71,37 @@ public class MarkAsPurchasedCommandHandlerTests
                 It.Is<ItemPurchasedEvent>(e =>
                     e.UserId == userId &&
                     e.IngredientId == ingredientId &&
-                    e.Quantity == 2 &&
+                    Math.Abs(e.Quantity - 2d) < 0.0001d &&
                     e.Unit == MeasurementUnit.Piece),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenItemAlreadyPurchased_ShouldThrowBusinessException_AndNotPublishEvent()
+    {
+        var userId = Guid.NewGuid();
+        var item = new ShoppingListItem(userId, Guid.NewGuid(), 2, MeasurementUnit.Piece);
+        item.MarkAsPurchased();
+
+        _mockShoppingListRepo
+            .Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<ShoppingListItem, bool>>>(),
+                null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(item);
+
+        var command = new MarkAsPurchasedCommand { ItemId = item.Id, UserId = userId };
+
+        await FluentActions.Invoking(() => _handler.Handle(command, CancellationToken.None))
+            .Should().ThrowAsync<BusinessException>();
+
+        _mockShoppingListRepo.Verify(
+            r => r.UpdateAsync(It.IsAny<ShoppingListItem>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _mockMediator.Verify(
+            m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

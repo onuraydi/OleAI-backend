@@ -137,4 +137,51 @@ public class ShoppingListBusinessRulesTests
             .Should().ThrowAsync<BusinessException>()
             .WithMessage(ShoppingListMessages.IngredientNotFound);
     }
+
+    [Fact]
+    public async Task IngredientMustExist_WhenFound_ShouldNotThrow()
+    {
+        // Arrange
+        _mockIngredientRepo
+            .Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<Ingredient, bool>>>(),
+                It.IsAny<Func<IQueryable<Ingredient>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Ingredient, object>>?>(),
+                false,
+                false,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Domates", Guid.NewGuid(), MeasurementCategory.Weight));
+
+        // Act & Assert
+        await FluentActions.Invoking(() =>
+                _rules.IngredientMustExist(Guid.NewGuid()))
+            .Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public void ItemMustNotBeAlreadyPurchased_WhenPurchased_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var item = new ShoppingListItem(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        item.MarkAsPurchased();
+
+        // Act
+        Action act = () => ShoppingListBusinessRules.ItemMustNotBeAlreadyPurchased(item);
+
+        // Assert
+        act.Should().Throw<BusinessException>()
+            .WithMessage(ShoppingListMessages.AlreadyPurchased);
+    }
+
+    [Fact]
+    public void ItemMustNotBeAlreadyPurchased_WhenNotPurchased_ShouldNotThrow()
+    {
+        // Arrange
+        var item = new ShoppingListItem(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
+
+        // Act
+        Action act = () => ShoppingListBusinessRules.ItemMustNotBeAlreadyPurchased(item);
+
+        // Assert
+        act.Should().NotThrow();
+    }
 }

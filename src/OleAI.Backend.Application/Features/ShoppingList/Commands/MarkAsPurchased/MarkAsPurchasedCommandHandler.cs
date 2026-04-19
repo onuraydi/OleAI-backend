@@ -32,13 +32,7 @@ public class MarkAsPurchasedCommandHandler : IRequestHandler<MarkAsPurchasedComm
         await _shoppingListItemRepository.UpdateAsync(item, cancellationToken);
 
         // Cross-module event: PantryAdditionEventHandler dolaba otomatik ekleyecek
-        await _mediator.Publish(new ItemPurchasedEvent
-        {
-            UserId = item.UserId,
-            IngredientId = item.IngredientId,
-            Quantity = item.Quantity,
-            Unit = item.Unit
-        }, cancellationToken);
+        await _mediator.Publish(ItemPurchasedEventFactory.Create(item), cancellationToken);
 
         return ShoppingListMessages.ItemMarkedAsPurchased;
     }
