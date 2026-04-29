@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
@@ -93,6 +94,20 @@ public class RecipesController : BaseController
         var deleteRecipeCommand = new DeleteRecipeCommand { Id = id };
 
         string resultMessage = await Mediator.Send(deleteRecipeCommand);
+
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// Kullanıcının kendisine ait bir tarifin görünürlük (Public/Private) durumunu değiştirir.
+    /// </summary>
+    [HttpPatch("{id}/visibility")]
+    [Authorize]
+    public async Task<IActionResult> ChangeVisibility([FromRoute] Guid id, [FromBody] ChangeRecipeVisibilityCommand command)
+    {
+        command.Id = id;
+
+        string resultMessage = await Mediator.Send(command);
 
         return Ok(new { Message = resultMessage });
     }
