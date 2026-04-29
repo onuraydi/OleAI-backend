@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
@@ -30,6 +31,12 @@ namespace OleAI.Backend.Application.Features.Recipes.Rules
             {
                 throw new BusinessException(RecipeMessages.InvalidIngredientsSelectedForRecipe);
             }
+        }
+
+        public void CheckIfAdmin(ClaimsPrincipal user)
+        {
+            if (!user.IsInRole("Admin"))
+                throw new AuthorizationException(RecipeMessages.AdminRoleRequired);
         }
     }
 }

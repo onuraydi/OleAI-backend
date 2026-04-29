@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Http;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.ImageStorage;
+using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
 {
@@ -15,13 +17,15 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
         private readonly IImageService _imageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly RecipeBusinessRules _recipeBusinessRules;
+        private readonly ILocalLlmService _localLlmService;
 
-        public CreateRecipeCommandHandler(IRecipeRepository recipeRepository, IImageService imageService, IHttpContextAccessor httpContextAccessor, RecipeBusinessRules recipeBusinessRules)
+        public CreateRecipeCommandHandler(IRecipeRepository recipeRepository, IImageService imageService, IHttpContextAccessor httpContextAccessor, RecipeBusinessRules recipeBusinessRules, ILocalLlmService localLlmService)
         {
             _recipeRepository = recipeRepository;
             _imageService = imageService;
             _httpContextAccessor = httpContextAccessor;
             _recipeBusinessRules = recipeBusinessRules;
+            _localLlmService = localLlmService;
         }
 
         public async Task<string> Handle(CreateRecipeCommand command, CancellationToken cancellationToken)
@@ -64,9 +68,24 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
                 }
             }
 
+            if (recipe.Visibility == RecipeVisibility.Public)
+            {
+                bool isContentClean = await _localLlmService.CheckRecipeContentForSpamAsync(recipe.Title, recipe.Description, cancellationToken);
+
+                if (isContentClean)
+                    recipe.PassLlmFilter();
+                else
+                    recipe.Reject(RecipeMessages.AiModeratorDetectedHarmfulContent);
+            }
+
             await _recipeRepository.AddAsync(recipe);
 
-            return RecipeMessages.RecipeAddedSuccessfully;
+            if (recipe.Status == RecipeStatus.Rejected)
+                return RecipeMessages.RecipeRejectedDueToSystemStandards;
+
+            return recipe.Visibility == RecipeVisibility.Private
+                ? RecipeMessages.RecipeCreatedAndSavedAsPrivate
+                : RecipeMessages.RecipeCreatedAndPendingAdminApproval;
         }
     }
 }
