@@ -13,5 +13,9 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string RecipeApprovedAndPublished = "Tarif başarıyla onaylandı ve topluluğa açıldı.";
         public const string RecipeNotFoundOrDeleted = "İşlem yapmak istediğiniz tarif bulunamadı veya sistemden silinmiş.";
         public const string UnauthorizedRecipeAccess = "Bu tarif üzerinde değişiklik yapma veya silme yetkiniz bulunmuyor.";
+        public const string SpamDetectedAfterUpdate = "Güncelleme sonrası spam içerik tespit edildi.";
+        public const string RecipeUpdatedButRejectedDueToSpam = "Tarif güncellendi ancak spam içerik nedeniyle reddedildi.";
+        public const string RecipeUpdatedSuccessfully = "Tarif başarıyla güncellendi.";
+        public const string RecipeDeletedWithRelatedContent = "Tarif ve ilgili tüm içerikler başarıyla silindi.";
     }
 }
