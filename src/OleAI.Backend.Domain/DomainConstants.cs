@@ -10,5 +10,6 @@ namespace OleAI.Backend.Domain
         public const string ProductAlreadyPurchasedMessage = "Bu ürün zaten satın alındı olarak işaretlenmiş.";
         public const string CannotChangePurchasedProductQuantity = "Satın alınmış bir ürünün miktarı değiştirilemez.";
         public const string InvalidProductQuantityInList = "Alışveriş listesindeki ürün miktarı sıfırdan büyük olmalıdır.";
+        public const string OnlyLlmApprovedRecipesCanBeApprovedByAdmin = "Sadece LLM onayından geçmiş tarifler admin tarafından onaylanabilir.";
     }
 }
