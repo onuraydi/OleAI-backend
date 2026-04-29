@@ -6,20 +6,20 @@ namespace OleAI.Backend.Domain.Entities
 {
     public class ShoppingListItem : Entity<Guid>
     {
-        public Guid UserId { get; private set; }
-        public Guid IngredientId { get; private set; }
+        public Guid UserId { get; set; }
+        public Guid IngredientId { get; set; }
 
-        public double Quantity { get; private set; }
-        public MeasurementUnit Unit { get; private set; }
+        public double Quantity { get; set; }
+        public MeasurementUnit Unit { get; set; }
 
-        public bool IsPurchased { get; private set; }
+        public bool IsPurchased { get; set; }
 
         // Navigation Properties
         public virtual User User { get; private set; } = null!;
         public virtual Ingredient Ingredient { get; private set; } = null!;
 
         // EF Core için gerekli; encapsulation'ı korumak adına protected
-        protected ShoppingListItem() { }
+        public ShoppingListItem() { }
 
         public ShoppingListItem(Guid userId, Guid ingredientId, double quantity, MeasurementUnit unit)
         {

@@ -107,5 +107,17 @@ namespace OleAI.Backend.Domain.Entities
             IngredientId = masterIngredientId;
             // IngredientRequestId bağlantısı audit trail için tutulmaktadır.
         }
+
+        /// <summary>
+        /// Kullanılan miktar kadar stoku düşer. Miktar sıfırın altına inemez.
+        /// </summary>
+        public void DecreaseAmount(double usedAmount)
+        {
+            Amount -= usedAmount;
+            if (Amount < 0)
+            {
+                Amount = 0;
+            }
+        }
     }
 }

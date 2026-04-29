@@ -22,5 +22,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string VisibilityUpdateFailedStandards = "Tarif görünürlüğü değiştirilirken sistem standartlarına uymadığı için reddedildi.";
         public const string RecipePublishedAndQueuedForReview = "Tarif topluluğa açıldı ve yönetici onayı için sıraya alındı.";
         public const string RecipeVisibilityChangedToPrivate = "Tarif gizliye (Private) çekildi, artık sadece siz görebilirsiniz.";
+        public const string RecipeNotFoundMessage = "Tarif bulunamadı.";
+        public const string EnjoyAndInventoryUpdatedWithShoppingList = "Afiyet olsun! Malzemeler dolabınızdan düşüldü ve eksilen ürünler alışveriş listenize eklendi.";
+        public const string EnjoyAndIngredientsRemovedFromInventory = "Afiyet olsun! Malzemeler dolabınızdan başarıyla düşüldü.";
     }
 }
