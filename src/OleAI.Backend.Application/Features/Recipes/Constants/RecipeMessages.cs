@@ -17,5 +17,10 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string RecipeUpdatedButRejectedDueToSpam = "Tarif güncellendi ancak spam içerik nedeniyle reddedildi.";
         public const string RecipeUpdatedSuccessfully = "Tarif başarıyla güncellendi.";
         public const string RecipeDeletedWithRelatedContent = "Tarif ve ilgili tüm içerikler başarıyla silindi.";
+        public const string VisibilityStatusIsAlreadySame = "Tarif zaten bu görünürlük durumunda.";
+        public const string RecipePublishingRejectedDueToContent = "Tarif topluluğa açılırken spam içerik tespit edildi ve reddedildi.";
+        public const string VisibilityUpdateFailedStandards = "Tarif görünürlüğü değiştirilirken sistem standartlarına uymadığı için reddedildi.";
+        public const string RecipePublishedAndQueuedForReview = "Tarif topluluğa açıldı ve yönetici onayı için sıraya alındı.";
+        public const string RecipeVisibilityChangedToPrivate = "Tarif gizliye (Private) çekildi, artık sadece siz görebilirsiniz.";
     }
 }
