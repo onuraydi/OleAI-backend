@@ -6,7 +6,10 @@ using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
 using OleAI.Backend.Core.Repositories.Pagination;
 
 namespace OleAI.Backend.Presentation.Controllers;
@@ -34,7 +37,7 @@ public class RecipesController : BaseController
     /// [Admin] Admin onayını bekleyen tarifleri sayfalamalı olarak listeler.
     /// </summary>
     [HttpGet("pending-approvals")]
-    [Authorize(Roles = "Admin")] // Projendeki role ismine göre (AuthRoles.Admin vs) ayarlayabilirsin
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetPendingApprovals([FromQuery] GetPendingAdminRecipesQuery query)
     {
         var result = await Mediator.Send(query);
@@ -72,7 +75,7 @@ public class RecipesController : BaseController
     /// Görsel (IFormFile) içerdiği için bu endpoint multipart/form-data kabul eder.
     /// </remarks>
     [HttpPut("{id}")]
-    [Authorize] // Sadece giriş yapmış kullanıcılar kendi tarifini güncelleyebilir
+    [Authorize]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromForm] UpdateRecipeCommand updateRecipeCommand)
     {
         // URL'den gelen ID'yi Command nesnesine atıyoruz
@@ -88,7 +91,7 @@ public class RecipesController : BaseController
     /// Cloudinary üzerindeki görseller de otomatik olarak temizlenir.
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize] // Sadece giriş yapmış kullanıcılar kendi tarifini silebilir
+    [Authorize]
     public async Task<IActionResult> Delete([FromRoute] Guid id)
     {
         var deleteRecipeCommand = new DeleteRecipeCommand { Id = id };
@@ -110,5 +113,39 @@ public class RecipesController : BaseController
         string resultMessage = await Mediator.Send(command);
 
         return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// Topluluğa açık, onaylanmış tarifleri sayfalamalı ve aranabilir şekilde listeler.
+    /// </summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetPublishedRecipes([FromQuery] GetPublishedRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Kullanıcının kendi girdiği tüm tarifleri listeler.
+    /// </summary>
+    [HttpGet("my-recipes")]
+    [Authorize]
+    public async Task<IActionResult> GetMyRecipes([FromQuery] GetMyRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Bir tarifin tüm detaylarını (malzemeler, adımlar, resimler) getirir.
+    /// Gizli tarifleri sadece tarifin sahibi görebilir.
+    /// </summary>
+    [HttpGet("{id}")]
+    [AllowAnonymous] // İçerideki kurala göre engellenir veya izin verilir
+    public async Task<IActionResult> GetDetail([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new GetRecipeDetailQuery { Id = id });
+        return Ok(result);
     }
 }
