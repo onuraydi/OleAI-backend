@@ -5,6 +5,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
@@ -147,5 +148,16 @@ public class RecipesController : BaseController
     {
         var result = await Mediator.Send(new GetRecipeDetailQuery { Id = id });
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Tarifi pişirme işlemini başlatır ve malzemeleri stoktan düşer.
+    /// </summary>
+    [HttpPost("{id}/start-cooking")]
+    [Authorize]
+    public async Task<IActionResult> StartCooking([FromRoute] Guid id)
+    {
+        var resultMessage = await Mediator.Send(new StartCookingCommand { RecipeId = id });
+        return Ok(new { Message = resultMessage });
     }
 }
