@@ -10,5 +10,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string RecipeRejectedDueToSystemStandards = "Tarifiniz sistem standartlarına uymadığı için reddedildi.";
         public const string RecipeCreatedAndSavedAsPrivate = "Tarif başarıyla oluşturuldu ve sadece sizin görebileceğiniz şekilde kaydedildi.";
         public const string RecipeCreatedAndPendingAdminApproval = "Tarifiniz oluşturuldu ve yönetici onayı için sıraya alındı.";
+        public const string RecipeApprovedAndPublished = "Tarif başarıyla onaylandı ve topluluğa açıldı.";
+        public const string RecipeNotFoundOrDeleted = "İşlem yapmak istediğiniz tarif bulunamadı veya sistemden silinmiş.";
+        public const string UnauthorizedRecipeAccess = "Bu tarif üzerinde değişiklik yapma veya silme yetkiniz bulunmuyor.";
     }
 }
