@@ -69,6 +69,8 @@ builder.Services.AddScoped<ITokenHelper, JwtHelper>();
 builder.Services.AddSingleton<HttpExceptionHandler>();
 
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
