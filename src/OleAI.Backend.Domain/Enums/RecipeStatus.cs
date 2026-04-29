@@ -1,9 +1,9 @@
-namespace OleAI.Backend.Domain.Enums
+namespace OleAI.Backend.Domain.Enums;
+
+public enum RecipeStatus
 {
-    public enum RecipeStatus
-    {
-        PendingApproval = 1,
-        Published = 2,
-        Rejected = 3
-    }
+    PendingLlmApproval = 1,
+    PendingAdminApproval = 2,
+    Published = 3,
+    Rejected = 4
 }

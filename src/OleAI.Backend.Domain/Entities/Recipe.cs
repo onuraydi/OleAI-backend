@@ -41,9 +41,31 @@ public class Recipe : Entity<Guid>
     public void SetVisibilityAndStatus(RecipeVisibility visibility)
     {
         Visibility = visibility;
+
         Status = visibility == RecipeVisibility.Private
             ? RecipeStatus.Published
-            : RecipeStatus.PendingApproval;
+            : RecipeStatus.PendingLlmApproval;
+    }
+
+    // Admin Onay Metotları
+    public void ApproveByAdmin()
+    {
+        if (Status != RecipeStatus.PendingAdminApproval)
+            throw new Exception(DomainConstants.OnlyLlmApprovedRecipesCanBeApprovedByAdmin);
+
+        Status = RecipeStatus.Published;
+    }
+
+    public void Reject(string reason)
+    {
+        // Reddetme nedeni ileride bir log tablosuna yazılabilir.
+        Status = RecipeStatus.Rejected;
+    }
+
+    public void PassLlmFilter()
+    {
+        if (Status == RecipeStatus.PendingLlmApproval)
+            Status = RecipeStatus.PendingAdminApproval;
     }
 
     public void AddIngredient(Guid ingredientId, decimal amount, int unitId)
