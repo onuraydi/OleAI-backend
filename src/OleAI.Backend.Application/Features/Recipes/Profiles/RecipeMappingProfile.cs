@@ -12,5 +12,20 @@ public class RecipeMappingProfile : Profile
         CreateMap<Recipe, PendingAdminRecipeListResponse>();
 
         CreateMap<Paginate<Recipe>, Paginate<PendingAdminRecipeListResponse>>();
+
+        CreateMap<Recipe, RecipeListItemResponse>()
+            .ForMember(dest => dest.MainImageUrl, opt =>
+                opt.MapFrom(src =>
+                src.RecipeImages.FirstOrDefault(i => i.IsMain) != null
+                ? src.RecipeImages.FirstOrDefault(i => i.IsMain)!.ImageUrl
+                : string.Empty))
+            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()));
+
+        CreateMap<Paginate<Recipe>, Paginate<RecipeListItemResponse>>();
+
+        CreateMap<Recipe, RecipeDetailResponse>();
+        CreateMap<RecipeIngredient, RecipeIngredientResponse>();
+        CreateMap<RecipeStep, RecipeStepResponse>();
+        CreateMap<RecipeImage, RecipeImageResponse>();
     }
 }
