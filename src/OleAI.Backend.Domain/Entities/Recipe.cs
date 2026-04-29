@@ -37,7 +37,89 @@ public class Recipe : Entity<Guid>
         return recipe;
     }
 
-    // İş Kuralı: Visibility'e göre Status otomatik belirlenir
+    public void UpdateDetails(string title, string description, RecipeVisibility visibility)
+    {
+        Title = title;
+        Description = description;
+        SetVisibilityAndStatus(visibility);
+    }
+
+    /// <summary>
+    /// Malzemeleri akıllıca senkronize eder (Eskileri siler, mevcutları günceller, yenileri ekler).
+    /// </summary>
+    public void SyncIngredients(IEnumerable<(Guid IngredientId, decimal Amount, int UnitId)> incomingIngredients)
+    {
+        var incomingIds = incomingIngredients.Select(x => x.IngredientId).ToList();
+
+        _recipeIngredients.RemoveAll(i => !incomingIds.Contains(i.IngredientId));
+
+        foreach (var incoming in incomingIngredients)
+        {
+            var existing = _recipeIngredients.FirstOrDefault(i => i.IngredientId == incoming.IngredientId);
+            if (existing != null)
+            {
+                existing.Amount = incoming.Amount;
+                existing.UnitId = incoming.UnitId;
+            }
+            else
+            {
+                _recipeIngredients.Add(new RecipeIngredient(Guid.NewGuid(), Id, incoming.IngredientId, incoming.Amount, incoming.UnitId));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adımları senkronize eder. Eğer bir adım silinmişse ve o adıma ait bir resim varsa,
+    /// o resmin Cloudinary'den silinmesi için PublicId'sini döner.
+    /// </summary>
+    public List<string> SyncSteps(IEnumerable<(int StepNumber, string Instruction)> incomingSteps)
+    {
+        var incomingNumbers = incomingSteps.Select(x => x.StepNumber).ToList();
+        var imagesToDeleteFromCloud = new List<string>();
+
+        var removedSteps = _recipeSteps.Where(s => !incomingNumbers.Contains(s.StepNumber)).ToList();
+        var removedStepIds = removedSteps.Select(s => s.Id).ToList();
+
+        var orphanedImages = _recipeImages.Where(i => i.StepId.HasValue && removedStepIds.Contains(i.StepId.Value)).ToList();
+        imagesToDeleteFromCloud.AddRange(orphanedImages.Select(i => i.PublicId));
+
+        _recipeSteps.RemoveAll(s => removedStepIds.Contains(s.Id));
+        _recipeImages.RemoveAll(i => orphanedImages.Contains(i));
+
+        foreach (var incoming in incomingSteps)
+        {
+            var existing = _recipeSteps.FirstOrDefault(s => s.StepNumber == incoming.StepNumber);
+            if (existing != null)
+                existing.Instruction = incoming.Instruction;
+            else
+                _recipeSteps.Add(new RecipeStep(Guid.NewGuid(), Id, incoming.StepNumber, incoming.Instruction));
+        }
+
+        return imagesToDeleteFromCloud;
+    }
+
+    /// <summary>
+    /// Ana resmi veya adım resmini değiştirir, buluttan silinmesi için eski PublicId'yi döner.
+    /// </summary>
+    public string? ReplaceImage(string newImageUrl, string newPublicId, bool isMain, Guid? stepId = null)
+    {
+        string? oldPublicId = null;
+
+        var existingImage = isMain
+            ? _recipeImages.FirstOrDefault(i => i.IsMain)
+            : _recipeImages.FirstOrDefault(i => i.StepId == stepId);
+
+        if (existingImage != null)
+        {
+            oldPublicId = existingImage.PublicId;
+            _recipeImages.Remove(existingImage);
+        }
+
+        _recipeImages.Add(new RecipeImage(Guid.NewGuid(), Id, newImageUrl, newPublicId, isMain, stepId));
+
+        return oldPublicId;
+    }
+
     public void SetVisibilityAndStatus(RecipeVisibility visibility)
     {
         Visibility = visibility;
@@ -47,7 +129,6 @@ public class Recipe : Entity<Guid>
             : RecipeStatus.PendingLlmApproval;
     }
 
-    // Admin Onay Metotları
     public void ApproveByAdmin()
     {
         if (Status != RecipeStatus.PendingAdminApproval)
