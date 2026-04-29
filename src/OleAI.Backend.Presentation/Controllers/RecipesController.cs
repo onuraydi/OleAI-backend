@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
 using OleAI.Backend.Core.Repositories.Pagination;
 
@@ -59,6 +61,39 @@ public class RecipesController : BaseController
     {
         command.Id = id;
         var resultMessage = await Mediator.Send(command);
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// Kullanıcının kendisine ait bir tarifi (görseller, adımlar ve malzemeler dahil) günceller.
+    /// </summary>
+    /// <remarks>
+    /// Görsel (IFormFile) içerdiği için bu endpoint multipart/form-data kabul eder.
+    /// </remarks>
+    [HttpPut("{id}")]
+    [Authorize] // Sadece giriş yapmış kullanıcılar kendi tarifini güncelleyebilir
+    public async Task<IActionResult> Update([FromRoute] Guid id, [FromForm] UpdateRecipeCommand updateRecipeCommand)
+    {
+        // URL'den gelen ID'yi Command nesnesine atıyoruz
+        updateRecipeCommand.Request.Id = id;
+
+        string resultMessage = await Mediator.Send(updateRecipeCommand);
+
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// Kullanıcının kendisine ait bir tarifi sistemden kalıcı olarak siler.
+    /// Cloudinary üzerindeki görseller de otomatik olarak temizlenir.
+    /// </summary>
+    [HttpDelete("{id}")]
+    [Authorize] // Sadece giriş yapmış kullanıcılar kendi tarifini silebilir
+    public async Task<IActionResult> Delete([FromRoute] Guid id)
+    {
+        var deleteRecipeCommand = new DeleteRecipeCommand { Id = id };
+
+        string resultMessage = await Mediator.Send(deleteRecipeCommand);
+
         return Ok(new { Message = resultMessage });
     }
 }
