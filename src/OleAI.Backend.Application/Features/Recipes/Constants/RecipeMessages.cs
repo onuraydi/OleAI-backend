@@ -25,5 +25,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string RecipeNotFoundMessage = "Tarif bulunamadı.";
         public const string EnjoyAndInventoryUpdatedWithShoppingList = "Afiyet olsun! Malzemeler dolabınızdan düşüldü ve eksilen ürünler alışveriş listenize eklendi.";
         public const string EnjoyAndIngredientsRemovedFromInventory = "Afiyet olsun! Malzemeler dolabınızdan başarıyla düşüldü.";
+        public const string RecipeNotOpenForInteractionYet = "Bu tarif henüz etkileşime açık değil.";
+        public const string RecipeNotFound = "Tarif bulunamadı.";
+        public const string TargetCommentMissing = "Cevap vermeye çalıştığınız yorum bulunamadı veya silinmiş.";
     }
 }
