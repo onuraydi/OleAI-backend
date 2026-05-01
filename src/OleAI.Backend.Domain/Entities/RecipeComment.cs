@@ -1,23 +1,32 @@
 using OleAI.Backend.Core.Repositories;
-using OleAI.Backend.Domain.Entities;
+
+namespace OleAI.Backend.Domain.Entities;
 
 public class RecipeComment : Entity<Guid>
 {
-    public Guid RecipeId { get; set; }
-    public Guid UserId { get; set; }
-    public string Content { get; set; }
-    public DateTime CreatedDate { get; set; }
+    public Guid RecipeId { get; private set; }
+    public Guid UserId { get; private set; }
+    public string Content { get; private set; }
 
-    public virtual User User { get; set; }
-    public virtual Recipe Recipe { get; set; }
+    public Guid? ParentCommentId { get; private set; }
 
-    public RecipeComment() { }
+    public virtual User User { get; private set; }
+    public virtual Recipe Recipe { get; private set; }
+    public virtual RecipeComment? ParentComment { get; private set; }
+    public virtual ICollection<RecipeComment> Replies { get; private set; }
 
-    public RecipeComment(Guid id, Guid recipeId, Guid userId, string content) : this()
+    public RecipeComment()
+    {
+        Replies = new HashSet<RecipeComment>();
+    }
+
+    public RecipeComment(Guid id, Guid recipeId, Guid userId, string content, Guid? parentCommentId = null) : this()
     {
         RecipeId = recipeId;
         UserId = userId;
         Content = content;
+        ParentCommentId = parentCommentId;
         CreatedDate = DateTime.UtcNow;
+        Replies = new HashSet<RecipeComment>();
     }
 }
