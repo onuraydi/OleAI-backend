@@ -47,6 +47,28 @@ namespace OleAI.Backend.Domain.Tests.Entities
         }
 
         [Fact]
+        public void DecreaseAmount_Should_NormalizeToZero_When_ResultIsWithinTolerance()
+        {
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1.0000000001d, MeasurementUnit.Gram);
+
+            userIngredient.DecreaseAmount(1);
+
+            userIngredient.Amount.Should().Be(0);
+            userIngredient.IsDepleted.Should().BeTrue();
+        }
+
+        [Fact]
+        public void DecreaseAmount_Should_KeepRemainingAmount_When_ResultIsAboveTolerance()
+        {
+            var userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1.01d, MeasurementUnit.Gram);
+
+            userIngredient.DecreaseAmount(1);
+
+            userIngredient.Amount.Should().BeApproximately(0.01d, 0.0000001d);
+            userIngredient.IsDepleted.Should().BeFalse();
+        }
+
+        [Fact]
         public void ApprovePendingRequest_Should_SetIngredientId_When_Valid()
         {
             // Arrange
