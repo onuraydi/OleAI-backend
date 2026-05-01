@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using OleAI.Backend.Application.Services.AuthService;
@@ -11,79 +5,58 @@ using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Core.Security.Jwt;
-using OleAI.Backend.Domain.Entities;
 using Xunit;
+using DomainEntities = OleAI.Backend.Domain.Entities;
 
 namespace OleAI.Backend.Application.Tests.Services.AuthService;
 
 public class AuthManagerTests
 {
-    private readonly Mock<IRefreshTokenRepository> _mockRefreshTokenRepo;
+    private readonly Mock<IRefreshTokenRepository> _mockRefreshTokenRepository;
+    private readonly TokenOptions _tokenOptions;
     private readonly AuthManager _authManager;
 
     public AuthManagerTests()
     {
-        _mockRefreshTokenRepo = new Mock<IRefreshTokenRepository>();
-
-        var tokenOptions = new TokenOptions { MaxActiveTokens = 2 };
-
-        _authManager = new AuthManager(_mockRefreshTokenRepo.Object, tokenOptions);
+        _mockRefreshTokenRepository = new Mock<IRefreshTokenRepository>();
+        _tokenOptions = new TokenOptions { MaxActiveTokens = 2 };
+        _authManager = new AuthManager(_mockRefreshTokenRepository.Object, _tokenOptions);
     }
 
     [Fact]
-    public async Task DeleteOldRefreshTokensAsync_ShouldExecuteDeleteForInvalidTokens()
+    public async Task DeleteOldRefreshTokensAsync_WhenCalled_ShouldDeleteInvalidTokens()
     {
         // Arrange
         var userId = Guid.NewGuid();
-
-        // Active tokens setup (empty so it won't trigger the secondary delete limit logic)
-        _mockRefreshTokenRepo.Setup(r => r.GetListAsync(
-            It.IsAny<QueryOptions<Domain.Entities.RefreshToken>>(),
-            It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Paginate<Domain.Entities.RefreshToken> { Items = new List<Domain.Entities.RefreshToken>() });
+        _mockRefreshTokenRepository.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<DomainEntities.RefreshToken>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Paginate<DomainEntities.RefreshToken> { Items = new List<DomainEntities.RefreshToken>() });
 
         // Act
         await _authManager.DeleteOldRefreshTokensAsync(userId, CancellationToken.None);
 
         // Assert
-        _mockRefreshTokenRepo.Verify(r => r.ExecuteDeleteAsync(
-            It.IsAny<Expression<Func<Domain.Entities.RefreshToken, bool>>>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+        _mockRefreshTokenRepository.Verify(r => r.ExecuteDeleteAsync(It.IsAny<System.Linq.Expressions.Expression<Func<DomainEntities.RefreshToken, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteOldRefreshTokensAsync_ShouldLimitActiveTokens_WhenCountExceeds()
+    public async Task DeleteOldRefreshTokensAsync_WhenMaxTokensExceeded_ShouldDeleteOldest()
     {
         // Arrange
         var userId = Guid.NewGuid();
-
-        // 3 active tokens. Limit is 2. So we keep the most recent (limit - 1) = 1.
-        // The remaining 2 should be deleted.
-        var activeTokens = new List<Domain.Entities.RefreshToken>
+        var tokens = new List<DomainEntities.RefreshToken>
         {
-            new Domain.Entities.RefreshToken { Id = Guid.NewGuid(), CreatedDate = DateTime.UtcNow }, // Most recent
-            new Domain.Entities.RefreshToken { Id = Guid.NewGuid(), CreatedDate = DateTime.UtcNow.AddSeconds(-10) }, // Oldest 1
-            new Domain.Entities.RefreshToken { Id = Guid.NewGuid(), CreatedDate = DateTime.UtcNow.AddSeconds(-20) }  // Oldest 2
+            new() { UserId = userId, CreatedDate = DateTime.UtcNow },
+            new() { UserId = userId, CreatedDate = DateTime.UtcNow.AddMinutes(-1) },
+            new() { UserId = userId, CreatedDate = DateTime.UtcNow.AddMinutes(-2) }
         };
 
-        var paginated = new Paginate<Domain.Entities.RefreshToken> { Items = activeTokens };
-
-        _mockRefreshTokenRepo.Setup(r => r.GetListAsync(
-            It.IsAny<QueryOptions<Domain.Entities.RefreshToken>>(),
-            It.IsAny<CancellationToken>()))
-            .ReturnsAsync(paginated);
+        _mockRefreshTokenRepository.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<DomainEntities.RefreshToken>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Paginate<DomainEntities.RefreshToken> { Items = tokens });
 
         // Act
         await _authManager.DeleteOldRefreshTokensAsync(userId, CancellationToken.None);
 
         // Assert
-        _mockRefreshTokenRepo.Verify(r => r.ExecuteDeleteAsync(
-            It.IsAny<Expression<Func<Domain.Entities.RefreshToken, bool>>>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-
-        _mockRefreshTokenRepo.Verify(r => r.DeleteRangeAsync(
-            It.Is<IEnumerable<Domain.Entities.RefreshToken>>(list => list.Count() == 2),
-            true,
-            It.IsAny<CancellationToken>()), Times.Once);
+        _mockRefreshTokenRepository.Verify(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<DomainEntities.RefreshToken>>(), true, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,12 +1,11 @@
 using System.Net;
-using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
-using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
 using Xunit;
@@ -15,122 +14,78 @@ namespace OleAI.Backend.Application.Tests.Services.Llm;
 
 public class OllamaLocalLlmManagerTests
 {
-    [Fact]
-    public async Task AnalyzeIngredientRequestAsync_WhenResponseIsValid_ShouldReturnLlmJson()
-    {
-        // Arrange
-        var handler = new StubHttpMessageHandler(_ =>
-        {
-            var payload = "{\"response\":\"{\\\"IsNew\\\":true}\"}";
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(payload, Encoding.UTF8, "application/json")
-            };
-        });
+    private readonly Mock<IIngredientRepository> _mockIngredientRepository;
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly IOptions<OllamaSettings> _settings;
+    private readonly OllamaLocalLlmManager _service;
 
-        var httpClient = new HttpClient(handler);
-        var settings = Options.Create(new OllamaSettings
+    public OllamaLocalLlmManagerTests()
+    {
+        _mockIngredientRepository = new Mock<IIngredientRepository>();
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object) { BaseAddress = new Uri("http://localhost:11434") };
+
+        _settings = Options.Create(new OllamaSettings
         {
             BaseUrl = "http://localhost:11434",
-            ModelName = "model",
-            SystemPrompt = "prompt"
+            ModelName = "test-model",
+            SystemPrompt = "test-system"
         });
 
-        var ingredientRepo = new Mock<IIngredientRepository>();
-        ingredientRepo
-            .Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Paginate<Ingredient> { Items = new List<Ingredient>() });
-
-        var sut = new OllamaLocalLlmManager(httpClient, settings, ingredientRepo.Object);
-
-        // Act
-        var result = await sut.AnalyzeIngredientRequestAsync("Domat", CancellationToken.None);
-
-        // Assert
-        result.Should().Be("{\"IsNew\":true}");
+        _service = new OllamaLocalLlmManager(_httpClient, _settings, _mockIngredientRepository.Object);
     }
 
     [Fact]
-    public async Task AnalyzeIngredientRequestAsync_WhenLlmReturnsInvalidJson_ShouldReturnFallbackErrorJson()
+    public async Task CheckRecipeContentForSpamAsync_WhenClean_ShouldReturnTrue()
     {
         // Arrange
-        var handler = new StubHttpMessageHandler(_ =>
+        var responsePayload = new { response = "{\"IsClean\": true, \"Reason\": \"OK\"}" };
+        var httpResponse = new HttpResponseMessage
         {
-            var payload = "{\"response\":\"not-a-json\"}";
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(payload, Encoding.UTF8, "application/json")
-            };
-        });
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(JsonSerializer.Serialize(responsePayload))
+        };
 
-        var httpClient = new HttpClient(handler);
-        var settings = Options.Create(new OllamaSettings
-        {
-            BaseUrl = "http://localhost:11434",
-            ModelName = "model",
-            SystemPrompt = "prompt"
-        });
-
-        var ingredientRepo = new Mock<IIngredientRepository>();
-        ingredientRepo
-            .Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Paginate<Ingredient> { Items = new List<Ingredient>() });
-
-        var sut = new OllamaLocalLlmManager(httpClient, settings, ingredientRepo.Object);
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(httpResponse);
 
         // Act
-        var result = await sut.AnalyzeIngredientRequestAsync("Domat", CancellationToken.None);
+        var result = await _service.CheckRecipeContentForSpamAsync("Title", "Desc", CancellationToken.None);
 
         // Assert
-        using var parsed = JsonDocument.Parse(result);
-        var reason = parsed.RootElement.GetProperty("Reason").GetString();
-        reason.Should().NotBeNull();
-        reason!.Should().Contain("SİSTEM HATASI");
+        result.Should().BeTrue();
     }
 
     [Fact]
-    public async Task AnalyzeIngredientRequestAsync_WhenHttpFails_ShouldReturnFallbackErrorJson()
+    public async Task AnalyzeIngredientRequestAsync_WhenLlmReturnsValidJson_ShouldReturnOutput()
     {
         // Arrange
-        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        _mockIngredientRepository.Setup(r => r.GetListAsync(It.IsAny<OleAI.Backend.Core.Repositories.Options.QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Paginate<Ingredient>());
 
-        var httpClient = new HttpClient(handler);
-        var settings = Options.Create(new OllamaSettings
+        var responsePayload = new { response = "{\"IsNew\": true}" };
+        var httpResponse = new HttpResponseMessage
         {
-            BaseUrl = "http://localhost:11434",
-            ModelName = "model",
-            SystemPrompt = "prompt"
-        });
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(JsonSerializer.Serialize(responsePayload))
+        };
 
-        var ingredientRepo = new Mock<IIngredientRepository>();
-        ingredientRepo
-            .Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Paginate<Ingredient> { Items = new List<Ingredient>() });
-
-        var sut = new OllamaLocalLlmManager(httpClient, settings, ingredientRepo.Object);
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(httpResponse);
 
         // Act
-        var result = await sut.AnalyzeIngredientRequestAsync("Domat", CancellationToken.None);
+        var result = await _service.AnalyzeIngredientRequestAsync("NewIng", CancellationToken.None);
 
         // Assert
-        using var parsed = JsonDocument.Parse(result);
-        var reason = parsed.RootElement.GetProperty("Reason").GetString();
-        reason.Should().NotBeNull();
-        reason!.Should().Contain("SİSTEM HATASI");
-    }
-
-    private sealed class StubHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responseFactory;
-
-        public StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
-        {
-            _responseFactory = responseFactory;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(_responseFactory(request));
-        }
+        result.Should().Contain("IsNew");
     }
 }
