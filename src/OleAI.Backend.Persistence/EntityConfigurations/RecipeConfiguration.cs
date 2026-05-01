@@ -19,16 +19,19 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
                 .WithOne()
                 .HasForeignKey(ri => ri.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(r => r.RecipeIngredients).UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasMany(r => r.RecipeSteps)
                 .WithOne()
                 .HasForeignKey(rs => rs.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(r => r.RecipeSteps).UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasMany(r => r.RecipeImages)
                 .WithOne()
                 .HasForeignKey(ri => ri.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(r => r.RecipeImages).UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

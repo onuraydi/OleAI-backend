@@ -23,7 +23,10 @@ public class RecipeMappingProfile : Profile
 
         CreateMap<Paginate<Recipe>, Paginate<RecipeListItemResponse>>();
 
-        CreateMap<Recipe, RecipeDetailResponse>();
+        CreateMap<Recipe, RecipeDetailResponse>()
+            .ForMember(dest => dest.Ingredients, opt => opt.MapFrom(src => src.RecipeIngredients))
+            .ForMember(dest => dest.Steps, opt => opt.MapFrom(src => src.RecipeSteps))
+            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.RecipeImages));
         CreateMap<RecipeIngredient, RecipeIngredientResponse>();
         CreateMap<RecipeStep, RecipeStepResponse>();
         CreateMap<RecipeImage, RecipeImageResponse>();
