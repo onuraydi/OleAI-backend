@@ -24,15 +24,8 @@ namespace OleAI.Backend.Application.Services.Llm
 
         public async Task<string> AnalyzeIngredientRequestAsync(string requestedName, CancellationToken cancellationToken = default)
         {
-            // 1. Veritabanındaki mevcut (Master) malzemeleri çek (LLM'e "bunlar zaten var, bunlardan biriyse Alias öner" demek için)
-            // Not: Çok fazla veri varsa burada sadece en popüler 100 tanesini veya benzerlerini çekilebilir.
-
-            QueryOptions<Ingredient> query = new QueryOptions<Ingredient>();
-            query.Size = 1000;
-            query.EnableTracking = false;
-
+            QueryOptions<Ingredient> query = new QueryOptions<Ingredient> { Size = 1000, EnableTracking = false };
             var existingIngredientResult = await _ingredientRepository.GetListAsync(query, cancellationToken);
-
             var existingIngredientNames = string.Join(", ", existingIngredientResult.Items.Select(i => i.Name));
 
             var userPrompt = $@"
@@ -46,47 +39,68 @@ namespace OleAI.Backend.Application.Services.Llm
 
                 SADECE geçerli bir JSON objesi döndür. Başka hiçbir metin veya markdown (```json) kullanma.";
 
+            try
+            {
+                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken);
+                if (string.IsNullOrEmpty(llmOutput)) return GenerateErrorJson("LLM boş yanıt döndü");
+                JsonDocument.Parse(llmOutput);
+                return llmOutput;
+            }
+            catch (Exception ex)
+            {
+                return GenerateErrorJson($"Hata: {ex.Message}");
+            }
+        }
+
+        public async Task<bool> CheckRecipeContentForSpamAsync(string title, string description, CancellationToken cancellationToken = default)
+        {
+            var userPrompt = $@"
+                Sen bir içerik moderatörüsün. Aşağıdaki yemek tarifini incele. Küfür, spam, anlamsız tuşlamalar (örn: 'asdfg') veya yiyecek dışı tehlikeli bir içerik barındırıp barındırmadığını kontrol et.
+
+                Başlık: '{title}'
+                Açıklama: '{description}'
+
+                Görevler:
+                1. Eğer içerik normal, geçerli bir yemek tarifiyse veya zararsız bir yiyecek anlatımıysa IsClean=true yap.
+                2. Eğer içerik spam, küfür, anlamsız metin veya yiyecekle alakasız tehlikeli bir madde içeriyorsa IsClean=false yap.
+                3. Reason alanına kararının nedenini kısaca yaz.
+
+                SADECE geçerli bir JSON objesi döndür. Başka hiçbir metin veya markdown (```json) kullanma.
+                Örnek Format: {{ ""IsClean"": true, ""Reason"": ""Geçerli yemek tarifi."" }}";
+
+            try
+            {
+                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken);
+                if (string.IsNullOrEmpty(llmOutput)) return false;
+
+                using var outputDoc = JsonDocument.Parse(llmOutput);
+                return outputDoc.RootElement.GetProperty("IsClean").GetBoolean();
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private async Task<string?> ExecuteOllamaRequestAsync(string prompt, CancellationToken cancellationToken)
+        {
             var requestPayload = new
             {
                 model = _settings.ModelName,
                 system = _settings.SystemPrompt,
-                propmt = userPrompt,
+                prompt = prompt,
                 stream = false,
                 format = "json"
             };
 
             var content = new StringContent(JsonSerializer.Serialize(requestPayload), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("/api/generate", content, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-            try
-            {
-                var response = await _httpClient.PostAsync("/api/generate", content, cancellationToken);
-                response.EnsureSuccessStatusCode();
+            var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var jsonDocument = JsonDocument.Parse(responseString);
 
-                var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
-                using var jsonDocument = JsonDocument.Parse(responseString);
-
-                var llmOutput = jsonDocument.RootElement.GetProperty("response").GetString();
-
-                if (string.IsNullOrEmpty(llmOutput))
-                    return GenerateErrorJson("LLM boş yanıt döndü");
-
-                JsonDocument.Parse(llmOutput);
-
-                return llmOutput;
-
-            }
-            catch (JsonException ex)
-            {
-                return GenerateErrorJson($"LLM geçerli bir JSON üretmedi: {ex.Message}");
-            }
-            catch (HttpRequestException ex)
-            {
-                return GenerateErrorJson($"Ollama servisine ulaşılamadı. Lütfen Ollama'nın çalıştığından emin olun: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                return GenerateErrorJson($"Beklenmeyen bir hata oluştu: {ex.Message}");
-            }
+            return jsonDocument.RootElement.GetProperty("response").GetString();
         }
 
         private string GenerateErrorJson(string errorMessage)

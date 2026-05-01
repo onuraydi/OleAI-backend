@@ -1,0 +1,69 @@
+using System.Security.Claims;
+using AutoMapper;
+using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Moq;
+using OleAI.Backend.Application.Features.Recipes.Dtos.Responses;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes;
+using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.Repositories.Options;
+using OleAI.Backend.Core.Repositories.Pagination;
+using OleAI.Backend.Domain.Entities;
+using Xunit;
+
+namespace OleAI.Backend.Application.Tests.Features.Recipes.Queries.GetMySavedRecipes;
+
+public class GetMySavedRecipesQueryHandlerTests
+{
+    private readonly Mock<IRecipeInteractionRepository> _mockInteractionRepository;
+    private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
+    private readonly GetMySavedRecipesQueryHandler _handler;
+
+    public GetMySavedRecipesQueryHandlerTests()
+    {
+        _mockInteractionRepository = new Mock<IRecipeInteractionRepository>();
+        _mockMapper = new Mock<IMapper>();
+        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+        _handler = new GetMySavedRecipesQueryHandler(_mockInteractionRepository.Object, _mockMapper.Object, _mockHttpContextAccessor.Object);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCalled_ShouldReturnSavedRecipes()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+
+        var query = new GetMySavedRecipesQuery { Page = 0, Size = 10 };
+        var interaction = new RecipeInteraction(Guid.NewGuid(), userId, Guid.NewGuid());
+        interaction.ToggleSave(); // IsSaved = true
+
+        var interactions = new Paginate<RecipeInteraction> { Items = new List<RecipeInteraction> { interaction } };
+
+        _mockInteractionRepository.Setup(r => r.GetListAsync(
+                It.IsAny<QueryOptions<RecipeInteraction>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(interactions);
+
+        var response = new List<RecipeListItemResponse> { new() { Title = "Saved" } };
+        _mockMapper.Setup(m => m.Map<IList<RecipeListItemResponse>>(It.IsAny<List<Recipe>>())).Returns(response);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+        _mockInteractionRepository.Verify(r => r.GetListAsync(It.Is<QueryOptions<RecipeInteraction>>(o => o.Predicate != null), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private void SetupUser(Guid userId)
+    {
+        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        var httpContext = new DefaultHttpContext { User = principal };
+        _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
+    }
+}
