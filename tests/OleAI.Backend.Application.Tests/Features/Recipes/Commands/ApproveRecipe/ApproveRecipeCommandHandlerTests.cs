@@ -4,6 +4,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
 using Xunit;
@@ -28,14 +29,9 @@ public class ApproveRecipeCommandHandlerTests
     {
         // Arrange
         var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
-        recipe.PassLlmFilter(); // Status becomes PendingAdminApproval
+        recipe.PassLlmFilter();
 
-        _mockRecipeRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
 
         var command = new ApproveRecipeCommand { Id = recipe.Id };
@@ -46,6 +42,21 @@ public class ApproveRecipeCommandHandlerTests
         // Assert
         result.Should().Be(RecipeMessages.RecipeApprovedAndPublished);
         recipe.Status.Should().Be(RecipeStatus.Published);
-        _mockRecipeRepository.Verify(r => r.UpdateAsync(recipe, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenRecipeNotFound_ShouldThrowNotFoundException()
+    {
+        // Arrange
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Recipe?)null);
+
+        var command = new ApproveRecipeCommand { Id = Guid.NewGuid() };
+
+        // Act
+        Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
     }
 }

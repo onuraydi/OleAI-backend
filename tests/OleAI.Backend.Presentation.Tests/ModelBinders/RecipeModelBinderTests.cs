@@ -16,23 +16,78 @@ public class RecipeModelBinderTests
     {
         // Arrange
         var binder = new CreateRecipeCommandModelBinder();
-
-        var formFields = new Dictionary<string, StringValues>
+        var context = CreateBindingContext("multipart/form-data", new Dictionary<string, StringValues>
         {
             { "Title", "Test Recipe" },
             { "Description", "Delicious" },
             { "Visibility", "Public" },
             { "IngredientsJson", "[]" },
             { "StepsJson", "[]" }
-        };
+        }, "MainImage");
 
-        var fileMock = new Mock<IFormFile>();
-        fileMock.Setup(f => f.Name).Returns("MainImage");
-        fileMock.Setup(f => f.FileName).Returns("test.jpg");
-        var files = new FormFileCollection { fileMock.Object };
+        // Act
+        await binder.BindModelAsync(context);
 
+        // Assert
+        context.Result.IsModelSet.Should().BeTrue();
+        context.ModelState.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task UpdateRecipeCommandModelBinder_WithValidForm_ShouldBindSuccessfully()
+    {
+        // Arrange
+        var binder = new UpdateRecipeCommandModelBinder();
+        var context = CreateBindingContext("multipart/form-data", new Dictionary<string, StringValues>
+        {
+            { "Title", "Updated Recipe" },
+            { "Description", "Better" },
+            { "Visibility", "Private" },
+            { "IngredientsJson", "[]" },
+            { "StepsJson", "[]" }
+        }, "NewMainImage");
+
+        // Act
+        await binder.BindModelAsync(context);
+
+        // Assert
+        context.Result.IsModelSet.Should().BeTrue();
+        context.ModelState.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task BaseRecipeCommandModelBinder_WithInvalidJson_ShouldHaveModelStateError()
+    {
+        // Arrange
+        var binder = new CreateRecipeCommandModelBinder();
+        var context = CreateBindingContext("multipart/form-data", new Dictionary<string, StringValues>
+        {
+            { "Title", "Test" },
+            { "IngredientsJson", "invalid-json" }
+        }, "MainImage");
+
+        // Act
+        await binder.BindModelAsync(context);
+
+        // Assert
+        context.ModelState.ContainsKey("IngredientsJson").Should().BeTrue();
+        context.ModelState["IngredientsJson"]!.Errors.Should().NotBeEmpty();
+    }
+
+    private static DefaultModelBindingContext CreateBindingContext(string contentType, Dictionary<string, StringValues> formFields, string? fileName = null)
+    {
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.ContentType = "multipart/form-data";
+        httpContext.Request.ContentType = contentType;
+
+        IFormFileCollection files = new FormFileCollection();
+        if (fileName != null)
+        {
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Name).Returns(fileName);
+            fileMock.Setup(f => f.FileName).Returns("test.jpg");
+            files = new FormFileCollection { fileMock.Object };
+        }
+
         httpContext.Request.Form = new FormCollection(formFields, files);
 
         var actionContext = new ActionContext
@@ -42,7 +97,7 @@ public class RecipeModelBinderTests
             ActionDescriptor = new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()
         };
 
-        var context = new DefaultModelBindingContext
+        return new DefaultModelBindingContext
         {
             ModelName = "test",
             ModelState = new ModelStateDictionary(),
@@ -50,12 +105,5 @@ public class RecipeModelBinderTests
             ActionContext = actionContext,
             ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(typeof(object))
         };
-
-        // Act
-        await binder.BindModelAsync(context);
-
-        // Assert
-        context.Result.IsModelSet.Should().BeTrue();
-        context.ModelState.IsValid.Should().BeTrue();
     }
 }

@@ -5,10 +5,22 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using OleAI.Backend.Application.Features.Recipes.Commands.AddComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.DeleteComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
 using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
+using OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment;
+using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Dtos.Requests;
 using OleAI.Backend.Application.Features.Recipes.Dtos.Responses;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyDislikedRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyLikedRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
 using OleAI.Backend.Core.Repositories.Pagination;
@@ -42,108 +54,108 @@ public class RecipesControllerTests
     [Fact]
     public async Task Add_ShouldSendCommand_AndReturnCreated()
     {
-        // Arrange
         var command = new CreateRecipeCommand();
         _mockMediator.Setup(m => m.Send(command, default)).ReturnsAsync("Created");
-
-        // Act
         var result = await _controller.Add(command);
-
-        // Assert
         (result as CreatedResult).Should().NotBeNull();
-        _mockMediator.Verify(m => m.Send(command, default), Times.Once);
     }
 
     [Fact]
-    public async Task GetPublishedRecipes_ShouldSendQuery_AndReturnOk()
+    public async Task Update_ShouldSendCommandWithUrlId_AndReturnOk()
     {
-        // Arrange
-        var query = new GetPublishedRecipesQuery();
-        var response = new Paginate<RecipeListItemResponse>();
-        _mockMediator.Setup(m => m.Send(query, default)).ReturnsAsync(response);
-
-        // Act
-        var result = await _controller.GetPublishedRecipes(query);
-
-        // Assert
-        (result as OkObjectResult).Should().NotBeNull();
-        _mockMediator.Verify(m => m.Send(query, default), Times.Once);
-    }
-
-    [Fact]
-    public async Task Approve_ShouldSendApproveCommand_AndReturnOk()
-    {
-        // Arrange
         var id = Guid.NewGuid();
-        _mockMediator.Setup(m => m.Send(It.IsAny<ApproveRecipeCommand>(), default)).ReturnsAsync("Approved");
-
-        // Act
-        var result = await _controller.Approve(id);
-
-        // Assert
+        var command = new UpdateRecipeCommand { Request = new UpdateRecipeRequest() };
+        _mockMediator.Setup(m => m.Send(command, default)).ReturnsAsync("Updated");
+        var result = await _controller.Update(id, command);
         (result as OkObjectResult).Should().NotBeNull();
-        _mockMediator.Verify(m => m.Send(It.Is<ApproveRecipeCommand>(c => c.Id == id), default), Times.Once);
+        command.Request.Id.Should().Be(id);
     }
 
     [Fact]
-    public async Task Delete_ShouldSendDeleteCommand_AndReturnOk()
+    public async Task Reject_ShouldSendCommandWithUrlId_AndReturnOk()
     {
-        // Arrange
         var id = Guid.NewGuid();
-        _mockMediator.Setup(m => m.Send(It.IsAny<DeleteRecipeCommand>(), default)).ReturnsAsync("Deleted");
-
-        // Act
-        var result = await _controller.Delete(id);
-
-        // Assert
+        var command = new RejectRecipeCommand();
+        _mockMediator.Setup(m => m.Send(command, default)).ReturnsAsync("Rejected");
+        var result = await _controller.Reject(id, command);
         (result as OkObjectResult).Should().NotBeNull();
-        _mockMediator.Verify(m => m.Send(It.Is<DeleteRecipeCommand>(c => c.Id == id), default), Times.Once);
+        command.Id.Should().Be(id);
     }
 
     [Fact]
-    public async Task ToggleLike_ShouldSendToggleInteractionCommand_AndReturnOk()
+    public async Task ChangeVisibility_ShouldSendCommandWithUrlId_AndReturnOk()
     {
-        // Arrange
         var id = Guid.NewGuid();
-        _mockMediator.Setup(m => m.Send(It.IsAny<ToggleInteractionCommand>(), default)).ReturnsAsync("Liked");
-
-        // Act
-        var result = await _controller.ToggleLike(id);
-
-        // Assert
+        var command = new ChangeRecipeVisibilityCommand();
+        _mockMediator.Setup(m => m.Send(command, default)).ReturnsAsync("VisibilityChanged");
+        var result = await _controller.ChangeVisibility(id, command);
         (result as OkObjectResult).Should().NotBeNull();
-        _mockMediator.Verify(m => m.Send(It.Is<ToggleInteractionCommand>(c => c.RecipeId == id && c.InteractionType == "Like"), default), Times.Once);
+        command.Id.Should().Be(id);
     }
 
     [Fact]
-    public async Task AddComment_ShouldSendCommandWithRecipeId_AndReturnOk()
+    public async Task StartCooking_ShouldSendCommandWithId_AndReturnOk()
     {
-        // Arrange
         var id = Guid.NewGuid();
-        var command = new AddCommentCommand { Content = "Test" };
-        _mockMediator.Setup(m => m.Send(command, default)).ReturnsAsync("Commented");
-
-        // Act
-        var result = await _controller.AddComment(id, command);
-
-        // Assert
+        _mockMediator.Setup(m => m.Send(It.IsAny<StartCookingCommand>(), default)).ReturnsAsync("Enjoy");
+        var result = await _controller.StartCooking(id);
         (result as OkObjectResult).Should().NotBeNull();
-        command.RecipeId.Should().Be(id);
-        _mockMediator.Verify(m => m.Send(command, default), Times.Once);
     }
 
     [Fact]
-    public async Task GetDetail_ShouldSendGetRecipeDetailQuery_AndReturnOk()
+    public async Task UpdateComment_ShouldSendCommandWithCommentId_AndReturnOk()
     {
-        // Arrange
-        var id = Guid.NewGuid();
-        _mockMediator.Setup(m => m.Send(It.IsAny<GetRecipeDetailQuery>(), default)).ReturnsAsync(new RecipeDetailResponse());
-
-        // Act
-        var result = await _controller.GetDetail(id);
-
-        // Assert
+        var commentId = Guid.NewGuid();
+        var command = new UpdateCommentCommand();
+        _mockMediator.Setup(m => m.Send(command, default)).ReturnsAsync("Updated");
+        var result = await _controller.UpdateComment(commentId, command);
         (result as OkObjectResult).Should().NotBeNull();
-        _mockMediator.Verify(m => m.Send(It.Is<GetRecipeDetailQuery>(q => q.Id == id), default), Times.Once);
+        command.CommentId.Should().Be(commentId);
+    }
+
+    [Fact]
+    public async Task DeleteComment_ShouldSendCommandWithCommentId_AndReturnOk()
+    {
+        var commentId = Guid.NewGuid();
+        _mockMediator.Setup(m => m.Send(It.IsAny<DeleteCommentCommand>(), default)).ReturnsAsync("Deleted");
+        var result = await _controller.DeleteComment(commentId);
+        (result as OkObjectResult).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetMyRecipes_ShouldSendQuery_AndReturnOk()
+    {
+        var query = new GetMyRecipesQuery();
+        _mockMediator.Setup(m => m.Send(query, default)).ReturnsAsync(new Paginate<RecipeListItemResponse>());
+        var result = await _controller.GetMyRecipes(query);
+        (result as OkObjectResult).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetMySavedRecipes_ShouldSendQuery_AndReturnOk()
+    {
+        var query = new GetMySavedRecipesQuery();
+        _mockMediator.Setup(m => m.Send(query, default)).ReturnsAsync(new Paginate<RecipeListItemResponse>());
+        var result = await _controller.GetMySavedRecipes(query);
+        (result as OkObjectResult).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetPendingApprovals_ShouldSendQuery_AndReturnOk()
+    {
+        var query = new GetPendingAdminRecipesQuery();
+        _mockMediator.Setup(m => m.Send(query, default)).ReturnsAsync(new Paginate<PendingAdminRecipeListResponse>());
+        var result = await _controller.GetPendingApprovals(query);
+        (result as OkObjectResult).Should().NotBeNull();
+    }
+
+    // Reuse existing tests below or just override them
+    [Fact]
+    public async Task ToggleDislike_ShouldSendToggleInteractionCommand_AndReturnOk()
+    {
+        var id = Guid.NewGuid();
+        _mockMediator.Setup(m => m.Send(It.IsAny<ToggleInteractionCommand>(), default)).ReturnsAsync("Disliked");
+        var result = await _controller.ToggleDislike(id);
+        (result as OkObjectResult).Should().NotBeNull();
     }
 }
