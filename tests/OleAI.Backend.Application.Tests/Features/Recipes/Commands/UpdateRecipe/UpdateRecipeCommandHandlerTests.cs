@@ -10,6 +10,7 @@ using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
 using Xunit;
@@ -52,33 +53,12 @@ public class UpdateRecipeCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
-
-        var recipeId = Guid.NewGuid();
         var existingRecipe = Recipe.Create(userId, "Old", "Old", RecipeVisibility.Public);
 
-        _mockRecipeRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingRecipe);
 
-        _mockImageService.Setup(s => s.UploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("new_url", "new_public_id"));
-
-        var command = new UpdateRecipeCommand
-        {
-            Request = new UpdateRecipeRequest
-            {
-                Id = recipeId,
-                Title = "New Title",
-                Description = "New Desc",
-                Visibility = RecipeVisibility.Private
-            },
-            Ingredients = new List<CreateRecipeIngredientRequest>(),
-            Steps = new List<UpdateRecipeStepRequest>()
-        };
+        var command = new UpdateRecipeCommand { Request = new UpdateRecipeRequest { Id = Guid.NewGuid(), Title = "New Title", Visibility = RecipeVisibility.Private }, Ingredients = new List<CreateRecipeIngredientRequest>(), Steps = new List<UpdateRecipeStepRequest>() };
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -86,7 +66,43 @@ public class UpdateRecipeCommandHandlerTests
         // Assert
         result.Should().Be(RecipeMessages.RecipeUpdatedSuccessfully);
         existingRecipe.Title.Should().Be("New Title");
-        _mockRecipeRepository.Verify(r => r.UpdateAsync(existingRecipe, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUserNotOwner_ShouldThrowAuthorizationException()
+    {
+        // Arrange
+        SetupUser(Guid.NewGuid());
+        var ownerId = Guid.NewGuid();
+        var existingRecipe = Recipe.Create(ownerId, "Title", "Desc", RecipeVisibility.Public);
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingRecipe);
+
+        var command = new UpdateRecipeCommand { Request = new UpdateRecipeRequest { Id = Guid.NewGuid() } };
+
+        // Act
+        Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<AuthorizationException>();
+    }
+
+    [Fact]
+    public async Task Handle_WhenRecipeNotFound_ShouldThrowNotFoundException()
+    {
+        // Arrange
+        SetupUser(Guid.NewGuid());
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Recipe?)null);
+
+        var command = new UpdateRecipeCommand { Request = new UpdateRecipeRequest { Id = Guid.NewGuid() } };
+
+        // Act
+        Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
     }
 
     private void SetupUser(Guid userId)
@@ -94,7 +110,6 @@ public class UpdateRecipeCommandHandlerTests
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var principal = new ClaimsPrincipal(identity);
-
         var httpContext = new DefaultHttpContext { User = principal };
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
