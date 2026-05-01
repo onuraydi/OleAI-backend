@@ -12,6 +12,7 @@ using OleAI.Backend.Application.Features.ShoppingList.Rules;
 using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
+using OleAI.Backend.Application.Services.UserProfiles;
 
 namespace OleAI.Backend.Application
 {
@@ -51,6 +52,7 @@ namespace OleAI.Backend.Application
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();
             services.AddScoped<IImageService, CloudinaryImageManager>();
+            services.AddScoped<IUserProfileVectorService, DummyUserProfileVectorService>();
 
             return services;
         }

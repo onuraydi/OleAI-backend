@@ -23,7 +23,7 @@ public class RecipeCommentConfiguration : IEntityTypeConfiguration<RecipeComment
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(c => c.Recipe)
-            .WithMany()
+            .WithMany(r => r.Comments)
             .HasForeignKey(c => c.RecipeId)
             .OnDelete(DeleteBehavior.Cascade); // tarif silinirse yorum da silinsin
 
