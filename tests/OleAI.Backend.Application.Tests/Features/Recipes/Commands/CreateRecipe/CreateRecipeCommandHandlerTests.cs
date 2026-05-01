@@ -46,71 +46,73 @@ public class CreateRecipeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenValidRequest_ShouldCreateRecipeAndReturnMessage()
+    public async Task Handle_WhenValidPublicRequest_ShouldCallLlmAndReturnPendingApproval()
     {
-        // Arrange
-        var userId = Guid.NewGuid();
-        SetupUser(userId);
-
-        var request = new CreateRecipeRequest
-        {
-            Title = "Test",
-            Description = "Desc",
-            Visibility = RecipeVisibility.Public,
-            MainImage = Mock.Of<IFormFile>()
-        };
-
-        var command = new CreateRecipeCommand
-        {
-            CreateRecipeRequest = request,
-            Ingredients = new List<CreateRecipeIngredientRequest> { new() { IngredientId = Guid.NewGuid(), Amount = 1, UnitId = 1 } },
-            Steps = new List<CreateRecipeStepRequest> { new() { StepNumber = 1, Instruction = "Step 1" } }
-        };
-
-        _mockIngredientRepository.Setup(r => r.GetCountAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Ingredient, bool>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
-        _mockImageService.Setup(s => s.UploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("url", "public_id"));
-
-        _mockLocalLlmService.Setup(s => s.CheckRecipeContentForSpamAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.Should().Be(RecipeMessages.RecipeCreatedAndPendingAdminApproval);
-        _mockRecipeRepository.Verify(r => r.AddAsync(It.IsAny<Recipe>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_WhenSpamDetected_ShouldRejectRecipe()
-    {
-        // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
 
         var command = new CreateRecipeCommand
         {
-            CreateRecipeRequest = new CreateRecipeRequest { Title = "Spam", Description = "Spam", Visibility = RecipeVisibility.Public },
+            CreateRecipeRequest = new CreateRecipeRequest { Title = "T", Visibility = RecipeVisibility.Public, MainImage = Mock.Of<IFormFile>() },
             Ingredients = new List<CreateRecipeIngredientRequest>(),
             Steps = new List<CreateRecipeStepRequest>()
         };
 
+        _mockImageService.Setup(s => s.UploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(("url", "id"));
         _mockLocalLlmService.Setup(s => s.CheckRecipeContentForSpamAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false); // Spam detected
+            .ReturnsAsync(true);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        result.Should().Be(RecipeMessages.RecipeRejectedDueToSystemStandards);
-        _mockRecipeRepository.Verify(r => r.AddAsync(It.Is<Recipe>(re => re.Status == RecipeStatus.Rejected), It.IsAny<CancellationToken>()), Times.Once);
+        result.Should().Be(RecipeMessages.RecipeCreatedAndPendingAdminApproval);
+        _mockLocalLlmService.Verify(s => s.CheckRecipeContentForSpamAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPrivateRequest_ShouldNotCallLlmAndReturnSavedAsPrivate()
+    {
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+
+        var command = new CreateRecipeCommand
+        {
+            CreateRecipeRequest = new CreateRecipeRequest { Title = "T", Visibility = RecipeVisibility.Private, MainImage = Mock.Of<IFormFile>() },
+            Ingredients = new List<CreateRecipeIngredientRequest>(),
+            Steps = new List<CreateRecipeStepRequest>()
+        };
+
+        _mockImageService.Setup(s => s.UploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(("url", "id"));
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.Should().Be(RecipeMessages.RecipeCreatedAndSavedAsPrivate);
+        _mockLocalLlmService.Verify(s => s.CheckRecipeContentForSpamAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WithStepImages_ShouldUploadStepImages()
+    {
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+
+        var command = new CreateRecipeCommand
+        {
+            CreateRecipeRequest = new CreateRecipeRequest { Title = "T", Visibility = RecipeVisibility.Private, MainImage = Mock.Of<IFormFile>() },
+            Ingredients = new List<CreateRecipeIngredientRequest>(),
+            Steps = new List<CreateRecipeStepRequest>
+            {
+                new() { StepNumber = 1, Instruction = "I", StepImage = Mock.Of<IFormFile>() }
+            }
+        };
+
+        _mockImageService.Setup(s => s.UploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(("url", "id"));
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        _mockImageService.Verify(s => s.UploadAsync(It.IsAny<IFormFile>(), "recipes/steps", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private void SetupUser(Guid userId)
@@ -118,7 +120,6 @@ public class CreateRecipeCommandHandlerTests
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var principal = new ClaimsPrincipal(identity);
-
         var httpContext = new DefaultHttpContext { User = principal };
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }

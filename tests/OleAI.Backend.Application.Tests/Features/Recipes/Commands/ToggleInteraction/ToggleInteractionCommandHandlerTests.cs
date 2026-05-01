@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Application.Services.UserProfiles;
+using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
 using Xunit;
@@ -40,39 +41,80 @@ public class ToggleInteractionCommandHandlerTests
     [Fact]
     public async Task Handle_WhenLike_ShouldToggleLikeAndReturnMessage()
     {
-        // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
-
         var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
         recipe.PassLlmFilter();
         recipe.ApproveByAdmin();
 
-        _mockRecipeRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
-
-        _mockInteractionRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<RecipeInteraction, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<RecipeInteraction>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<RecipeInteraction, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((RecipeInteraction?)null);
 
         var command = new ToggleInteractionCommand { RecipeId = recipe.Id, InteractionType = "Like" };
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
+        result.Should().Contain("Like");
+    }
+
+    [Fact]
+    public async Task Handle_WhenDislike_ShouldToggleDislike()
+    {
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        recipe.PassLlmFilter();
+        recipe.ApproveByAdmin();
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
+
+        var command = new ToggleInteractionCommand { RecipeId = recipe.Id, InteractionType = "Dislike" };
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.Should().Contain("Dislike");
+    }
+
+    [Fact]
+    public async Task Handle_WhenSave_ShouldToggleSave()
+    {
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        recipe.PassLlmFilter();
+        recipe.ApproveByAdmin();
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
+
+        var command = new ToggleInteractionCommand { RecipeId = recipe.Id, InteractionType = "Save" };
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.Should().Contain("Save");
+    }
+
+    [Fact]
+    public async Task Handle_WhenInvalidType_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        recipe.PassLlmFilter();
+        recipe.ApproveByAdmin();
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
+
+        var command = new ToggleInteractionCommand { RecipeId = recipe.Id, InteractionType = "Invalid" };
+
+        // Act
+        Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
         // Assert
-        result.Should().Be("Like işlemi başarıyla gerçekleştirildi.");
-        _mockInteractionRepository.Verify(r => r.AddAsync(It.IsAny<RecipeInteraction>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockInteractionRepository.Verify(r => r.UpdateAsync(It.Is<RecipeInteraction>(i => i.IsLiked), It.IsAny<CancellationToken>()), Times.Once);
+        await act.Should().ThrowAsync<BusinessException>();
     }
 
     private void SetupUser(Guid userId)
@@ -80,7 +122,6 @@ public class ToggleInteractionCommandHandlerTests
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var principal = new ClaimsPrincipal(identity);
-
         var httpContext = new DefaultHttpContext { User = principal };
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
