@@ -20,7 +20,7 @@ namespace OleAI.Backend.Application.Services.Inventory
                     // TODO: BURada tür dönüşümü yüzünden ufak yuvarlama hataları alınabilir.
                     userIngredient.DecreaseAmount((double)recipeIngredient.Amount);
 
-                    if (userIngredient.Amount == 0)
+                    if (userIngredient.IsDepleted)
                     {
                         itemsToAddToShoppingList.Add(recipeIngredient.IngredientId);
                     }
