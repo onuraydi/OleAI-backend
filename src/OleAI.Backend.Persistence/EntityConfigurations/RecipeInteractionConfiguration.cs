@@ -20,7 +20,7 @@ public class RecipeInteractionConfiguration : IEntityTypeConfiguration<RecipeInt
         builder.HasIndex(i => new { i.RecipeId, i.UserId }).IsUnique();
 
         builder.HasOne(i => i.Recipe)
-            .WithMany()
+            .WithMany(r => r.Interactions)
             .HasForeignKey(i => i.RecipeId)
             .OnDelete(DeleteBehavior.Cascade); // Tarif silinirse etkileşimler de silinsin
 

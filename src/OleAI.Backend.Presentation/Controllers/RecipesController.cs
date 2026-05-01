@@ -4,12 +4,17 @@ using OleAI.Backend.Application.Features.Recipes.Commands.AddComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Commands.DeleteComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
 using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
+using OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyDislikedRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyLikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
@@ -209,5 +214,59 @@ public class RecipesController : BaseController
         command.RecipeId = id;
         var result = await Mediator.Send(command);
         return Ok(new { Message = result });
+    }
+
+    /// <summary>
+    /// Kullanıcının kendi yorumunu günceller.
+    /// </summary>
+    [HttpPut("comments/{commentId}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateComment([FromRoute] Guid commentId, [FromBody] UpdateCommentCommand command)
+    {
+        command.CommentId = commentId;
+        return Ok(new { Message = await Mediator.Send(command) });
+    }
+
+    /// <summary>
+    /// Kullanıcının kendi yorumunu siler.
+    /// </summary>
+    [HttpDelete("comments/{commentId}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteComment([FromRoute] Guid commentId)
+    {
+        return Ok(new { Message = await Mediator.Send(new DeleteCommentCommand { CommentId = commentId }) });
+    }
+
+
+    // TODO BUNLAR DAHA SONRA USERSCONTROLLER'A YAZILACAK
+
+    /// <summary>
+    /// Giriş yapan kullanıcının "Favorilerime Kaydettiği" tarifleri sayfalamalı getirir.
+    /// </summary>
+    [HttpGet("me/saved-recipes")]
+    [Authorize]
+    public async Task<IActionResult> GetMySavedRecipes([FromQuery] GetMySavedRecipesQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
+    /// <summary>
+    /// Giriş yapan kullanıcının "Beğendiği" tarifleri sayfalamalı getirir.
+    /// </summary>
+    [HttpGet("me/liked-recipes")]
+    [Authorize]
+    public async Task<IActionResult> GetMyLikedRecipes([FromQuery] GetMyLikedRecipesQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
+    /// <summary>
+    /// Giriş yapan kullanıcının "Beğenmediği" tarifleri sayfalamalı getirir.
+    /// </summary>
+    [HttpGet("me/disliked-recipes")]
+    [Authorize]
+    public async Task<IActionResult> GetMyDisikedRecipes([FromQuery] GetMyDislikedRecipesQuery query)
+    {
+        return Ok(await Mediator.Send(query));
     }
 }

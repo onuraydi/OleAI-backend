@@ -24,7 +24,7 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(s => s.Ingredient)
-                   .WithMany()
+                   .WithMany(i => i.ShoppingListItems)
                    .HasForeignKey(s => s.IngredientId)
                    .OnDelete(DeleteBehavior.Restrict);
         }
