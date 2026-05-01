@@ -19,6 +19,7 @@ using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
 using OleAI.Backend.Core.Repositories.Pagination;
+using OleAI.Backend.Presentation.ModelBinders;
 
 namespace OleAI.Backend.Presentation.Controllers;
 
@@ -35,9 +36,10 @@ public class RecipesController : BaseController
     /// </summary>
     /// <remarks>
     /// Bu endpoint form-data kabul eder. Resimler ve liste verileri aynı form içinde gönderilmelidir.
+    /// IngredientsJson ve StepsJson alanları JSON array olmalıdır.
     /// </remarks>
     [HttpPost]
-    public async Task<IActionResult> Add([FromForm] CreateRecipeCommand createRecipeCommand)
+    public async Task<IActionResult> Add([ModelBinder(BinderType = typeof(CreateRecipeCommandModelBinder))] CreateRecipeCommand createRecipeCommand)
     {
         string resultMessage = await Mediator.Send(createRecipeCommand);
 
@@ -87,7 +89,7 @@ public class RecipesController : BaseController
     /// </remarks>
     [HttpPut("{id}")]
     [Authorize]
-    public async Task<IActionResult> Update([FromRoute] Guid id, [FromForm] UpdateRecipeCommand updateRecipeCommand)
+    public async Task<IActionResult> Update([FromRoute] Guid id, [ModelBinder(BinderType = typeof(UpdateRecipeCommandModelBinder))] UpdateRecipeCommand updateRecipeCommand)
     {
         // URL'den gelen ID'yi Command nesnesine atıyoruz
         updateRecipeCommand.Request.Id = id;

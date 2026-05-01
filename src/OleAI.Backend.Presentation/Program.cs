@@ -17,6 +17,7 @@ using OleAI.Backend.Core.Helpers;
 using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
+using OleAI.Backend.Presentation.Swagger;
 using StackExchange.Redis;
 
 Env.TraversePath().Load();
@@ -71,7 +72,11 @@ builder.Services.AddSingleton<HttpExceptionHandler>();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddOpenApi();
 
 // Swagger Configuration
@@ -79,6 +84,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen(opt =>
 {
     opt.SwaggerDoc("v1", new OpenApiInfo { Title = "OleAI API", Version = "v1" });
+
+    opt.OperationFilter<CreateRecipeFormOperationFilter>();
 
     opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -100,6 +107,7 @@ builder.Services.AddSwaggerGen(opt =>
             Array.Empty<string>()
         }
     });
+
 });
 
 // JWT Configuration

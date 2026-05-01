@@ -50,6 +50,7 @@ namespace OleAI.Backend.Application
             services.AddScoped<RecipeBusinessRules>();
 
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
+            services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();
             services.AddScoped<IImageService, CloudinaryImageManager>();
             services.AddScoped<IUserProfileVectorService, DummyUserProfileVectorService>();

@@ -13,13 +13,13 @@ public class Recipe : Entity<Guid>
 
     // Dışarıdan .Add() ile rastgele veri eklenmesini engelliyoruz
     private readonly List<RecipeIngredient> _recipeIngredients = new();
-    public IReadOnlyCollection<RecipeIngredient> RecipeIngredients => _recipeIngredients.AsReadOnly();
+    public IReadOnlyCollection<RecipeIngredient> RecipeIngredients => _recipeIngredients;
 
     private readonly List<RecipeStep> _recipeSteps = new();
-    public IReadOnlyCollection<RecipeStep> RecipeSteps => _recipeSteps.AsReadOnly();
+    public IReadOnlyCollection<RecipeStep> RecipeSteps => _recipeSteps;
 
     private readonly List<RecipeImage> _recipeImages = new();
-    public IReadOnlyCollection<RecipeImage> RecipeImages => _recipeImages.AsReadOnly();
+    public IReadOnlyCollection<RecipeImage> RecipeImages => _recipeImages;
 
 
     public virtual ICollection<RecipeComment> Comments { get; private set; }
