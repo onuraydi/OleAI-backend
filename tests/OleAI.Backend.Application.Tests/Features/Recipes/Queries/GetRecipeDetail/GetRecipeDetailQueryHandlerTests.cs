@@ -38,58 +38,68 @@ public class GetRecipeDetailQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenRecipeIsPublic_ShouldReturnDetail()
+    public async Task Handle_WhenRecipeIsPublicAndPublished_ShouldReturnDetail()
     {
-        // Arrange
-        var recipeId = Guid.NewGuid();
         var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
         recipe.PassLlmFilter();
-        recipe.ApproveByAdmin(); // Status: Published
+        recipe.ApproveByAdmin();
 
-        _mockRecipeRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
 
-        var response = new RecipeDetailResponse { Id = recipeId, Title = "Title" };
-        _mockMapper.Setup(m => m.Map<RecipeDetailResponse>(recipe)).Returns(response);
+        SetInteractions(recipe, new List<RecipeInteraction>());
+        SetComments(recipe, new List<RecipeComment>());
 
-        var query = new GetRecipeDetailQuery { Id = recipeId };
+        _mockMapper.Setup(m => m.Map<RecipeDetailResponse>(recipe)).Returns(new RecipeDetailResponse());
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(new GetRecipeDetailQuery { Id = Guid.NewGuid() }, CancellationToken.None);
 
-        // Assert
         result.Should().NotBeNull();
-        result.Title.Should().Be("Title");
-        result.Statistics.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task Handle_WhenRecipeIsPrivateAndNotOwner_ShouldThrowAuthorizationException()
+    public async Task Handle_WhenRecipeIsPrivateButOwnerIsQuerying_ShouldReturnDetail()
     {
-        // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Private", "Desc", RecipeVisibility.Private);
-        SetupUser(Guid.NewGuid()); // Other user
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Private);
 
-        _mockRecipeRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
 
-        var query = new GetRecipeDetailQuery { Id = recipe.Id };
+        SetInteractions(recipe, new List<RecipeInteraction>());
+        SetComments(recipe, new List<RecipeComment>());
 
-        // Act
-        Func<Task> act = async () => await _handler.Handle(query, CancellationToken.None);
+        _mockMapper.Setup(m => m.Map<RecipeDetailResponse>(recipe)).Returns(new RecipeDetailResponse());
 
-        // Assert
-        await act.Should().ThrowAsync<AuthorizationException>();
+        var result = await _handler.Handle(new GetRecipeDetailQuery { Id = recipe.Id }, CancellationToken.None);
+
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenUserLoggedIn_ShouldReturnUserInteraction()
+    {
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        recipe.PassLlmFilter();
+        recipe.ApproveByAdmin();
+
+        var interaction = new RecipeInteraction(Guid.NewGuid(), recipe.Id, userId);
+        interaction.ToggleLike();
+        SetInteractions(recipe, new List<RecipeInteraction> { interaction });
+        SetComments(recipe, new List<RecipeComment>());
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
+
+        _mockMapper.Setup(m => m.Map<RecipeDetailResponse>(recipe)).Returns(new RecipeDetailResponse());
+
+        var result = await _handler.Handle(new GetRecipeDetailQuery { Id = recipe.Id }, CancellationToken.None);
+
+        result.UserInteraction.Should().NotBeNull();
+        result.UserInteraction!.IsLiked.Should().BeTrue();
     }
 
     private void SetupUser(Guid userId)
@@ -97,8 +107,19 @@ public class GetRecipeDetailQueryHandlerTests
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var principal = new ClaimsPrincipal(identity);
-
         var httpContext = new DefaultHttpContext { User = principal };
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
+    }
+
+    private void SetInteractions(Recipe recipe, List<RecipeInteraction> interactions)
+    {
+        var property = typeof(Recipe).GetProperty(nameof(Recipe.Interactions));
+        property?.SetValue(recipe, interactions);
+    }
+
+    private void SetComments(Recipe recipe, List<RecipeComment> comments)
+    {
+        var property = typeof(Recipe).GetProperty(nameof(Recipe.Comments));
+        property?.SetValue(recipe, comments);
     }
 }

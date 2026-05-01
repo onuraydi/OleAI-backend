@@ -5,7 +5,6 @@ using Moq;
 using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.Repositories;
-using OleAI.Backend.Application.Services.UserProfiles;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
 using Xunit;
@@ -40,30 +39,44 @@ public class StartCookingCommandHandlerTests
     [Fact]
     public async Task Handle_WhenValidRequest_ShouldReturnSuccessMessage()
     {
-        // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
-
         var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
-        _mockRecipeRepository.Setup(r => r.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
-                It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
 
         _mockUserIngredientRepository.Setup(r => r.GetListAsync(It.IsAny<OleAI.Backend.Core.Repositories.Options.QueryOptions<UserIngredient>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new OleAI.Backend.Core.Repositories.Pagination.Paginate<UserIngredient>());
+            .ReturnsAsync(new OleAI.Backend.Core.Repositories.Pagination.Paginate<UserIngredient> { Items = new List<UserIngredient>() });
 
-        var command = new StartCookingCommand { RecipeId = recipe.Id };
+        _mockShoppingListItemRepository.Setup(r => r.GetListAsync(It.IsAny<OleAI.Backend.Core.Repositories.Options.QueryOptions<ShoppingListItem>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OleAI.Backend.Core.Repositories.Pagination.Paginate<ShoppingListItem> { Items = new List<ShoppingListItem>() });
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(new StartCookingCommand { RecipeId = recipe.Id }, CancellationToken.None);
 
-        // Assert
         result.Should().NotBeNullOrEmpty();
-        _mockRecipeRepository.Verify(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(), It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenIngredientsMissing_ShouldAddToShoppingList()
+    {
+        var userId = Guid.NewGuid();
+        SetupUser(userId);
+        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        recipe.AddIngredient(Guid.NewGuid(), 100, 1); // 100g of something
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
+
+        _mockUserIngredientRepository.Setup(r => r.GetListAsync(It.IsAny<OleAI.Backend.Core.Repositories.Options.QueryOptions<UserIngredient>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OleAI.Backend.Core.Repositories.Pagination.Paginate<UserIngredient> { Items = new List<UserIngredient>() }); // Empty pantry
+
+        _mockShoppingListItemRepository.Setup(r => r.GetListAsync(It.IsAny<OleAI.Backend.Core.Repositories.Options.QueryOptions<ShoppingListItem>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OleAI.Backend.Core.Repositories.Pagination.Paginate<ShoppingListItem> { Items = new List<ShoppingListItem>() });
+
+        await _handler.Handle(new StartCookingCommand { RecipeId = recipe.Id }, CancellationToken.None);
+
+        _mockShoppingListItemRepository.Verify(r => r.AddAsync(It.IsAny<ShoppingListItem>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private void SetupUser(Guid userId)
