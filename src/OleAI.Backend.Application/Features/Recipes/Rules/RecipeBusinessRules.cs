@@ -97,5 +97,16 @@ namespace OleAI.Backend.Application.Features.Recipes.Rules
             if (!exists)
                 throw new NotFoundException(RecipeMessages.TargetCommentMissing);
         }
+
+        /// <summary>
+        /// Kural: Yorum güncellemek için o yorumu sizin atmanız gerekli.
+        /// </summary>
+        public void CheckIfUserIsCommentOwner(RecipeComment? comment, Guid currentUserId)
+        {
+            if (comment == null) throw new NotFoundException("Yorum bulunamadı.");
+
+            if (comment.UserId != currentUserId)
+                throw new AuthorizationException(RecipeMessages.UnauthorizedCommentAction);
+        }
     }
 }

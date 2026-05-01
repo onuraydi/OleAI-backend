@@ -29,4 +29,10 @@ public class RecipeComment : Entity<Guid>
         CreatedDate = DateTime.UtcNow;
         Replies = new HashSet<RecipeComment>();
     }
+
+    public void UpdateContent(string newContent)
+    {
+        Content = newContent;
+        UpdatedDate = DateTime.UtcNow;
+    }
 }
