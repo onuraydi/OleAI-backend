@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OleAI.Backend.Application.Features.Recipes.Commands.AddComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
+using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
@@ -15,6 +17,9 @@ using OleAI.Backend.Core.Repositories.Pagination;
 
 namespace OleAI.Backend.Presentation.Controllers;
 
+/// <summary>
+/// Tarif yönetimi ve etkileşim işlemleri için API endpoints'ini sağlar.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
@@ -139,7 +144,7 @@ public class RecipesController : BaseController
     }
 
     /// <summary>
-    /// Bir tarifin tüm detaylarını (malzemeler, adımlar, resimler) getirir.
+    /// Bir tarifin tüm detaylarını (malzemeler, adımlar, resimler, etkileşimler) getirir.
     /// Gizli tarifleri sadece tarifin sahibi görebilir.
     /// </summary>
     [HttpGet("{id}")]
@@ -159,5 +164,50 @@ public class RecipesController : BaseController
     {
         var resultMessage = await Mediator.Send(new StartCookingCommand { RecipeId = id });
         return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// Tarife beğeni (Like) atar veya mevcut beğeniyi kaldırır.
+    /// </summary>
+    [HttpPost("{id}/like")]
+    [Authorize]
+    public async Task<IActionResult> ToggleLike([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new ToggleInteractionCommand { RecipeId = id, InteractionType = "Like" });
+        return Ok(new { Message = result });
+    }
+
+    /// <summary>
+    /// Tarifi beğenmeme (Dislike) olarak işaretler veya kaldırır.
+    /// </summary>
+    [HttpPost("{id}/dislike")]
+    [Authorize]
+    public async Task<IActionResult> ToggleDislike([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new ToggleInteractionCommand { RecipeId = id, InteractionType = "Dislike" });
+        return Ok(new { Message = result });
+    }
+
+    /// <summary>
+    /// Tarifi kullanıcının favorilerine (Saved) ekler veya çıkarır.
+    /// </summary>
+    [HttpPost("{id}/save")]
+    [Authorize]
+    public async Task<IActionResult> ToggleSave([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new ToggleInteractionCommand { RecipeId = id, InteractionType = "Save" });
+        return Ok(new { Message = result });
+    }
+
+    /// <summary>
+    /// Tarife ana yorum veya başka bir yoruma cevap ekler.
+    /// </summary>
+    [HttpPost("{id}/comments")]
+    [Authorize]
+    public async Task<IActionResult> AddComment([FromRoute] Guid id, [FromBody] AddCommentCommand command)
+    {
+        command.RecipeId = id;
+        var result = await Mediator.Send(command);
+        return Ok(new { Message = result });
     }
 }
