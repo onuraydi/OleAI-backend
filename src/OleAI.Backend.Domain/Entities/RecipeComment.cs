@@ -22,6 +22,7 @@ public class RecipeComment : Entity<Guid>
 
     public RecipeComment(Guid id, Guid recipeId, Guid userId, string content, Guid? parentCommentId = null) : this()
     {
+        Id = id;
         RecipeId = recipeId;
         UserId = userId;
         Content = content;

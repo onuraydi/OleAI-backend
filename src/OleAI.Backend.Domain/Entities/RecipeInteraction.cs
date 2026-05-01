@@ -18,6 +18,7 @@ public class RecipeInteraction : Entity<Guid>
 
     public RecipeInteraction(Guid id, Guid recipeId, Guid userId) : this()
     {
+        Id = id;
         RecipeId = recipeId;
         UserId = userId;
     }
