@@ -21,6 +21,10 @@ public class Recipe : Entity<Guid>
     private readonly List<RecipeImage> _recipeImages = new();
     public IReadOnlyCollection<RecipeImage> RecipeImages => _recipeImages.AsReadOnly();
 
+
+    public virtual ICollection<RecipeComment> Comments { get; private set; }
+    public virtual ICollection<RecipeInteraction> Interactions { get; private set; }
+
     private Recipe() { } // EF Core için
 
     // Factory Method: Yeni tarif sadece bu yolla yaratılır
