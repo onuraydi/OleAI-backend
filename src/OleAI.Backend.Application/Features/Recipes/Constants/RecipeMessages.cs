@@ -28,5 +28,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string RecipeNotOpenForInteractionYet = "Bu tarif henüz etkileşime açık değil.";
         public const string RecipeNotFound = "Tarif bulunamadı.";
         public const string TargetCommentMissing = "Cevap vermeye çalıştığınız yorum bulunamadı veya silinmiş.";
+        public const string UnauthorizedCommentAction = "Bu yorum üzerinde işlem yapma yetkiniz yok.";
+        public const string CommentUpdatedSuccessfullyMessage = "Yorumunuz başarıyla güncellendi.";
+        public const string CommentDeletedSuccessfullyMessage = "Yorumunuz başarıyla silindi.";
     }
 }
