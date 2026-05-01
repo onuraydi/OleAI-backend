@@ -4,7 +4,7 @@ using OleAI.Backend.Core.Repositories.Pagination;
 
 namespace OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes
 {
-    public class GetMySavedRecipesQuery : IRequest<Paginate<RecipeListItemResponse>>
+    public class GetMySavedRecipesQuery : IRequest<Paginate<RecipeListItemResponse>>, IPageableRequest
     {
         public int Page { get; set; } = 0;
         public int Size { get; set; } = 10;

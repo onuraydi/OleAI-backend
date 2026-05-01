@@ -1,76 +1,25 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Extensions.Primitives;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Dtos.Requests;
-using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Presentation.ModelBinders;
 
-public class UpdateRecipeCommandModelBinder : IModelBinder
+public class UpdateRecipeCommandModelBinder : BaseRecipeCommandModelBinder<UpdateRecipeCommand>
 {
-    public async Task BindModelAsync(ModelBindingContext bindingContext)
+    public override async Task BindModelAsync(ModelBindingContext bindingContext)
     {
-        if (bindingContext == null)
-        {
-            throw new ArgumentNullException(nameof(bindingContext));
-        }
+        if (bindingContext == null) throw new ArgumentNullException(nameof(bindingContext));
 
-        var request = bindingContext.HttpContext.Request;
+        var (success, fields) = await ParseCommonFieldsAsync(bindingContext);
+        if (!success || fields == null) return;
 
-        if (!request.HasFormContentType)
-        {
-            bindingContext.ModelState.AddModelError(bindingContext.ModelName, "İstek multipart/form-data olmalıdır.");
-            bindingContext.Result = ModelBindingResult.Failed();
-            return;
-        }
+        var newMainImage = fields.Form.Files.GetFile("NewMainImage");
 
-        var form = await request.ReadFormAsync();
+        var ingredients = DeserializeJson<CreateRecipeIngredientRequest>(fields.IngredientsJson, "IngredientsJson", bindingContext);
+        var steps = DeserializeJson<UpdateRecipeStepRequest>(fields.StepsJson, "StepsJson", bindingContext);
 
-        var title = form["Title"].ToString();
-        var description = form["Description"].ToString();
-        var visibilityText = form["Visibility"].ToString();
-        var ingredientsJson = form["IngredientsJson"].ToString();
-        var stepsJson = form["StepsJson"].ToString();
-
-        var newMainImage = form.Files.GetFile("NewMainImage");
-
-        var serializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        List<CreateRecipeIngredientRequest> ingredients = new();
-        List<UpdateRecipeStepRequest> steps = new();
-
-        if (!string.IsNullOrWhiteSpace(ingredientsJson))
-        {
-            try
-            {
-                ingredients = JsonSerializer.Deserialize<List<CreateRecipeIngredientRequest>>(ingredientsJson, serializerOptions) ?? new();
-            }
-            catch (JsonException)
-            {
-                bindingContext.ModelState.AddModelError("IngredientsJson", "IngredientsJson geçerli JSON formatında olmalıdır.");
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(stepsJson))
-        {
-            try
-            {
-                steps = JsonSerializer.Deserialize<List<UpdateRecipeStepRequest>>(stepsJson, serializerOptions) ?? new();
-            }
-            catch (JsonException)
-            {
-                bindingContext.ModelState.AddModelError("StepsJson", "StepsJson geçerli JSON formatında olmalıdır.");
-            }
-        }
-
-        if (!Enum.TryParse<RecipeVisibility>(visibilityText, true, out var visibility))
-        {
-            bindingContext.ModelState.AddModelError("Visibility", "Visibility alanı geçerli değil. Örnek: Public veya Private.");
-        }
-
-        var stepImages = form.Files.Where(f => f.Name == "StepImages").ToList();
-        var stepNumberValues = form["StepImageStepNumbers"];
-        var stepNumbers = ParseStepNumbers(stepNumberValues, bindingContext);
+        var stepImages = fields.Form.Files.Where(f => f.Name == "StepImages").ToList();
+        var stepNumbers = ParseStepNumbers(fields.Form["StepImageStepNumbers"], bindingContext);
 
         if (stepImages.Count != stepNumbers.Count)
         {
@@ -86,7 +35,6 @@ public class UpdateRecipeCommandModelBinder : IModelBinder
                 bindingContext.ModelState.AddModelError("StepImageStepNumbers", $"{stepNumber} numaralı adım StepsJson içinde bulunamadı.");
                 continue;
             }
-
             matchingStep.NewStepImage = stepImages[i];
         }
 
@@ -100,9 +48,9 @@ public class UpdateRecipeCommandModelBinder : IModelBinder
         {
             Request = new UpdateRecipeRequest
             {
-                Title = title,
-                Description = description,
-                Visibility = visibility,
+                Title = fields.Title,
+                Description = fields.Description,
+                Visibility = fields.Visibility,
                 NewMainImage = newMainImage
             },
             Ingredients = ingredients,
@@ -110,27 +58,5 @@ public class UpdateRecipeCommandModelBinder : IModelBinder
         };
 
         bindingContext.Result = ModelBindingResult.Success(command);
-    }
-
-    private static List<int> ParseStepNumbers(StringValues values, ModelBindingContext bindingContext)
-    {
-        var stepNumbers = new List<int>();
-        foreach (var value in values)
-        {
-            var tokens = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            foreach (var token in tokens)
-            {
-                if (int.TryParse(token, out var stepNumber))
-                {
-                    stepNumbers.Add(stepNumber);
-                }
-                else
-                {
-                    bindingContext.ModelState.AddModelError("StepImageStepNumbers", "StepImageStepNumbers sayısal değerler içermelidir.");
-                }
-            }
-        }
-
-        return stepNumbers;
     }
 }
