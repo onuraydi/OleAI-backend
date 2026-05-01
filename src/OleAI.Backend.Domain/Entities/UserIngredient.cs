@@ -5,6 +5,8 @@ namespace OleAI.Backend.Domain.Entities
 {
     public class UserIngredient : Entity<Guid>
     {
+        private const double DepletionTolerance = 0.000001d;
+
         public Guid UserId { get; private set; }
         public Guid? IngredientId { get; private set; }
         public Guid? IngredientRequestId { get; private set; }
@@ -24,6 +26,8 @@ namespace OleAI.Backend.Domain.Entities
         public virtual IngredientRequest? IngredientRequest { get; private set; }
 
         protected UserIngredient() { }
+
+        public bool IsDepleted => Amount <= DepletionTolerance;
 
         /// <summary>
         /// Sistemde var olan (onaylı) bir malzeme için pantry girişi oluşturur.
@@ -106,6 +110,18 @@ namespace OleAI.Backend.Domain.Entities
 
             IngredientId = masterIngredientId;
             // IngredientRequestId bağlantısı audit trail için tutulmaktadır.
+        }
+
+        /// <summary>
+        /// Kullanılan miktar kadar stoku düşer. Miktar sıfırın altına inemez.
+        /// </summary>
+        public void DecreaseAmount(double usedAmount)
+        {
+            Amount -= usedAmount;
+            if (Amount <= DepletionTolerance)
+            {
+                Amount = 0;
+            }
         }
     }
 }

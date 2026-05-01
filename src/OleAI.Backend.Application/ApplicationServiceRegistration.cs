@@ -7,9 +7,12 @@ using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Features.IngredientCategories.Rules;
 using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Features.Pantry.Rules;
+using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Features.ShoppingList.Rules;
 using OleAI.Backend.Application.Services.AuthService;
+using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
+using OleAI.Backend.Application.Services.UserProfiles;
 
 namespace OleAI.Backend.Application
 {
@@ -44,9 +47,13 @@ namespace OleAI.Backend.Application
             services.AddScoped<IngredientBusinessRules>();
             services.AddScoped<IngredientAliasBusinessRules>();
             services.AddScoped<ShoppingListBusinessRules>();
+            services.AddScoped<RecipeBusinessRules>();
 
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
+            services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();
+            services.AddScoped<IImageService, CloudinaryImageManager>();
+            services.AddScoped<IUserProfileVectorService, DummyUserProfileVectorService>();
 
             return services;
         }

@@ -20,6 +20,12 @@ public class AppDbContext : DbContext
     public DbSet<UserIngredient> UserIngredients { get; set; }
     public DbSet<IngredientRequest> IngredientRequests { get; set; }
     public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
+    public DbSet<Recipe> Recipes { get; set; }
+    public DbSet<RecipeImage> RecipeImages { get; set; }
+    public DbSet<RecipeStep> RecipeSteps { get; set; }
+    public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
+    public DbSet<RecipeInteraction> RecipeInteractions { get; set; }
+    public DbSet<RecipeComment> RecipeComments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

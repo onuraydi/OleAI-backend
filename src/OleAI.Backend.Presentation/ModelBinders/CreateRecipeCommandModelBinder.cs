@@ -1,0 +1,66 @@
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Dtos.Requests;
+
+namespace OleAI.Backend.Presentation.ModelBinders;
+
+public class CreateRecipeCommandModelBinder : BaseRecipeCommandModelBinder<CreateRecipeCommand>
+{
+    public override async Task BindModelAsync(ModelBindingContext bindingContext)
+    {
+        if (bindingContext == null) throw new ArgumentNullException(nameof(bindingContext));
+
+        var (success, fields) = await ParseCommonFieldsAsync(bindingContext);
+        if (!success || fields == null) return;
+
+        var mainImage = fields.Form.Files.GetFile("MainImage");
+        if (mainImage == null)
+        {
+            bindingContext.ModelState.AddModelError("MainImage", "Tarifin ana kapak fotoğrafı zorunludur.");
+        }
+
+        var ingredients = DeserializeJson<CreateRecipeIngredientRequest>(fields.IngredientsJson, "IngredientsJson", bindingContext);
+        var steps = DeserializeJson<CreateRecipeStepRequest>(fields.StepsJson, "StepsJson", bindingContext);
+
+        var stepImages = fields.Form.Files.Where(f => f.Name == "StepImages").ToList();
+        var stepNumbers = ParseStepNumbers(fields.Form["StepImageStepNumbers"], bindingContext);
+
+        if (stepImages.Count != stepNumbers.Count)
+        {
+            bindingContext.ModelState.AddModelError("StepImages", "StepImages ve StepImageStepNumbers sayıları eşleşmelidir.");
+        }
+
+        for (int i = 0; i < Math.Min(stepImages.Count, stepNumbers.Count); i++)
+        {
+            var stepNumber = stepNumbers[i];
+            var matchingStep = steps.FirstOrDefault(s => s.StepNumber == stepNumber);
+            if (matchingStep == null)
+            {
+                bindingContext.ModelState.AddModelError("StepImageStepNumbers", $"{stepNumber} numaralı adım StepsJson içinde bulunamadı.");
+                continue;
+            }
+            matchingStep.StepImage = stepImages[i];
+        }
+
+        if (!bindingContext.ModelState.IsValid)
+        {
+            bindingContext.Result = ModelBindingResult.Failed();
+            return;
+        }
+
+        var command = new CreateRecipeCommand
+        {
+            CreateRecipeRequest = new CreateRecipeRequest
+            {
+                Title = fields.Title,
+                Description = fields.Description,
+                Visibility = fields.Visibility,
+                MainImage = mainImage!
+            },
+            Ingredients = ingredients,
+            Steps = steps
+        };
+
+        bindingContext.Result = ModelBindingResult.Success(command);
+    }
+}
