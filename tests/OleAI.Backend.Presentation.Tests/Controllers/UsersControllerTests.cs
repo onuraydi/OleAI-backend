@@ -54,4 +54,66 @@ public class UsersControllerTests
 
         _mockMediator.Verify(m => m.Send(command, default), Times.Once);
     }
+
+    [Fact]
+    public async Task GetProfile_ShouldSendQuery_AndReturnOk()
+    {
+        var response = new OleAI.Backend.Application.Features.Users.Dtos.Responses.UserProfileResponse();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Queries.GetUserProfile.GetUserProfileQuery>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.GetProfile();
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_ShouldSendCommand_AndReturnOk()
+    {
+        var command = new OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile.UpdateUserProfileCommand();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile.UpdateUserProfileCommand>(), default)).ReturnsAsync("Profile updated");
+
+        var result = await _controller.UpdateProfile(command);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateDietaryPreferences_ShouldSendCommand_AndReturnOk()
+    {
+        var command = new OleAI.Backend.Application.Features.Users.Commands.UpdateUserPreferences.UpdateUserPreferencesCommand();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Commands.UpdateUserPreferences.UpdateUserPreferencesCommand>(), default)).ReturnsAsync("Preferences updated");
+
+        var result = await _controller.UpdateDietaryPreferences(command);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAllergies_ShouldSendCommand_AndReturnOk()
+    {
+        var command = new OleAI.Backend.Application.Features.Users.Commands.UpdateUserAllergies.UpdateUserAllergiesCommand();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Commands.UpdateUserAllergies.UpdateUserAllergiesCommand>(), default)).ReturnsAsync("Allergies updated");
+
+        var result = await _controller.UpdateAllergies(command);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetRecommendations_ShouldSendQuery_AndReturnOk()
+    {
+        var response = new OleAI.Backend.Application.Services.AiRecommendation.AiRecommendationResponse();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Queries.GetRecommendation.GetRecommendationQuery>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.GetRecommendations();
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
 }
