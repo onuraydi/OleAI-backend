@@ -47,8 +47,8 @@ public class CreateDietaryPreferenceCommandHandlerTests
         {
             Name = "Vegan",
             Description = "Hayvansal gıdalar tüketilmez",
-            ExcludedIngredientIds = new List<Guid>(),
-            ExcludedCategoryIds = new List<Guid>()
+            ExcludedIngredientIds = new List<Guid> { Guid.NewGuid() },
+            ExcludedCategoryIds = new List<Guid> { Guid.NewGuid() }
         };
 
         _mockDietaryPreferenceRepository
@@ -58,6 +58,14 @@ public class CreateDietaryPreferenceCommandHandlerTests
         _mockDietaryPreferenceRepository
             .Setup(r => r.AddAsync(It.IsAny<DietaryPreference>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((DietaryPreference dp, CancellationToken _) => dp);
+
+        _mockIngredientRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Ingredient, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedIngredientIds.Count);
+
+        _mockCategoryRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedCategoryIds.Count);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

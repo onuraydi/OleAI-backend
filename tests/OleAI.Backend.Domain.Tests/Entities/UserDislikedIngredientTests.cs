@@ -14,18 +14,23 @@ public class UserDislikedIngredientTests
         var userId = Guid.NewGuid();
         var ingredientId = Guid.NewGuid();
 
+        var user = new User();
+        var ingredient = new Ingredient(Guid.NewGuid(), "Test", Guid.NewGuid());
+
         // Act
-        var dislikedIngredient = new UserDislikedIngredient
+        var entity = new UserDislikedIngredient
         {
-            Id = id,
             UserId = userId,
-            IngredientId = ingredientId
+            IngredientId = ingredientId,
+            User = user,
+            Ingredient = ingredient
         };
 
         // Assert
-        dislikedIngredient.Id.Should().Be(id);
-        dislikedIngredient.UserId.Should().Be(userId);
-        dislikedIngredient.IngredientId.Should().Be(ingredientId);
+        entity.UserId.Should().Be(userId);
+        entity.IngredientId.Should().Be(ingredientId);
+        entity.User.Should().Be(user);
+        entity.Ingredient.Should().Be(ingredient);
     }
 
     [Fact]

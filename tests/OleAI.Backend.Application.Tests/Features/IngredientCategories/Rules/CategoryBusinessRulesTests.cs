@@ -109,4 +109,37 @@ public class CategoryBusinessRulesTests
         // Assert
         await act.Should().NotThrowAsync();
     }
+
+    [Fact]
+    public async Task CheckIfCategoriesExistAsync_WhenCountDoesNotMatch_ShouldThrowNotFoundException()
+    {
+        // Arrange
+        var ids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        _mockCategoryRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<Category, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        // Act
+        Func<Task> act = async () => await _rules.CheckIfCategoriesExistAsync(ids);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Belirtilen kategorilerden bazıları bulunamadı.");
+    }
+
+    [Fact]
+    public async Task CheckIfCategoriesExistAsync_WhenCountMatches_ShouldNotThrow()
+    {
+        // Arrange
+        var ids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        _mockCategoryRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<Category, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        // Act
+        Func<Task> act = async () => await _rules.CheckIfCategoriesExistAsync(ids);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
 }

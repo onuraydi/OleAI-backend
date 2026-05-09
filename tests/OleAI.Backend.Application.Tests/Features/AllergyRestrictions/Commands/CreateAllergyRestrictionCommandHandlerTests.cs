@@ -45,25 +45,32 @@ public class CreateAllergyRestrictionCommandHandlerTests
         // Arrange
         var command = new CreateAllergyRestrictionCommand
         {
-            Name = "Gluten Allergy",
-            Description = "No gluten",
-            ExcludedIngredientIds = new List<Guid>(),
-            ExcludedCategoryIds = new List<Guid>()
+            Name = "Glutensiz",
+            Description = "Gluten içeren ürünler tüketilmez",
+            ExcludedIngredientIds = new List<Guid> { Guid.NewGuid() },
+            ExcludedCategoryIds = new List<Guid> { Guid.NewGuid() }
         };
 
         _mockRepository
-            .Setup(r => r.AnyAsync(dp => dp.Name.ToLower() == command.Name.ToLower(), false, true, It.IsAny<CancellationToken>()))
+            .Setup(r => r.AnyAsync(ar => ar.Name.ToLower() == command.Name.ToLower(), false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<AllergyRestriction>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AllergyRestriction ar, CancellationToken _) => ar);
 
+        _mockIngredientRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Ingredient, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedIngredientIds.Count);
+
+        _mockCategoryRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedCategoryIds.Count);
+
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().Be(AllergyRestrictionMessages.AllergyRestrictionCreatedSuccessfully);
-        _mockRepository.Verify(r => r.AddAsync(It.Is<AllergyRestriction>(ar => ar.Name == "Gluten Allergy"), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

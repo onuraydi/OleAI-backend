@@ -14,15 +14,22 @@ public class AllergyExcludedIngredientTests
         var allergyId = Guid.NewGuid();
         var ingredientId = Guid.NewGuid();
 
+        var allergy = new AllergyRestriction();
+        var ingredient = new Ingredient(Guid.NewGuid(), "Test", Guid.NewGuid());
+
         // Act
         var entity = new AllergyExcludedIngredient
         {
             AllergyRestrictionId = allergyId,
-            IngredientId = ingredientId
+            IngredientId = ingredientId,
+            AllergyRestriction = allergy,
+            Ingredient = ingredient
         };
 
         // Assert
         entity.AllergyRestrictionId.Should().Be(allergyId);
         entity.IngredientId.Should().Be(ingredientId);
+        entity.AllergyRestriction.Should().Be(allergy);
+        entity.Ingredient.Should().Be(ingredient);
     }
 }

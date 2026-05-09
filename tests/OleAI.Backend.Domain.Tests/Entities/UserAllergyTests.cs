@@ -14,15 +14,22 @@ public class UserAllergyTests
         var userId = Guid.NewGuid();
         var allergyId = Guid.NewGuid();
 
+        var user = new User();
+        var allergy = new AllergyRestriction();
+
         // Act
         var entity = new UserAllergy
         {
             UserId = userId,
-            AllergyRestrictionId = allergyId
+            AllergyRestrictionId = allergyId,
+            User = user,
+            AllergyRestriction = allergy
         };
 
         // Assert
         entity.UserId.Should().Be(userId);
         entity.AllergyRestrictionId.Should().Be(allergyId);
+        entity.User.Should().Be(user);
+        entity.AllergyRestriction.Should().Be(allergy);
     }
 }
