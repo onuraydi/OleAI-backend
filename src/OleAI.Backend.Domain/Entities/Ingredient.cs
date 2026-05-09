@@ -20,6 +20,7 @@ namespace OleAI.Backend.Domain.Entities
         public virtual ICollection<IngredientAlias> Aliases { get; private set; }
         public virtual ICollection<UserIngredient> UserIngredients { get; private set; }
         public virtual ICollection<ShoppingListItem> ShoppingListItems { get; private set; }
+        public virtual ICollection<UserDislikedIngredient> UserDislikedIngredients { get; private set; }
 
         protected Ingredient()
         {
@@ -28,6 +29,7 @@ namespace OleAI.Backend.Domain.Entities
             Aliases = new HashSet<IngredientAlias>();
             UserIngredients = new HashSet<UserIngredient>();
             ShoppingListItems = new HashSet<ShoppingListItem>();
+            UserDislikedIngredients = new HashSet<UserDislikedIngredient>();
         }
 
         public Ingredient(Guid id, string name, Guid categoryId, MeasurementCategory unitFamily = MeasurementCategory.Other)

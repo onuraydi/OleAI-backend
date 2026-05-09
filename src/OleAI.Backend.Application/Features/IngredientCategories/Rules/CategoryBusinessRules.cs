@@ -35,5 +35,15 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Rules
             if (hasIngredient != null)
                 throw new BusinessException(CategoryMessages.CategoryCannotBeDeletedDueToDependenciesMessage);
         }
+
+        public async Task CheckIfCategoriesExistAsync(List<Guid> categoryIds, CancellationToken cancellationToken = default)
+        {
+            var count = await _categoryRepository.GetCountAsync(
+                predicate: c => categoryIds.Contains(c.Id),
+                cancellationToken: cancellationToken);
+
+            if (count != categoryIds.Count)
+                throw new NotFoundException("Belirtilen kategorilerden bazıları bulunamadı.");
+        }
     }
 }

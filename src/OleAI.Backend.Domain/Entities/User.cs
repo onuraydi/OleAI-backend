@@ -19,6 +19,9 @@ namespace OleAI.Backend.Domain.Entities
 
         public virtual ICollection<UserOperationClaim> UserOperationClaims { get; set; }
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
+        public virtual ICollection<UserDietaryPreference> UserDietaryPreferences { get; set; } = new HashSet<UserDietaryPreference>();
+        public virtual ICollection<UserAllergy> UserAllergies { get; set; } = new HashSet<UserAllergy>();
+        public virtual ICollection<UserDislikedIngredient> UserDislikedIngredients { get; set; } = new HashSet<UserDislikedIngredient>();
 
         public User()
         {

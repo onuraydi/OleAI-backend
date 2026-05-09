@@ -26,6 +26,11 @@ public class AppDbContext : DbContext
     public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
     public DbSet<RecipeInteraction> RecipeInteractions { get; set; }
     public DbSet<RecipeComment> RecipeComments { get; set; }
+    public DbSet<DietaryPreference> DietaryPreferences { get; set; }
+    public DbSet<AllergyRestriction> AllergyRestrictions { get; set; }
+    public DbSet<UserDietaryPreference> UserDietaryPreferences { get; set; }
+    public DbSet<UserAllergy> UserAllergies { get; set; }
+    public DbSet<UserDislikedIngredient> UserDislikedIngredients { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
