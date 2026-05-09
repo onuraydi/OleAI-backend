@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<AllergyRestriction> AllergyRestrictions { get; set; }
     public DbSet<UserDietaryPreference> UserDietaryPreferences { get; set; }
     public DbSet<UserAllergy> UserAllergies { get; set; }
+    public DbSet<UserDislikedIngredient> UserDislikedIngredients { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
