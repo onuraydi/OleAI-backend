@@ -14,15 +14,22 @@ public class UserDietaryPreferenceTests
         var userId = Guid.NewGuid();
         var dietId = Guid.NewGuid();
 
+        var user = new User();
+        var diet = new DietaryPreference();
+
         // Act
         var entity = new UserDietaryPreference
         {
             UserId = userId,
-            DietaryPreferenceId = dietId
+            DietaryPreferenceId = dietId,
+            User = user,
+            DietaryPreference = diet
         };
 
         // Assert
         entity.UserId.Should().Be(userId);
         entity.DietaryPreferenceId.Should().Be(dietId);
+        entity.User.Should().Be(user);
+        entity.DietaryPreference.Should().Be(diet);
     }
 }

@@ -47,9 +47,10 @@ public class UpdateAllergyRestrictionCommandHandlerTests
         var command = new UpdateAllergyRestrictionCommand
         {
             Id = Guid.NewGuid(),
-            Name = "Gluten Free Updated",
-            ExcludedIngredientIds = new List<Guid>(),
-            ExcludedCategoryIds = new List<Guid>()
+            Name = "Yeni Glutensiz",
+            Description = "Yeni açıklama",
+            ExcludedIngredientIds = new List<Guid> { Guid.NewGuid() },
+            ExcludedCategoryIds = new List<Guid> { Guid.NewGuid() }
         };
 
         var restriction = new AllergyRestriction { Id = command.Id, Name = "Gluten Free" };
@@ -62,15 +63,25 @@ public class UpdateAllergyRestrictionCommandHandlerTests
             .Setup(r => r.AnyAsync(It.IsAny<Expression<Func<AllergyRestriction, bool>>>(), false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
+
+
         _mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<AllergyRestriction>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AllergyRestriction ar, CancellationToken _) => ar);
+
+        _mockIngredientRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Ingredient, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedIngredientIds.Count);
+
+        _mockCategoryRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedCategoryIds.Count);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().Be(AllergyRestrictionMessages.AllergyRestrictionUpdatedSuccessfully);
-        _mockRepository.Verify(r => r.UpdateAsync(It.Is<AllergyRestriction>(ar => ar.Name == "Gluten Free Updated"), It.IsAny<CancellationToken>()), Times.Once);
+        _mockRepository.Verify(r => r.UpdateAsync(It.Is<AllergyRestriction>(ar => ar.Name == "Yeni Glutensiz"), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

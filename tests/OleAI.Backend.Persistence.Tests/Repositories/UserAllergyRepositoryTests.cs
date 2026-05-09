@@ -25,7 +25,7 @@ public class UserAllergyRepositoryTests
         using var context = CreateContext();
         var repository = new UserAllergyRepository(context);
         var userId = Guid.NewGuid();
-        
+
         var allergies = new List<UserAllergy>
         {
             new UserAllergy { UserId = userId, AllergyRestrictionId = Guid.NewGuid() },
@@ -38,5 +38,20 @@ public class UserAllergyRepositoryTests
         // Assert
         var saved = await context.UserAllergies.Where(u => u.UserId == userId).ToListAsync();
         saved.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ExecuteDeleteByUserIdAsync_ThrowsException_BecauseOfInMemoryDatabase()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var repository = new UserAllergyRepository(context);
+        var userId = Guid.NewGuid();
+
+        // Act & Assert
+        // ExecuteDeleteAsync is not supported in EF Core InMemory database provider.
+        // This test ensures the repository method is called and correctly throws the InMemory exception.
+        Func<Task> action = async () => await repository.ExecuteDeleteByUserIdAsync(userId);
+        await action.Should().ThrowAsync<InvalidOperationException>();
     }
 }

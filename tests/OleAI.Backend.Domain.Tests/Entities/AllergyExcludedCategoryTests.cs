@@ -14,15 +14,22 @@ public class AllergyExcludedCategoryTests
         var allergyId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
 
+        var allergy = new AllergyRestriction();
+        var category = new Category(Guid.NewGuid(), "Test Category");
+
         // Act
         var entity = new AllergyExcludedCategory
         {
             AllergyRestrictionId = allergyId,
-            CategoryId = categoryId
+            CategoryId = categoryId,
+            AllergyRestriction = allergy,
+            Category = category
         };
 
         // Assert
         entity.AllergyRestrictionId.Should().Be(allergyId);
         entity.CategoryId.Should().Be(categoryId);
+        entity.AllergyRestriction.Should().Be(allergy);
+        entity.Category.Should().Be(category);
     }
 }

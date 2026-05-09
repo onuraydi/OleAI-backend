@@ -28,7 +28,7 @@ public class GetUserProfileQueryHandlerTests
         _mockMapper = new Mock<IMapper>();
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
         _mockCacheService = new Mock<ICacheService>();
-        
+
         var mockDietaryRepo = new Mock<IDietaryPreferenceRepository>();
         var mockAllergyRepo = new Mock<IAllergyRestrictionRepository>();
         _userBusinessRules = new UserBusinessRules(mockDietaryRepo.Object, mockAllergyRepo.Object);
@@ -47,7 +47,7 @@ public class GetUserProfileQueryHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         SetupHttpContext(userId);
-        
+
         var cachedProfile = new UserProfileResponse { Id = userId };
         _mockCacheService.Setup(c => c.GetAsync<UserProfileResponse>($"user-profile:{userId}")).ReturnsAsync(cachedProfile);
 
@@ -67,14 +67,14 @@ public class GetUserProfileQueryHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         SetupHttpContext(userId);
-        
+
         _mockCacheService.Setup(c => c.GetAsync<UserProfileResponse>($"user-profile:{userId}")).ReturnsAsync((UserProfileResponse)null!);
 
         var user = new User { Id = userId };
         _mockUserRepository.Setup(r => r.GetAsync(
-            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), 
-            It.IsAny<Func<IQueryable<User>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<User, object>>?>(), 
-            false, 
+            It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(),
+            It.IsAny<Func<IQueryable<User>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<User, object>>?>(),
+            false,
             false,
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);

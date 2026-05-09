@@ -46,10 +46,10 @@ public class UpdateDietaryPreferenceCommandHandlerTests
         // Arrange
         var command = new UpdateDietaryPreferenceCommand
         {
-            Id = Guid.NewGuid(),
-            Name = "Vegan Updated",
-            ExcludedIngredientIds = new List<Guid>(),
-            ExcludedCategoryIds = new List<Guid>()
+            Name = "Yeni Vegan",
+            Description = "Yeni açıklama",
+            ExcludedIngredientIds = new List<Guid> { Guid.NewGuid() },
+            ExcludedCategoryIds = new List<Guid> { Guid.NewGuid() }
         };
 
         var preference = new DietaryPreference { Id = command.Id, Name = "Vegan" };
@@ -66,11 +66,19 @@ public class UpdateDietaryPreferenceCommandHandlerTests
             .Setup(r => r.UpdateAsync(It.IsAny<DietaryPreference>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((DietaryPreference dp, CancellationToken _) => dp);
 
+        _mockIngredientRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Ingredient, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedIngredientIds.Count);
+
+        _mockCategoryRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExcludedCategoryIds.Count);
+
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().Be(DietaryPreferenceMessages.DietaryPreferenceUpdatedSuccessfully);
-        _mockDietaryPreferenceRepository.Verify(r => r.UpdateAsync(It.Is<DietaryPreference>(dp => dp.Name == "Vegan Updated"), It.IsAny<CancellationToken>()), Times.Once);
+        _mockDietaryPreferenceRepository.Verify(r => r.UpdateAsync(It.Is<DietaryPreference>(dp => dp.Name == "Yeni Vegan"), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
