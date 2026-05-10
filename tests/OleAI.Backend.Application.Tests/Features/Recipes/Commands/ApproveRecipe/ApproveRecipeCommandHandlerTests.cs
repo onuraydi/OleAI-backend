@@ -3,6 +3,7 @@ using Moq;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
+using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
@@ -14,14 +15,16 @@ namespace OleAI.Backend.Application.Tests.Features.Recipes.Commands.ApproveRecip
 public class ApproveRecipeCommandHandlerTests
 {
     private readonly Mock<IRecipeRepository> _mockRecipeRepository;
+    private readonly Mock<IAiRecommendationService> _mockAiService;
     private readonly RecipeBusinessRules _rules;
     private readonly ApproveRecipeCommandHandler _handler;
 
     public ApproveRecipeCommandHandlerTests()
     {
         _mockRecipeRepository = new Mock<IRecipeRepository>();
+        _mockAiService = new Mock<IAiRecommendationService>();
         _rules = new RecipeBusinessRules(Mock.Of<IIngredientRepository>(), Mock.Of<IRecipeCommentRepository>());
-        _handler = new ApproveRecipeCommandHandler(_mockRecipeRepository.Object, _rules);
+        _handler = new ApproveRecipeCommandHandler(_mockRecipeRepository.Object, _rules, _mockAiService.Object);
     }
 
     [Fact]

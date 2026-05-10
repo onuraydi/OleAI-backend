@@ -53,23 +53,26 @@ namespace OleAI.Backend.Application.Features.Users.Queries.GetRecommendation
                             .ThenInclude(ar => ar.ExcludedCategories)
                                 .ThenInclude(ec => ec.Category)
                     .Include(u => u.UserDislikedIngredients)
-                        .ThenInclude(udi => udi.Ingredient),
+                        .ThenInclude(udi => udi.Ingredient)
+                    .Include(u => u.UserIngredients)
+                        .ThenInclude(ui => ui.Ingredient)
+                    .Include(u => u.Interactions),
                 enableTracking: false,
                 cancellationToken: cancellationToken);
 
             _userBusinessRules.CheckIfUserExists(user);
 
-            // Entity → AiRecommendationPayload mapping
-            var payload = MapToPayload(userId, user!);
+            // Entity -> AiRecommendationPayload mapping
+            var payload = MapToPayload(userId, user!, request.Mode);
 
             return await _aiRecommendationService.GetRecommendationsAsync(payload, cancellationToken);
         }
 
         /// <summary>
         /// Kullanıcının diyet tercihleri ve alerjilerinden, AI motorunun beklediği düz listeye (flat list) dönüştürür.
-        /// Hem diyet hem alerji kısıtlarından gelen dışlama listeleri birleştirilir ve tekrar eden öğeler elenir.
+        /// Hem diyet hem alerji kısıtlarından gelen dışlama listeleri birleştirilir ve tekrar eden üyeler elenir.
         /// </summary>
-        private static AiRecommendationPayload MapToPayload(Guid userId, Domain.Entities.User user)
+        private static AiRecommendationPayload MapToPayload(Guid userId, Domain.Entities.User user, RecommendationMode mode)
         {
             var excludedIngredients = new HashSet<string>();
             var excludedCategories = new HashSet<string>();
@@ -103,14 +106,24 @@ namespace OleAI.Backend.Application.Features.Users.Queries.GetRecommendation
             return new AiRecommendationPayload
             {
                 UserId = userId,
+                PantryItems = user.UserIngredients
+                    .Where(ui => ui.Ingredient != null)
+                    .Select(ui => new PantryItemDto { Id = ui.Ingredient!.Id, Name = ui.Ingredient.Name })
+                    .ToList(),
+                Interactions = user.Interactions
+                    .Select(i => new RecipeInteractionDto
+                    {
+                        RecipeId = i.RecipeId,
+                        InteractionType = i.IsLiked ? "like" : (i.IsDisliked ? "dislike" : "save"),
+                        InteractionDate = DateTime.UtcNow // Backend needs to track this properly in DB
+                    })
+                    .ToList(),
                 DietaryPreferences = user.UserDietaryPreferences
                     .Select(udp => udp.DietaryPreference.Name)
                     .ToList(),
-                Allergies = user.UserAllergies
-                    .Select(ua => ua.AllergyRestriction.Name)
-                    .ToList(),
                 ExcludedIngredients = excludedIngredients.ToList(),
-                ExcludedCategories = excludedCategories.ToList()
+                ExcludedCategories = excludedCategories.ToList(),
+                Mode = mode.ToString().ToLower()
             };
         }
     }

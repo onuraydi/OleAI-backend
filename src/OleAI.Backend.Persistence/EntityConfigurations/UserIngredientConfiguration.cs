@@ -22,6 +22,16 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
                 .IsUnique()
                 .HasFilter("[IngredientId] IS NOT NULL")
                 .HasDatabaseName("UK_UserIngredients_UserId_IngredientId");
+
+            builder.HasOne(ui => ui.User)
+                .WithMany(u => u.UserIngredients)
+                .HasForeignKey(ui => ui.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(ui => ui.Ingredient)
+                .WithMany(i => i.UserIngredients)
+                .HasForeignKey(ui => ui.IngredientId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

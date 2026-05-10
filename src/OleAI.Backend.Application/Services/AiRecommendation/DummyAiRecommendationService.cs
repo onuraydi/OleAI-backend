@@ -13,5 +13,16 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
             // Stub: Boş öneri listesi döner.
             return Task.FromResult(new AiRecommendationResponse());
         }
+
+        public Task SyncRecipeAsync(
+            Guid recipeId,
+            string title,
+            string ingredients,
+            string? category = null,
+            List<string>? tags = null,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 }
