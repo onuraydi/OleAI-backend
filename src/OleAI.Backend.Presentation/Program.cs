@@ -108,6 +108,10 @@ builder.Services.AddSwaggerGen(opt =>
         }
     });
 
+    // XML açıklamalarını Swagger'a ekle
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, xmlFile);
+    opt.IncludeXmlComments(xmlPath);
 });
 
 // JWT Configuration

@@ -73,9 +73,9 @@ namespace OleAI.Backend.Presentation.Controllers
         /// Kullanıcının diyet tercihleri ve alerjilerine göre AI destekli kişiselleştirilmiş tarif önerileri alır.
         /// </summary>
         [HttpGet("me/recommendations")]
-        public async Task<IActionResult> GetRecommendations()
+        public async Task<IActionResult> GetRecommendations([FromQuery] GetRecommendationQuery query)
         {
-            var result = await Mediator.Send(new GetRecommendationQuery());
+            var result = await Mediator.Send(query);
             return Ok(result);
         }
     }

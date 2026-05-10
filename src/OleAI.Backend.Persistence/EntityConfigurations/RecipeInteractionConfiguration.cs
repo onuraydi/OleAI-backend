@@ -25,7 +25,7 @@ public class RecipeInteractionConfiguration : IEntityTypeConfiguration<RecipeInt
             .OnDelete(DeleteBehavior.Cascade); // Tarif silinirse etkileşimler de silinsin
 
         builder.HasOne(i => i.User)
-            .WithMany()
+            .WithMany(u => u.Interactions)
             .HasForeignKey(i => i.UserId)
             .OnDelete(DeleteBehavior.Restrict);
     }

@@ -8,6 +8,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.DeleteComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
+using OleAI.Backend.Application.Features.Recipes.Commands.SyncAllToAi;
 using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
@@ -18,6 +19,7 @@ using OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Presentation.ModelBinders;
 
@@ -78,6 +80,18 @@ public class RecipesController : BaseController
     {
         command.Id = id;
         var resultMessage = await Mediator.Send(command);
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Veritabanındaki tüm onaylanmış tarifleri AI motoruna senkronize eder.
+    /// Genellikle ilk kurulumda veya veri tutarsızlığı durumunda manuel olarak kullanılır.
+    /// </summary>
+    [HttpPost("sync-all-to-ai")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> SyncAllToAi()
+    {
+        var resultMessage = await Mediator.Send(new SyncAllToAiCommand());
         return Ok(new { Message = resultMessage });
     }
 
@@ -159,6 +173,17 @@ public class RecipesController : BaseController
     public async Task<IActionResult> GetDetail([FromRoute] Guid id)
     {
         var result = await Mediator.Send(new GetRecipeDetailQuery { Id = id });
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// AI motorunun başlangıçta tüm tarifleri çekmesi için kullanılan özel endpoint.
+    /// </summary>
+    [HttpGet("ai-sync")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetForAi()
+    {
+        var result = await Mediator.Send(new GetRecipesForAiQuery());
         return Ok(result);
     }
 

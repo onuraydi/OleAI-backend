@@ -64,13 +64,16 @@ namespace OleAI.Backend.Application
 
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
             services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+            services.Configure<AiServiceSettings>(configuration.GetSection("AiService"));
+
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();
+            services.AddHttpClient<IAiRecommendationService, HttpAiRecommendationService>();
+            services.AddHttpClient<IUserProfileVectorService, HttpUserProfileVectorService>();
+
             services.AddScoped<IImageService, CloudinaryImageManager>();
-            services.AddScoped<IUserProfileVectorService, DummyUserProfileVectorService>();
             services.AddScoped<UserBusinessRules>();
             services.AddScoped<DietaryPreferenceBusinessRules>();
             services.AddScoped<AllergyRestrictionBusinessRules>();
-            services.AddScoped<IAiRecommendationService, DummyAiRecommendationService>();
 
             return services;
         }

@@ -107,13 +107,15 @@ public class UsersControllerTests
     [Fact]
     public async Task GetRecommendations_ShouldSendQuery_AndReturnOk()
     {
+        var query = new OleAI.Backend.Application.Features.Users.Queries.GetRecommendation.GetRecommendationQuery();
         var response = new OleAI.Backend.Application.Services.AiRecommendation.AiRecommendationResponse();
         _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Queries.GetRecommendation.GetRecommendationQuery>(), default)).ReturnsAsync(response);
 
-        var result = await _controller.GetRecommendations();
+        var result = await _controller.GetRecommendations(query);
 
         var okResult = result as OkObjectResult;
         okResult.Should().NotBeNull();
         okResult!.Value.Should().Be(response);
     }
 }
+

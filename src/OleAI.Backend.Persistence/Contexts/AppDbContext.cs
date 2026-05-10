@@ -32,6 +32,12 @@ public class AppDbContext : DbContext
     public DbSet<UserAllergy> UserAllergies { get; set; }
     public DbSet<UserDislikedIngredient> UserDislikedIngredients { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        base.OnConfiguring(optionsBuilder);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // çalışan Assembly (proje) içindeki tüm IEntityTypeConfiguration arayüzünü uygulayan

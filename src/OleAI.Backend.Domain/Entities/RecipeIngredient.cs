@@ -8,6 +8,7 @@ public class RecipeIngredient : Entity<Guid>
     public Guid IngredientId { get; set; }
     public decimal Amount { get; set; }
     public int UnitId { get; set; }
+    public virtual Ingredient Ingredient { get; set; } = null!;
 
     public RecipeIngredient() { }
 
