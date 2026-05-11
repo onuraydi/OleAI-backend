@@ -24,6 +24,17 @@ Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS Config
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("OleAI-Web",
+        policy => policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
+});
+
 // Cloudflare / Proxy IP Resolution
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -151,6 +162,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("OleAI-Web");
 
 app.UseHttpsRedirection();
 

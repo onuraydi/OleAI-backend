@@ -31,6 +31,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword
                     cancellationToken: cancellationToken
                 );
 
+
             if (user != null)
             {
                 _authBusinessRules.UserShouldBeActive(user);
