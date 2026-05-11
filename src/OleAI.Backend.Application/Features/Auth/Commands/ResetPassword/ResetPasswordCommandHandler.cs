@@ -29,7 +29,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.ResetPassword
                     cancellationToken: cancellationToken
                 );
 
-            string redisKey = $"OTP:Reset{command.Request.Email}";
+            string redisKey = $"OTP:Reset:{command.Request.Email}";
             var cachedCode = await _cacheService.GetAsync<string>(redisKey);
 
             await _authBusinessRules.ValidateAndTrackOtpAsync(_cacheService, redisKey, cachedCode!, command.Request.OtpCode);

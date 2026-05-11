@@ -32,7 +32,7 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers
         public override Task HandleException(BusinessException businessException)
         {
             Response.StatusCode = StatusCodes.Status400BadRequest;
-            var detail = new BusinessProblemDetails(businessException.Message);
+            var detail = new BusinessProblemDetails(businessException.Message, businessException.ErrorCode);
             return WriteAsJsonAsync(Response, detail);
         }
 
@@ -74,7 +74,11 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Handlers
         private static Task WriteAsJsonAsync<T>(HttpResponse response, T value)
         {
             response.ContentType = "application/json";
-            return JsonSerializer.SerializeAsync(response.Body, value);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            return JsonSerializer.SerializeAsync(response.Body, value, options);
         }
     }
 }
