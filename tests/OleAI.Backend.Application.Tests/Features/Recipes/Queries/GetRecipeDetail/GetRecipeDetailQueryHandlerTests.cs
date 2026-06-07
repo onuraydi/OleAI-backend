@@ -28,10 +28,12 @@ public class GetRecipeDetailQueryHandlerTests
         _mockRecipeRepository = new Mock<IRecipeRepository>();
         _mockMapper = new Mock<IMapper>();
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
-        _rules = new RecipeBusinessRules(Mock.Of<IIngredientRepository>(), Mock.Of<IRecipeCommentRepository>());
+        var recipeCommentRepositoryMock = new Mock<IRecipeCommentRepository>();
+        _rules = new RecipeBusinessRules(Mock.Of<IIngredientRepository>(), recipeCommentRepositoryMock.Object);
 
         _handler = new GetRecipeDetailQueryHandler(
             _mockRecipeRepository.Object,
+            recipeCommentRepositoryMock.Object,
             _mockMapper.Object,
             _rules,
             _mockHttpContextAccessor.Object);

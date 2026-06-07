@@ -22,12 +22,18 @@ namespace OleAI.Backend.Application.Services.Inventory
 
                     if (userIngredient.IsDepleted)
                     {
-                        itemsToAddToShoppingList.Add(recipeIngredient.IngredientId);
+                       if (recipeIngredient.IngredientId.HasValue)
+                       {
+                           itemsToAddToShoppingList.Add(recipeIngredient.IngredientId.Value);
+                       }
                     }
                 }
                 else
                 {
-                    itemsToAddToShoppingList.Add(recipeIngredient.IngredientId);
+                    if (recipeIngredient.IngredientId.HasValue)
+                    {
+                        itemsToAddToShoppingList.Add(recipeIngredient.IngredientId.Value);
+                    }
                 }
             }
             return itemsToAddToShoppingList;

@@ -115,7 +115,7 @@ namespace OleAI.Backend.Persistence.Contexts
                     var selectedIngredients = allIngredients.OrderBy(x => random.Next()).Take(random.Next(3, 7)).ToList();
                     foreach (var ing in selectedIngredients)
                     {
-                        recipe.AddIngredient(ing.Id, random.Next(1, 500), (int)MeasurementUnit.Gram);
+                        recipe.AddIngredient(ing.Id, null, random.Next(1, 500), (int)MeasurementUnit.Gram);
                     }
                     recipe.AddStep(1, "Malzemeleri hazırla.");
                     recipe.AddStep(2, "Hepsini karıştır ve pişir.");
