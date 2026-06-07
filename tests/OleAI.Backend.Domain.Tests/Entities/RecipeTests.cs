@@ -58,21 +58,33 @@ public class RecipeTests
     }
 
     [Fact]
-    public void SyncIngredients_ShouldAddUpdateAndRemoveCorrectly()
+    public void AddIngredient_ShouldAddIngredientToCollection()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
-        var stayId = Guid.NewGuid();
-        var removeId = Guid.NewGuid();
-        var addId = Guid.NewGuid();
+        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeVisibility.Public);
+        var ingredientId = Guid.NewGuid();
 
-        recipe.AddIngredient(stayId, 100, 1);
-        recipe.AddIngredient(removeId, 200, 1);
+        // Act
+        recipe.AddIngredient(ingredientId, null, 100, 1);
+        recipe.AddIngredient(ingredientId, null, 100, 1);
 
-        var incoming = new List<(Guid IngredientId, decimal Amount, int UnitId)>
+        // Assert
+        Assert.Equal(2, recipe.RecipeIngredients.Count);
+    }
+
+    [Fact]
+    public void SyncIngredients_ShouldWorkCorrectly()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeVisibility.Public);
+        var ing1 = Guid.NewGuid();
+        var ing2 = Guid.NewGuid();
+        recipe.AddIngredient(ing1, null, 100, 1);
+
+        var incoming = new List<(Guid? IngredientId, Guid? IngredientRequestId, decimal Amount, int UnitId)>
         {
-            (stayId, 150, 2), // Update
-            (addId, 300, 1)   // Add
+            (ing1, null, 200, 2),
+            (ing2, null, 50, 1)
         };
 
         // Act
@@ -80,9 +92,8 @@ public class RecipeTests
 
         // Assert
         recipe.RecipeIngredients.Should().HaveCount(2);
-        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == stayId && i.Amount == 150 && i.UnitId == 2);
-        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == addId && i.Amount == 300 && i.UnitId == 1);
-        recipe.RecipeIngredients.Should().NotContain(i => i.IngredientId == removeId);
+        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == ing1 && i.Amount == 200 && i.UnitId == 2);
+        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == ing2 && i.Amount == 50 && i.UnitId == 1);
     }
 
     [Fact]

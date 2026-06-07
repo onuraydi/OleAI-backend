@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.ImageStorage;
@@ -14,23 +15,27 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
     public class CreateRecipeCommandHandler : IRequestHandler<CreateRecipeCommand, string>
     {
         private readonly IRecipeRepository _recipeRepository;
+        private readonly IIngredientRequestRepository _ingredientRequestRepository;
         private readonly IImageService _imageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly RecipeBusinessRules _recipeBusinessRules;
         private readonly ILocalLlmService _localLlmService;
+        private readonly IMediator _mediator;
 
-        public CreateRecipeCommandHandler(IRecipeRepository recipeRepository, IImageService imageService, IHttpContextAccessor httpContextAccessor, RecipeBusinessRules recipeBusinessRules, ILocalLlmService localLlmService)
+        public CreateRecipeCommandHandler(IRecipeRepository recipeRepository, IIngredientRequestRepository ingredientRequestRepository, IImageService imageService, IHttpContextAccessor httpContextAccessor, RecipeBusinessRules recipeBusinessRules, ILocalLlmService localLlmService, IMediator mediator)
         {
             _recipeRepository = recipeRepository;
+            _ingredientRequestRepository = ingredientRequestRepository;
             _imageService = imageService;
             _httpContextAccessor = httpContextAccessor;
             _recipeBusinessRules = recipeBusinessRules;
             _localLlmService = localLlmService;
+            _mediator = mediator;
         }
 
         public async Task<string> Handle(CreateRecipeCommand command, CancellationToken cancellationToken)
         {
-            var requestedIngredientIds = command.Ingredients.Select(i => i.IngredientId).Distinct().ToList();
+            var requestedIngredientIds = command.Ingredients.Where(i => i.IngredientId.HasValue).Select(i => i.IngredientId!.Value).Distinct().ToList();
             await _recipeBusinessRules.CheckIfIngredientsExistAsync(requestedIngredientIds, cancellationToken);
 
             var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -44,9 +49,35 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
             var mainImageUpload = await _imageService.UploadAsync(command.CreateRecipeRequest.MainImage, "recipes/main", cancellationToken);
             recipe.AddImage(mainImageUpload.Url, mainImageUpload.PublicId, isMain: true);
 
+            bool hasPendingIngredients = false;
+            var requestsToAdd = new List<IngredientRequest>();
+            var eventsToPublish = new List<IngredientRequestedEvent>();
+
             foreach (var ingredientDto in command.Ingredients)
             {
-                recipe.AddIngredient(ingredientDto.IngredientId, ingredientDto.Amount, ingredientDto.UnitId);
+                if (ingredientDto.IngredientId.HasValue)
+                {
+                    recipe.AddIngredient(ingredientDto.IngredientId.Value, null, ingredientDto.Amount, ingredientDto.UnitId);
+                }
+                else if (!string.IsNullOrEmpty(ingredientDto.RequestedName))
+                {
+                    hasPendingIngredients = true;
+                    var ingredientRequest = new IngredientRequest(Guid.NewGuid(), userId, ingredientDto.RequestedName, ingredientDto.SuggestedCategoryId);
+                    requestsToAdd.Add(ingredientRequest);
+                    
+                    recipe.AddIngredient(null, ingredientRequest.Id, ingredientDto.Amount, ingredientDto.UnitId);
+                    
+                    eventsToPublish.Add(new IngredientRequestedEvent
+                    {
+                        RequestId = ingredientRequest.Id,
+                        RequestedName = ingredientRequest.RequestedName
+                    });
+                }
+            }
+
+            if (requestsToAdd.Any())
+            {
+                await _ingredientRequestRepository.AddRangeAsync(requestsToAdd, cancellationToken);
             }
 
             var orderedSteps = command.Steps.OrderBy(s => s.StepNumber).ToList();
@@ -79,6 +110,11 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
             }
 
             await _recipeRepository.AddAsync(recipe);
+
+            foreach (var evt in eventsToPublish)
+            {
+                await _mediator.Publish(evt, cancellationToken);
+            }
 
             if (recipe.Status == RecipeStatus.Rejected)
                 return RecipeMessages.RecipeRejectedDueToSystemStandards;

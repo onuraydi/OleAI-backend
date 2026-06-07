@@ -12,7 +12,9 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
 
             builder.Property(r => r.RequestedName).HasColumnName("RequestedName").IsRequired().HasMaxLength(150);
             builder.Property(r => r.Status).HasColumnName("Status").IsRequired();
+            builder.Property(r => r.CategoryId).HasColumnName("CategoryId").IsRequired(false);
             builder.Property(r => r.LlmAnalysisResult).HasColumnName("LlmAnalysisResult").HasColumnType("nvarchar(max)"); // JSON tutacağı için
+            builder.HasOne(r => r.Category).WithMany().HasForeignKey(r => r.CategoryId).OnDelete(DeleteBehavior.SetNull);
 
             // Adminlerin bekleyen talepleri hızlı görmesi için statüye index
             builder.HasIndex(r => r.Status).HasDatabaseName("IX_IngredientRequests_Status");

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
@@ -41,10 +42,12 @@ public class UpdateRecipeCommandHandlerTests
 
         _handler = new UpdateRecipeCommandHandler(
             _mockRecipeRepository.Object,
+            new Mock<IIngredientRequestRepository>().Object,
             _rules,
             _mockHttpContextAccessor.Object,
             _mockLocalLlmService.Object,
-            _mockImageService.Object);
+            _mockImageService.Object,
+            new Mock<IMediator>().Object);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
@@ -39,10 +40,12 @@ public class CreateRecipeCommandHandlerTests
 
         _handler = new CreateRecipeCommandHandler(
             _mockRecipeRepository.Object,
+            new Mock<IIngredientRequestRepository>().Object,
             _mockImageService.Object,
             _mockHttpContextAccessor.Object,
             _rules,
-            _mockLocalLlmService.Object);
+            _mockLocalLlmService.Object,
+            new Mock<IMediator>().Object);
     }
 
     [Fact]

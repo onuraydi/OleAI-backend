@@ -47,6 +47,7 @@ namespace OleAI.Backend.Presentation.Controllers
 
             var result = await Mediator.Send(command);
 
+            SetAccessTokenToCookie(result.AccessToken.Token);
             SetRefreshTokenToCookie(result.RefreshToken);
 
             return Ok(result);
@@ -72,6 +73,7 @@ namespace OleAI.Backend.Presentation.Controllers
 
             var result = await Mediator.Send(command);
 
+            SetAccessTokenToCookie(result.AccessToken.Token);
             SetRefreshTokenToCookie(result.RefreshToken);
 
             return Ok(result.AccessToken);
@@ -146,6 +148,7 @@ namespace OleAI.Backend.Presentation.Controllers
 
             var result = await Mediator.Send(command);
 
+            Response.Cookies.Delete("accessToken");
             Response.Cookies.Delete("refreshToken");
 
             return Ok(result);
@@ -160,6 +163,19 @@ namespace OleAI.Backend.Presentation.Controllers
             return HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "0.0.0.0";
         }
 
+        private void SetAccessTokenToCookie(string accessToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            };
+
+            Response.Cookies.Append("accessToken", accessToken, cookieOptions);
+        }
+
         private void SetRefreshTokenToCookie(RefreshToken refreshToken)
         {
             var cookieOptions = new CookieOptions
@@ -167,7 +183,7 @@ namespace OleAI.Backend.Presentation.Controllers
                 HttpOnly = true,
                 Expires = refreshToken.Expiration,
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.None
             };
 
             Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);

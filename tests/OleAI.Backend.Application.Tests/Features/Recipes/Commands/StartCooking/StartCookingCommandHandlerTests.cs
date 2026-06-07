@@ -63,7 +63,9 @@ public class StartCookingCommandHandlerTests
         var userId = Guid.NewGuid();
         SetupUser(userId);
         var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
-        recipe.AddIngredient(Guid.NewGuid(), 100, 1); // 100g of something
+        recipe.AddIngredient(Guid.NewGuid(), null, 100, 1); // 100g of something
+        recipe.AddStep(1, "Start the process");
+        recipe.AddStep(2, "Finish the process");
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);

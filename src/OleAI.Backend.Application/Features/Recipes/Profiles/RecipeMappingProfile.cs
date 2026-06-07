@@ -27,8 +27,18 @@ public class RecipeMappingProfile : Profile
             .ForMember(dest => dest.Ingredients, opt => opt.MapFrom(src => src.RecipeIngredients))
             .ForMember(dest => dest.Steps, opt => opt.MapFrom(src => src.RecipeSteps))
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.RecipeImages));
-        CreateMap<RecipeIngredient, RecipeIngredientResponse>();
+            
+        CreateMap<RecipeIngredient, RecipeIngredientResponse>()
+            .ForMember(dest => dest.IngredientName, opt => opt.MapFrom(src => src.Ingredient.Name))
+            .ForMember(dest => dest.UnitFamily, opt => opt.MapFrom(src => (int)src.Ingredient.UnitFamily));
         CreateMap<RecipeStep, RecipeStepResponse>();
         CreateMap<RecipeImage, RecipeImageResponse>();
+        
+        CreateMap<RecipeComment, RecipeCommentResponse>()
+            .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName))
+            .ForMember(dest => dest.ProfileImageUrl, opt => opt.MapFrom(src => (string?)null))
+            .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.Replies));
+
+        CreateMap<Paginate<RecipeComment>, Paginate<RecipeCommentResponse>>();
     }
 }

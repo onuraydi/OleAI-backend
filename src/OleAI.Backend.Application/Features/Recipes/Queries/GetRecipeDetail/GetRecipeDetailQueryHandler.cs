@@ -13,17 +13,20 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
 public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery, RecipeDetailResponse>
 {
     private readonly IRecipeRepository _recipeRepository;
+    private readonly IRecipeCommentRepository _recipeCommentRepository;
     private readonly IMapper _mapper;
     private readonly RecipeBusinessRules _recipeBusinessRules;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public GetRecipeDetailQueryHandler(
         IRecipeRepository recipeRepository,
+        IRecipeCommentRepository recipeCommentRepository,
         IMapper mapper,
         RecipeBusinessRules recipeBusinessRules,
         IHttpContextAccessor httpContextAccessor)
     {
         _recipeRepository = recipeRepository;
+        _recipeCommentRepository = recipeCommentRepository;
         _mapper = mapper;
         _recipeBusinessRules = recipeBusinessRules;
         _httpContextAccessor = httpContextAccessor;
@@ -34,9 +37,9 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
         var recipe = await _recipeRepository.GetAsync(
             predicate: r => r.Id == request.Id,
             include: q => q.Include(r => r.RecipeIngredients)
+                               .ThenInclude(ri => ri.Ingredient)
                            .Include(r => r.RecipeSteps)
                            .Include(r => r.RecipeImages)
-                           .Include(r => r.Comments)
                            .Include(r => r.Interactions),
             enableTracking: false,
             cancellationToken: cancellationToken);
@@ -54,13 +57,15 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
 
         var response = _mapper.Map<RecipeDetailResponse>(recipe);
 
-        response.Statistics = new RecipeStatisticsResponse
-        {
-            TotalComments = recipe!.Comments?.Count ?? 0,
-            TotalLikes = recipe.Interactions?.Count(i => i.IsLiked) ?? 0,
-            TotalDislikes = recipe.Interactions?.Count(i => i.IsDisliked) ?? 0,
-            TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0
-        };
+        var totalComments = await _recipeCommentRepository.GetCountAsync(c => c.RecipeId == recipe.Id, cancellationToken: cancellationToken);
+
+            response.Statistics = new RecipeStatisticsResponse
+            {
+                TotalComments = totalComments,
+                TotalLikes = recipe.Interactions?.Count(i => i.IsLiked) ?? 0,
+                TotalDislikes = recipe.Interactions?.Count(i => i.IsDisliked) ?? 0,
+                TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0
+            };
 
         var currentUserIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrWhiteSpace(currentUserIdClaim))

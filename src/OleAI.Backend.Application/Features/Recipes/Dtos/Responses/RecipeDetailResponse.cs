@@ -45,4 +45,17 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
         public string Username { get; set; } = string.Empty;
         public string? ProfileImageUrl { get; set; }
     }
+
+    public class RecipeCommentResponse
+    {
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string? ProfileImageUrl { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public Guid? ParentCommentId { get; set; }
+        public DateTime CreatedDate { get; set; }
+        
+        public List<RecipeCommentResponse> Replies { get; set; } = new();
+    }
 }

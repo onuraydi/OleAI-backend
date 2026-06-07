@@ -232,6 +232,23 @@ public class RecipesController : BaseController
     }
 
     /// <summary>
+    /// Tarife ait ana yorumları ve onlara verilmiş cevapları sayfalamalı olarak getirir.
+    /// </summary>
+    [HttpGet("{id}/comments")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetComments([FromRoute] Guid id, [FromQuery] int page = 0, [FromQuery] int size = 10)
+    {
+        var query = new OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeComments.GetRecipeCommentsQuery 
+        { 
+            RecipeId = id, 
+            Page = page, 
+            Size = size 
+        };
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Tarife ana yorum veya başka bir yoruma cevap ekler.
     /// </summary>
     [HttpPost("{id}/comments")]

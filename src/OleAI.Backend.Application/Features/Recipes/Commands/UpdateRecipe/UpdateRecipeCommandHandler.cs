@@ -2,11 +2,13 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
@@ -14,23 +16,29 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, string>
 {
     private readonly IRecipeRepository _recipeRepository;
+    private readonly IIngredientRequestRepository _ingredientRequestRepository;
     private readonly RecipeBusinessRules _recipeBusinessRules;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILocalLlmService _localLlmService;
     private readonly IImageService _imageService;
+    private readonly IMediator _mediator;
 
     public UpdateRecipeCommandHandler(
         IRecipeRepository recipeRepository,
+        IIngredientRequestRepository ingredientRequestRepository,
         RecipeBusinessRules recipeBusinessRules,
         IHttpContextAccessor httpContextAccessor,
         ILocalLlmService localLlmService,
-        IImageService imageService)
+        IImageService imageService,
+        IMediator mediator)
     {
         _recipeRepository = recipeRepository;
+        _ingredientRequestRepository = ingredientRequestRepository;
         _recipeBusinessRules = recipeBusinessRules;
         _httpContextAccessor = httpContextAccessor;
         _localLlmService = localLlmService;
         _imageService = imageService;
+        _mediator = mediator;
     }
 
     public async Task<string> Handle(UpdateRecipeCommand command, CancellationToken cancellationToken)
@@ -47,12 +55,41 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         _recipeBusinessRules.CheckIfRecipeExists(recipe);
         _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
 
-        var ingredientIds = command.Ingredients.Select(i => i.IngredientId).ToList();
+        var ingredientIds = command.Ingredients.Where(i => i.IngredientId.HasValue).Select(i => i.IngredientId!.Value).ToList();
         await _recipeBusinessRules.CheckIfIngredientsExistAsync(ingredientIds, cancellationToken);
 
         recipe!.UpdateDetails(command.Request.Title, command.Request.Description, command.Request.Visibility);
 
-        var ingredientTuples = command.Ingredients.Select(i => (i.IngredientId, i.Amount, i.UnitId));
+        var ingredientTuples = new List<(Guid? IngredientId, Guid? IngredientRequestId, decimal Amount, int UnitId)>();
+        var requestsToAdd = new List<IngredientRequest>();
+        var eventsToPublish = new List<IngredientRequestedEvent>();
+
+        foreach (var ingredientDto in command.Ingredients)
+        {
+            if (ingredientDto.IngredientId.HasValue)
+            {
+                ingredientTuples.Add((ingredientDto.IngredientId.Value, null, ingredientDto.Amount, ingredientDto.UnitId));
+            }
+            else if (!string.IsNullOrEmpty(ingredientDto.RequestedName))
+            {
+                var ingredientRequest = new IngredientRequest(Guid.NewGuid(), userId, ingredientDto.RequestedName, ingredientDto.SuggestedCategoryId);
+                requestsToAdd.Add(ingredientRequest);
+                
+                ingredientTuples.Add((null, ingredientRequest.Id, ingredientDto.Amount, ingredientDto.UnitId));
+                
+                eventsToPublish.Add(new IngredientRequestedEvent
+                {
+                    RequestId = ingredientRequest.Id,
+                    RequestedName = ingredientRequest.RequestedName
+                });
+            }
+        }
+
+        if (requestsToAdd.Any())
+        {
+            await _ingredientRequestRepository.AddRangeAsync(requestsToAdd, cancellationToken);
+        }
+        
         recipe.SyncIngredients(ingredientTuples);
 
         var stepTuples = command.Steps.OrderBy(s => s.StepNumber).Select(s => (s.StepNumber, s.Instruction));
@@ -91,6 +128,11 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         }
 
         await _recipeRepository.UpdateAsync(recipe);
+
+        foreach (var evt in eventsToPublish)
+        {
+            await _mediator.Publish(evt, cancellationToken);
+        }
 
         return recipe.Status == RecipeStatus.Rejected
             ? RecipeMessages.RecipeUpdatedButRejectedDueToSpam

@@ -21,7 +21,16 @@ public class CreateRecipeCommandValidator : AbstractValidator<CreateRecipeComman
 
         RuleForEach(x => x.Ingredients).ChildRules(ingredient =>
         {
-            ingredient.RuleFor(i => i.IngredientId).NotEmpty();
+            ingredient.RuleFor(i => i.IngredientId)
+                .NotEmpty()
+                .When(i => string.IsNullOrEmpty(i.RequestedName))
+                .WithMessage("Kayıtlı bir malzeme seçilmeli veya yeni bir malzeme önerilmelidir.");
+
+            ingredient.RuleFor(i => i.RequestedName)
+                .NotEmpty()
+                .When(i => !i.IngredientId.HasValue)
+                .WithMessage("Kayıtlı bir malzeme seçilmeli veya yeni bir malzeme önerilmelidir.");
+
             ingredient.RuleFor(i => i.Amount).GreaterThan(0).WithMessage("Miktar 0'dan büyük olmalıdır.");
         });
 

@@ -59,7 +59,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
             // Sistem olmayan bir ürünü kullanıcı serbest metinle yazdığı zaman // Direkt eklensin ancak onay bekliyor gözükmesin
             else
             {
-                var ingredientRequest = new IngredientRequest(Guid.NewGuid(), command.Request.UserId, command.Request.RequestedName!);
+                var ingredientRequest = new IngredientRequest(Guid.NewGuid(), command.Request.UserId, command.Request.RequestedName!, command.Request.SuggestedCategoryId);
                 await _ingredientRequestRepository.AddAsync(ingredientRequest, cancellationToken);
 
                 userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), command.Request.UserId, ingredientRequest.Id, command.Request.Quantity, command.Request.Unit, command.Request.ExpirationDate);

@@ -8,5 +8,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Dtos.Responses
         public string DisplayName { get; set; } = string.Empty; // Bulunan metin (Alias veya Master ad)
         public bool IsAlias { get; set; }
         public MeasurementCategory UnitFamily { get; set; }
+        public Guid CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
     }
 }

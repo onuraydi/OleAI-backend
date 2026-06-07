@@ -254,6 +254,10 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Property<string>("AdminNote")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CategoryId");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -281,6 +285,8 @@ namespace OleAI.Backend.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_IngredientRequests_Status");
@@ -471,7 +477,10 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("IngredientId")
+                    b.Property<Guid?>("IngredientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("IngredientRequestId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("RecipeId")
@@ -976,11 +985,18 @@ namespace OleAI.Backend.Persistence.Migrations
 
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.IngredientRequest", b =>
                 {
+                    b.HasOne("OleAI.Backend.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("OleAI.Backend.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("User");
                 });
@@ -1024,9 +1040,7 @@ namespace OleAI.Backend.Persistence.Migrations
                 {
                     b.HasOne("OleAI.Backend.Domain.Entities.Ingredient", "Ingredient")
                         .WithMany()
-                        .HasForeignKey("IngredientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IngredientId");
 
                     b.HasOne("OleAI.Backend.Domain.Entities.Recipe", null)
                         .WithMany("RecipeIngredients")
