@@ -28,6 +28,12 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Rules
             if (result != null) throw new BusinessException(CategoryMessages.CategoryAlreadyExistsMessage);
         }
 
+        public async Task CategoryNameCannotBeDuplicatedWhenUpdated(Guid id, string name)
+        {
+            var result = await _categoryRepository.GetAsync(c => c.Name.ToLower() == name.ToLower() && c.Id != id);
+            if (result != null) throw new BusinessException(CategoryMessages.CategoryAlreadyExistsMessage);
+        }
+
         public async Task CategoryCannotBeDeletedIfHasIngredients(Guid categoryId)
         {
             var hasIngredient = await _ingredientRepository.GetAsync(i => i.CategoryId == categoryId);
