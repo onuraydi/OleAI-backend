@@ -61,6 +61,7 @@ public class AddShoppingListItemCommandHandler
         ShoppingListItem newItem;
         string responseIngredientName;
         string responseCategoryName;
+        string responseCategoryIconName;
 
         if (req.IngredientId.HasValue)
         {
@@ -100,6 +101,7 @@ public class AddShoppingListItemCommandHandler
 
             responseIngredientName = cachedIngredient.Name;
             responseCategoryName = cachedIngredient.CategoryName;
+            responseCategoryIconName = cachedIngredient.CategoryIconName;
         }
         else
         {
@@ -114,6 +116,7 @@ public class AddShoppingListItemCommandHandler
 
             responseIngredientName = ingredientRequest.RequestedName!;
             responseCategoryName = "DİĞER";
+            responseCategoryIconName = "fastfood";
         }
 
         await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
@@ -134,6 +137,7 @@ public class AddShoppingListItemCommandHandler
             IngredientRequestId = newItem.IngredientRequestId,
             IngredientName = responseIngredientName,
             CategoryName = responseCategoryName,
+            CategoryIconName = responseCategoryIconName,
             Quantity = newItem.Quantity,
             Unit = newItem.Unit,
             IsPurchased = newItem.IsPurchased

@@ -46,11 +46,13 @@ public class GetMyShoppingListQueryHandler
             {
                 dto.IngredientName = item.Ingredient.Name;
                 dto.CategoryName = item.Ingredient.Category?.Name ?? "DİĞER";
+                dto.CategoryIconName = item.Ingredient.Category?.IconName ?? "fastfood";
             }
             else if (item.IngredientRequestId.HasValue && item.IngredientRequest != null)
             {
                 dto.IngredientName = item.IngredientRequest.RequestedName;
                 dto.CategoryName = item.IngredientRequest.Category?.Name ?? "DİĞER";
+                dto.CategoryIconName = item.IngredientRequest.Category?.IconName ?? "fastfood";
             }
 
             responseList.Add(dto);

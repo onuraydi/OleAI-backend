@@ -98,6 +98,12 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("IconName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("IconName");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
