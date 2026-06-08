@@ -24,6 +24,7 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Queries.GetCat
             QueryOptions<Category> query = new QueryOptions<Category>();
             query.Size = 100;
             query.EnableTracking = false;
+            query.WithDeleted = true;
 
             var categories = await _categoryRepository.GetListAsync(query, cancellationToken);
 

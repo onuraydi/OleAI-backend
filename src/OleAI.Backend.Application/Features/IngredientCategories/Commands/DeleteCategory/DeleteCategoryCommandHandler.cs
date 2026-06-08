@@ -21,7 +21,9 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Commands.Delet
             var category = await _categoryRepository.GetAsync(c => c.Id == request.Id, cancellationToken: cancellationToken);
             _categoryBusinessRules.CategoryMustExistWhenRequested(category);
 
-            await _categoryBusinessRules.CategoryCannotBeDeletedIfHasIngredients(request.Id);
+            // Kullanıcı ısrarla bu hatayı almak istemediği ve soft-delete yapısı olduğu için, 
+            // kategorinin silinmesine izin veriyoruz. Eski malzemelerde kategori null dönebilir.
+            // await _categoryBusinessRules.CategoryCannotBeDeletedIfHasIngredients(request.Id);
 
             await _categoryRepository.DeleteAsync(category!);
             return CategoryMessages.DeletedCategoryMessage;
