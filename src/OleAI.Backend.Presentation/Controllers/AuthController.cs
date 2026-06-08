@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OleAI.Backend.Application.Features.Auth.Commands.AssignRole;
+using OleAI.Backend.Application.Features.Auth.Commands.BanUser;
 using OleAI.Backend.Application.Features.Auth.Commands.ChangePassword;
 using OleAI.Backend.Application.Features.Auth.Commands.ForgotPassword;
 using OleAI.Backend.Application.Features.Auth.Commands.Login;
@@ -131,6 +132,15 @@ namespace OleAI.Backend.Presentation.Controllers
         public async Task<IActionResult> UnlockUser([FromBody] UnlockUserRequest request)
         {
             var command = new UnlockUserCommand { Request = request };
+            var result = await Mediator.Send(command);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = AuthRoles.Admin)]
+        [HttpPost("ban-user")]
+        public async Task<IActionResult> BanUser([FromBody] BanUserRequest request)
+        {
+            var command = new BanUserCommand { Request = request };
             var result = await Mediator.Send(command);
             return Ok(result);
         }

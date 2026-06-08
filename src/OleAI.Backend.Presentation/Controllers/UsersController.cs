@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Users.Commands.UpdateUserAllergies;
 using OleAI.Backend.Application.Features.Users.Commands.UpdateUserPreferences;
 using OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile;
+using OleAI.Backend.Application.Features.Users.Queries.GetAdminUsers;
 using OleAI.Backend.Application.Features.Users.Queries.GetRecommendation;
 using OleAI.Backend.Application.Features.Users.Queries.GetUserProfile;
 
@@ -76,6 +78,17 @@ namespace OleAI.Backend.Presentation.Controllers
         public async Task<IActionResult> GetRecommendations([FromQuery] GetRecommendationQuery query)
         {
             var result = await Mediator.Send(query);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Sadece Admin rolüne sahip kullanıcıların tüm kullanıcı listesini (rolleri, kilit durumu vs.) getirmesini sağlar.
+        /// </summary>
+        [HttpGet("all")]
+        [Authorize(Roles = AuthRoles.Admin)]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var result = await Mediator.Send(new GetAdminUsersQuery());
             return Ok(result);
         }
     }
