@@ -63,7 +63,7 @@ public class ShoppingListEventHandler : INotificationHandler<IngredientDepletedE
 
         var defaultUnit = MeasurementUnitHelper.GetDefaultUnitForCategory(cachedIngredient.UnitFamily);
 
-        var newItem = new ShoppingListItem(
+        var newItem = ShoppingListItem.CreateStandard(
             userId: notification.UserId,
             ingredientId: cachedIngredient.Id,
             quantity: 1,

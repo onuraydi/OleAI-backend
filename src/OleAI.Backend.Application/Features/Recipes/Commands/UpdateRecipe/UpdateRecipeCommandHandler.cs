@@ -74,9 +74,9 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
             {
                 var ingredientRequest = new IngredientRequest(Guid.NewGuid(), userId, ingredientDto.RequestedName, ingredientDto.SuggestedCategoryId);
                 requestsToAdd.Add(ingredientRequest);
-                
+
                 ingredientTuples.Add((null, ingredientRequest.Id, ingredientDto.Amount, ingredientDto.UnitId));
-                
+
                 eventsToPublish.Add(new IngredientRequestedEvent
                 {
                     RequestId = ingredientRequest.Id,
@@ -89,7 +89,7 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         {
             await _ingredientRequestRepository.AddRangeAsync(requestsToAdd, cancellationToken);
         }
-        
+
         recipe.SyncIngredients(ingredientTuples);
 
         var stepTuples = command.Steps.OrderBy(s => s.StepNumber).Select(s => (s.StepNumber, s.Instruction));

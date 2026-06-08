@@ -69,10 +69,10 @@ public class ApproveRecipeCommandHandler : IRequestHandler<ApproveRecipeCommand,
                 if (req.Status == IngredientRequestStatus.Pending)
                 {
                     var recipeIng = pendingRecipeIngredients.First(ri => ri.IngredientRequestId == req.Id);
-                    
+
                     var unit = (MeasurementUnit)recipeIng.UnitId;
                     MeasurementCategory unitFamily = MeasurementCategory.Other;
-                    
+
                     if (MeasurementUnitHelper.GetUnitsForCategory(MeasurementCategory.Weight).Contains(unit))
                         unitFamily = MeasurementCategory.Weight;
                     else if (MeasurementUnitHelper.GetUnitsForCategory(MeasurementCategory.Volume).Contains(unit))

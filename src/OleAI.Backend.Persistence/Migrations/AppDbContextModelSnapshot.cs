@@ -496,6 +496,8 @@ namespace OleAI.Backend.Persistence.Migrations
 
                     b.HasIndex("IngredientId");
 
+                    b.HasIndex("IngredientRequestId");
+
                     b.HasIndex("RecipeId");
 
                     b.ToTable("RecipeIngredients", (string)null);
@@ -649,9 +651,13 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("IngredientId")
+                    b.Property<Guid?>("IngredientId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("IngredientId");
+
+                    b.Property<Guid?>("IngredientRequestId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("IngredientRequestId");
 
                     b.Property<bool>("IsPurchased")
                         .HasColumnType("bit")
@@ -675,6 +681,8 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IngredientId");
+
+                    b.HasIndex("IngredientRequestId");
 
                     b.HasIndex("UserId");
 
@@ -1042,6 +1050,10 @@ namespace OleAI.Backend.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("IngredientId");
 
+                    b.HasOne("OleAI.Backend.Domain.Entities.IngredientRequest", "IngredientRequest")
+                        .WithMany()
+                        .HasForeignKey("IngredientRequestId");
+
                     b.HasOne("OleAI.Backend.Domain.Entities.Recipe", null)
                         .WithMany("RecipeIngredients")
                         .HasForeignKey("RecipeId")
@@ -1049,6 +1061,8 @@ namespace OleAI.Backend.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Ingredient");
+
+                    b.Navigation("IngredientRequest");
                 });
 
             modelBuilder.Entity("OleAI.Backend.Domain.Entities.RecipeInteraction", b =>
@@ -1095,8 +1109,12 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.HasOne("OleAI.Backend.Domain.Entities.Ingredient", "Ingredient")
                         .WithMany("ShoppingListItems")
                         .HasForeignKey("IngredientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OleAI.Backend.Domain.Entities.IngredientRequest", "IngredientRequest")
+                        .WithMany()
+                        .HasForeignKey("IngredientRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("OleAI.Backend.Domain.Entities.User", "User")
                         .WithMany()
@@ -1105,6 +1123,8 @@ namespace OleAI.Backend.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Ingredient");
+
+                    b.Navigation("IngredientRequest");
 
                     b.Navigation("User");
                 });

@@ -70,13 +70,12 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.StartCooking
                 {
                     if (!currentShoppingListIds.Contains(ingredientId))
                     {
-                        await _shoppingListItemRepository.AddAsync(new ShoppingListItem
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = userId,
-                            IngredientId = ingredientId,
-                            IsPurchased = false
-                        });
+                        await _shoppingListItemRepository.AddAsync(ShoppingListItem.CreateStandard(
+                            userId: userId,
+                            ingredientId: ingredientId,
+                            quantity: 1,
+                            unit: OleAI.Backend.Domain.Enums.MeasurementUnit.Piece
+                        ));
                     }
                 }
             }

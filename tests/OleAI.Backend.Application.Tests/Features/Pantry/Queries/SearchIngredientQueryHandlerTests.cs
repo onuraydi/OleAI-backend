@@ -96,9 +96,9 @@ public class SearchIngredientQueryHandlerTests
 
         _mockIngredientRepository.Verify(r => r.GetListAsync(It.IsAny<QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(c => c.SetAsync<List<IngredientSearchResultResponse>>(
-            "Pantry:AllIngredientsCatalog:v2", 
+            "Pantry:AllIngredientsCatalog:v2",
             It.Is<List<IngredientSearchResultResponse>>(list => list.Count >= 2),
-            It.Is<TimeSpan?>(t => t == TimeSpan.FromHours(6)), 
+            It.Is<TimeSpan?>(t => t == TimeSpan.FromHours(6)),
             null), Times.Once);
     }
 

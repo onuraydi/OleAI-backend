@@ -55,7 +55,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
         public string Content { get; set; } = string.Empty;
         public Guid? ParentCommentId { get; set; }
         public DateTime CreatedDate { get; set; }
-        
+
         public List<RecipeCommentResponse> Replies { get; set; } = new();
     }
 }

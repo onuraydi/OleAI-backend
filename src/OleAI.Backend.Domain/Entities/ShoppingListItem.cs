@@ -6,28 +6,48 @@ namespace OleAI.Backend.Domain.Entities
 {
     public class ShoppingListItem : Entity<Guid>
     {
-        public Guid UserId { get; set; }
-        public Guid IngredientId { get; set; }
+        public Guid UserId { get; private set; }
+        public Guid? IngredientId { get; private set; }
+        public Guid? IngredientRequestId { get; private set; }
 
-        public double Quantity { get; set; }
-        public MeasurementUnit Unit { get; set; }
+        public double Quantity { get; private set; }
+        public MeasurementUnit Unit { get; private set; }
 
-        public bool IsPurchased { get; set; }
+        public bool IsPurchased { get; private set; }
 
         // Navigation Properties
         public virtual User User { get; private set; } = null!;
-        public virtual Ingredient Ingredient { get; private set; } = null!;
+        public virtual Ingredient? Ingredient { get; private set; }
+        public virtual IngredientRequest? IngredientRequest { get; private set; }
 
         // EF Core için gerekli; encapsulation'ı korumak adına protected
-        public ShoppingListItem() { }
+        protected ShoppingListItem() { }
 
-        public ShoppingListItem(Guid userId, Guid ingredientId, double quantity, MeasurementUnit unit)
+        public static ShoppingListItem CreateStandard(Guid userId, Guid ingredientId, double quantity, MeasurementUnit unit)
         {
-            Id = Guid.NewGuid();
-            UserId = userId;
-            IngredientId = ingredientId;
-            SetQuantityAndUnit(quantity, unit);
-            IsPurchased = false;
+            var item = new ShoppingListItem
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                IngredientId = ingredientId,
+                IsPurchased = false
+            };
+            item.SetQuantityAndUnit(quantity, unit);
+            return item;
+        }
+
+        public static ShoppingListItem CreatePending(Guid userId, IngredientRequest ingredientRequest, double quantity, MeasurementUnit unit)
+        {
+            var item = new ShoppingListItem
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                IngredientRequestId = ingredientRequest.Id,
+                IngredientRequest = ingredientRequest,
+                IsPurchased = false
+            };
+            item.SetQuantityAndUnit(quantity, unit);
+            return item;
         }
 
         public void MarkAsPurchased()

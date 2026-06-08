@@ -11,6 +11,7 @@ public static class ItemPurchasedEventFactory
         {
             UserId = item.UserId,
             IngredientId = item.IngredientId,
+            IngredientRequestId = item.IngredientRequestId,
             Quantity = item.Quantity,
             Unit = item.Unit
         };
