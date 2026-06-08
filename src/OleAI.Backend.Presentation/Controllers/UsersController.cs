@@ -82,13 +82,13 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         /// <summary>
-        /// Sadece Admin rolüne sahip kullanıcıların tüm kullanıcı listesini (rolleri, kilit durumu vs.) getirmesini sağlar.
+        /// Sadece Admin rolüne sahip kullanıcıların tüm kullanıcı listesini (rolleri, kilit durumu vs.) sayfalamalı olarak getirmesini sağlar.
         /// </summary>
         [HttpGet("all")]
         [Authorize(Roles = AuthRoles.Admin)]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int size = 10)
         {
-            var result = await Mediator.Send(new GetAdminUsersQuery());
+            var result = await Mediator.Send(new GetAdminUsersQuery { PageNumber = page, PageSize = size });
             return Ok(result);
         }
     }
