@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.AllergyRestrictions.Commands.CreateAllergyRestriction;
 using OleAI.Backend.Application.Features.AllergyRestrictions.Commands.DeleteAllergyRestriction;
+using OleAI.Backend.Application.Features.AllergyRestrictions.Commands.RestoreAllergyRestriction;
 using OleAI.Backend.Application.Features.AllergyRestrictions.Commands.UpdateAllergyRestriction;
 using OleAI.Backend.Application.Features.AllergyRestrictions.Queries.GetAllergyRestrictionById;
 using OleAI.Backend.Application.Features.AllergyRestrictions.Queries.GetAllergyRestrictionList;
@@ -49,6 +50,14 @@ public class AllergyRestrictionsController : BaseController
     public async Task<IActionResult> Delete([FromRoute] Guid id)
     {
         var result = await Mediator.Send(new DeleteAllergyRestrictionCommand { Id = id });
+        return Ok(new { Message = result });
+    }
+
+    [HttpPut("restore/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Restore([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new RestoreAllergyRestrictionCommand { Id = id });
         return Ok(new { Message = result });
     }
 }
