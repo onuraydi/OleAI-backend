@@ -54,7 +54,10 @@ public class GetMyShoppingListQueryHandlerTests
 
         var expectedResponse = new ShoppingListItemResponse
         {
-            Id = Guid.NewGuid(), IngredientId = ingredientId, Quantity = 2, Unit = MeasurementUnit.Piece
+            Id = Guid.NewGuid(),
+            IngredientId = ingredientId,
+            Quantity = 2,
+            Unit = MeasurementUnit.Piece
         };
         _mockMapper
             .Setup(m => m.Map<ShoppingListItemResponse>(It.IsAny<ShoppingListItem>()))
