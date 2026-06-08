@@ -45,7 +45,8 @@ public class CreateDietaryPreferenceCommandHandler : IRequestHandler<CreateDieta
         var dietaryPreference = new DietaryPreference
         {
             Name = request.Name.Trim(),
-            Desciption = request.Description?.Trim(),
+            Description = request.Description?.Trim(),
+            IconName = request.IconName,
             IsActive = true
         };
 
