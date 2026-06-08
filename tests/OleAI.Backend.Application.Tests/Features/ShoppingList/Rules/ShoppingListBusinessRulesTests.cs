@@ -43,7 +43,7 @@ public class ShoppingListBusinessRulesTests
                 false,
                 false,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ShoppingListItem(userId, ingredientId, 1, MeasurementUnit.Piece));
+            .ReturnsAsync(ShoppingListItem.CreateStandard(userId, ingredientId, 1, MeasurementUnit.Piece));
 
         // Act & Assert
         await FluentActions.Invoking(() =>
@@ -78,7 +78,7 @@ public class ShoppingListBusinessRulesTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 1, MeasurementUnit.Gram);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 1, MeasurementUnit.Gram);
 
         _mockShoppingListRepo
             .Setup(r => r.GetAsync(
@@ -161,7 +161,7 @@ public class ShoppingListBusinessRulesTests
     public void ItemMustNotBeAlreadyPurchased_WhenPurchased_ShouldThrowBusinessException()
     {
         // Arrange
-        var item = new ShoppingListItem(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
         item.MarkAsPurchased();
 
         // Act
@@ -176,7 +176,7 @@ public class ShoppingListBusinessRulesTests
     public void ItemMustNotBeAlreadyPurchased_WhenNotPurchased_ShouldNotThrow()
     {
         // Arrange
-        var item = new ShoppingListItem(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
 
         // Act
         Action act = () => ShoppingListBusinessRules.ItemMustNotBeAlreadyPurchased(item);
@@ -185,3 +185,4 @@ public class ShoppingListBusinessRulesTests
         act.Should().NotThrow();
     }
 }
+

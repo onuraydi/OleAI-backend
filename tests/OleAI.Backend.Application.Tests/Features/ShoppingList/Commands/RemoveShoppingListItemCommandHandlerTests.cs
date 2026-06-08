@@ -39,7 +39,7 @@ public class RemoveShoppingListItemCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         var itemId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
 
         _mockShoppingListRepo
             .Setup(r => r.GetAsync(
@@ -91,3 +91,4 @@ public class RemoveShoppingListItemCommandHandlerTests
             .WithMessage(ShoppingListMessages.ItemNotFoundOrUnauthorized);
     }
 }
+

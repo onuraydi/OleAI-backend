@@ -11,7 +11,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Profiles
         public IngredientMappingProfile()
         {
             CreateMap<Ingredient, IngredientResponse>()
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Category.Name));
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Kategorisiz"));
 
             CreateMap<Paginate<Ingredient>, Paginate<IngredientResponse>>();
 

@@ -38,7 +38,7 @@ public class UpdateShoppingListItemCommandHandlerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
 
         _mockShoppingListRepo
             .Setup(r => r.GetAsync(
@@ -74,7 +74,7 @@ public class UpdateShoppingListItemCommandHandlerTests
     {
         // Arrange: item satın alınmış (domain guard devreye girer)
         var userId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
         item.MarkAsPurchased(); // IsPurchased = true
 
         _mockShoppingListRepo
@@ -118,3 +118,4 @@ public class UpdateShoppingListItemCommandHandlerTests
             .WithMessage(ShoppingListMessages.ItemNotFoundOrUnauthorized);
     }
 }
+

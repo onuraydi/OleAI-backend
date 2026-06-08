@@ -25,10 +25,10 @@ public class ApproveRecipeCommandHandlerTests
         _mockAiService = new Mock<IAiRecommendationService>();
         _rules = new RecipeBusinessRules(Mock.Of<IIngredientRepository>(), Mock.Of<IRecipeCommentRepository>());
         _handler = new ApproveRecipeCommandHandler(
-            _mockRecipeRepository.Object, 
+            _mockRecipeRepository.Object,
             Mock.Of<IIngredientRepository>(),
             Mock.Of<IIngredientRequestRepository>(),
-            _rules, 
+            _rules,
             _mockAiService.Object,
             Mock.Of<OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService>());
     }

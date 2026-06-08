@@ -49,7 +49,7 @@ public class ShoppingListEventHandlerTests
                 false,
                 false,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ShoppingListItem(userId, ingredientId, 1, MeasurementUnit.Piece));
+            .ReturnsAsync(ShoppingListItem.CreateStandard(userId, ingredientId, 1, MeasurementUnit.Piece));
 
         var notification = new IngredientDepletedEvent
         {
@@ -229,3 +229,4 @@ public class ShoppingListEventHandlerTests
             Times.Never);
     }
 }
+

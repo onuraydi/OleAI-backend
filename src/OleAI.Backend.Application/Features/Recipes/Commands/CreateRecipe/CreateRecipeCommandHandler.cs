@@ -64,9 +64,9 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
                     hasPendingIngredients = true;
                     var ingredientRequest = new IngredientRequest(Guid.NewGuid(), userId, ingredientDto.RequestedName, ingredientDto.SuggestedCategoryId);
                     requestsToAdd.Add(ingredientRequest);
-                    
+
                     recipe.AddIngredient(null, ingredientRequest.Id, ingredientDto.Amount, ingredientDto.UnitId);
-                    
+
                     eventsToPublish.Add(new IngredientRequestedEvent
                     {
                         RequestId = ingredientRequest.Id,

@@ -59,13 +59,13 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
 
         var totalComments = await _recipeCommentRepository.GetCountAsync(c => c.RecipeId == recipe.Id, cancellationToken: cancellationToken);
 
-            response.Statistics = new RecipeStatisticsResponse
-            {
-                TotalComments = totalComments,
-                TotalLikes = recipe.Interactions?.Count(i => i.IsLiked) ?? 0,
-                TotalDislikes = recipe.Interactions?.Count(i => i.IsDisliked) ?? 0,
-                TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0
-            };
+        response.Statistics = new RecipeStatisticsResponse
+        {
+            TotalComments = totalComments,
+            TotalLikes = recipe.Interactions?.Count(i => i.IsLiked) ?? 0,
+            TotalDislikes = recipe.Interactions?.Count(i => i.IsDisliked) ?? 0,
+            TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0
+        };
 
         var currentUserIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrWhiteSpace(currentUserIdClaim))

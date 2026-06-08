@@ -56,7 +56,7 @@ public class Recipe : Entity<Guid>
         var incomingIngredientIds = incomingIngredients.Where(x => x.IngredientId.HasValue).Select(x => x.IngredientId).ToList();
         var incomingRequestIds = incomingIngredients.Where(x => x.IngredientRequestId.HasValue).Select(x => x.IngredientRequestId).ToList();
 
-        _recipeIngredients.RemoveAll(i => 
+        _recipeIngredients.RemoveAll(i =>
             (i.IngredientId.HasValue && !incomingIngredientIds.Contains(i.IngredientId)) ||
             (i.IngredientRequestId.HasValue && !incomingRequestIds.Contains(i.IngredientRequestId))
         );

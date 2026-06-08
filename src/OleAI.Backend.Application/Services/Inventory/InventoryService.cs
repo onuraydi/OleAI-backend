@@ -22,10 +22,10 @@ namespace OleAI.Backend.Application.Services.Inventory
 
                     if (userIngredient.IsDepleted)
                     {
-                       if (recipeIngredient.IngredientId.HasValue)
-                       {
-                           itemsToAddToShoppingList.Add(recipeIngredient.IngredientId.Value);
-                       }
+                        if (recipeIngredient.IngredientId.HasValue)
+                        {
+                            itemsToAddToShoppingList.Add(recipeIngredient.IngredientId.Value);
+                        }
                     }
                 }
                 else
