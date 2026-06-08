@@ -24,7 +24,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.UpdateIngredie
             var ingredient = await _ingredientRepository.GetAsync(i => i.Id == command.Request.Id, cancellationToken: cancellationToken);
             _ingredientBusinessRules.IngredientMustExistWhenRequested(ingredient);
 
-            await _ingredientBusinessRules.IngredientNameCannotBeDuplicatedWhenInserted(command.Request.Name);
+            await _ingredientBusinessRules.IngredientNameCannotBeDuplicatedWhenUpdated(command.Request.Id, command.Request.Name);
 
             _mapper.Map(command.Request, ingredient);
             await _ingredientRepository.UpdateAsync(ingredient!);

@@ -70,7 +70,8 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                     IsAlias = false,
                     UnitFamily = ingredient.UnitFamily,
                     CategoryId = ingredient.CategoryId,
-                    CategoryName = ingredient.Category?.Name ?? "Diğer"
+                    CategoryName = ingredient.Category?.Name ?? "Diğer",
+                    CategoryIconName = ingredient.Category?.IconName ?? "fastfood"
                 });
 
                 // Arama havuzuna Eşanlamlı (Alias) kelimeleri ekle
@@ -83,7 +84,8 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                         IsAlias = true,
                         UnitFamily = ingredient.UnitFamily,
                         CategoryId = ingredient.CategoryId,
-                        CategoryName = ingredient.Category?.Name ?? "Diğer"
+                        CategoryName = ingredient.Category?.Name ?? "Diğer",
+                        CategoryIconName = ingredient.Category?.IconName ?? "fastfood"
                     });
                 }
             }

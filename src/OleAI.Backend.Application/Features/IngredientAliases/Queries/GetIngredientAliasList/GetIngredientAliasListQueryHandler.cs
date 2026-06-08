@@ -22,6 +22,7 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Queries.GetIngred
         {
             QueryOptions<IngredientAlias> query = new QueryOptions<IngredientAlias>();
             query.EnableTracking = false;
+            query.WithDeleted = true;
 
             var ingredientAlias = await _ingredientAliasRepository.GetListAsync(query, cancellationToken);
 

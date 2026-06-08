@@ -17,13 +17,13 @@ namespace OleAI.Backend.Persistence.Contexts
             {
                 var categories = new Dictionary<string, Category>
                 {
-                    { "Sebze", new Category(Guid.NewGuid(), "Sebzeler") },
-                    { "Et", new Category(Guid.NewGuid(), "Et ve Tavuk") },
-                    { "Bakliyat", new Category(Guid.NewGuid(), "Kuru Bakliyat") },
-                    { "Baharat", new Category(Guid.NewGuid(), "Baharatlar") },
-                    { "Sut", new Category(Guid.NewGuid(), "Süt Ürünleri") },
-                    { "Yag", new Category(Guid.NewGuid(), "Yağlar") },
-                    { "Healthy", new Category(Guid.NewGuid(), "Healthy") }
+                    { "Sebze", new Category(Guid.NewGuid(), "Sebzeler", "grass") },
+                    { "Et", new Category(Guid.NewGuid(), "Et ve Tavuk", "set_meal") },
+                    { "Bakliyat", new Category(Guid.NewGuid(), "Kuru Bakliyat", "grain") },
+                    { "Baharat", new Category(Guid.NewGuid(), "Baharatlar", "scatter_plot") },
+                    { "Sut", new Category(Guid.NewGuid(), "Süt Ürünleri", "water_drop") },
+                    { "Yag", new Category(Guid.NewGuid(), "Yağlar", "oil_barrel") },
+                    { "Healthy", new Category(Guid.NewGuid(), "Healthy", "health_and_safety") }
                 };
                 await context.Categories.AddRangeAsync(categories.Values);
                 await context.SaveChangesAsync();

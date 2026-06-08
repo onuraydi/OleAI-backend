@@ -119,5 +119,15 @@ namespace OleAI.Backend.Presentation.Controllers
             var result = await Mediator.Send(new DeleteIngredientAliasCommand { Id = aliasId });
             return Ok(new { Message = result });
         }
+
+        /// <summary>
+        /// Silinmiş bir eşanlamlı kelimeyi geri getirir.
+        /// </summary>
+        [HttpPatch("aliases/{aliasId}/restore")]
+        public async Task<IActionResult> RestoreAlias([FromRoute] Guid aliasId)
+        {
+            var result = await Mediator.Send(new OleAI.Backend.Application.Features.IngredientAliases.Commands.RestoreIngredientAlias.RestoreIngredientAliasCommand { Id = aliasId });
+            return Ok(new { Message = result });
+        }
     }
 }

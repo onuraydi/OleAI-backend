@@ -68,8 +68,24 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
             var userInventoryItem = await _userIngredientRepository.GetAsync(ui => ui.IngredientRequestId == command.Request.RequestId);
             if (userInventoryItem != null)
             {
-                userInventoryItem.ApprovePendingRequest(targetMasterIngredientId);
-                await _userIngredientRepository.UpdateAsync(userInventoryItem);
+                var existingMasterItem = await _userIngredientRepository.GetAsync(ui => ui.UserId == userInventoryItem.UserId && ui.IngredientId == targetMasterIngredientId);
+
+                if (existingMasterItem != null)
+                {
+                    // Kullanıcının envanterinde bu ürün zaten var. Miktarları birleştir (aynı birimdeyse) ve pending olanı sil.
+                    if (existingMasterItem.Unit == userInventoryItem.Unit && userInventoryItem.Amount > 0)
+                    {
+                        existingMasterItem.AddQuantity(userInventoryItem.Amount);
+                        await _userIngredientRepository.UpdateAsync(existingMasterItem);
+                    }
+
+                    await _userIngredientRepository.DeleteAsync(userInventoryItem, permanent: true); // Pending kaydını kalıcı olarak veya soft sil. DeleteAsync default'ta soft-delete yapar.
+                }
+                else
+                {
+                    userInventoryItem.ApprovePendingRequest(targetMasterIngredientId);
+                    await _userIngredientRepository.UpdateAsync(userInventoryItem);
+                }
             }
 
             return PantryMessages.RequestResolvedAndInventoryUpdatedMessage;
