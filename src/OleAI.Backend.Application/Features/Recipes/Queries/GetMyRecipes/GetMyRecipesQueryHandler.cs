@@ -35,7 +35,7 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
             EnableTracking = false,
             Include = q => q.Include(r => r.RecipeImages),
 
-            Predicate = r => r.UserId == userId
+            Predicate = r => r.DeletedDate == null && r.UserId == userId
         };
 
         var recipes = await _recipeRepository.GetListAsync(query, cancellationToken);

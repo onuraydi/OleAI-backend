@@ -39,14 +39,16 @@ public class DeleteRecipeCommandHandler : IRequestHandler<DeleteRecipeCommand, s
             cancellationToken: cancellationToken);
 
         _recipeBusinessRules.CheckIfRecipeExists(recipe);
-        _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
 
-        foreach (var image in recipe!.RecipeImages)
+        var isAdmin = _httpContextAccessor.HttpContext?.User.IsInRole("Admin") ?? false;
+        if (!isAdmin)
         {
-            await _imageService.DeleteAsync(image.PublicId, cancellationToken);
+            _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
         }
 
-        await _recipeRepository.DeleteAsync(recipe, permanent: true);
+        // Artık resimleri silmiyoruz çünkü Soft Delete yapıyoruz (Soft delete yapılan tarifin resimleri Cloudinary'de kalmalı)
+        // Hard delete ayrı bir komutla yapılacak.
+        await _recipeRepository.DeleteAsync(recipe, permanent: false);
 
         return RecipeMessages.RecipeDeletedWithRelatedContent;
     }

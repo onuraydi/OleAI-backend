@@ -158,13 +158,13 @@ public class RecipeTests
     public void ApproveByAdmin_WhenNotPendingAdminApproval_ShouldThrowException()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Private); // Sets status to Published
 
         // Act
         Action act = () => recipe.ApproveByAdmin();
 
         // Assert
-        act.Should().Throw<Exception>().WithMessage(DomainConstants.OnlyLlmApprovedRecipesCanBeApprovedByAdmin);
+        act.Should().Throw<Exception>().WithMessage("Sadece onay bekleyen tarifler onaylanabilir.");
     }
 
     [Fact]

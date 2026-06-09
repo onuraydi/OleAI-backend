@@ -76,7 +76,7 @@ public class Recipe : Entity<Guid>
             }
             else
             {
-                _recipeIngredients.Add(new RecipeIngredient(Guid.NewGuid(), Id, incoming.IngredientId, incoming.IngredientRequestId, incoming.Amount, incoming.UnitId));
+                _recipeIngredients.Add(new RecipeIngredient(Guid.Empty, Id, incoming.IngredientId, incoming.IngredientRequestId, incoming.Amount, incoming.UnitId));
             }
         }
     }
@@ -105,7 +105,7 @@ public class Recipe : Entity<Guid>
             if (existing != null)
                 existing.Instruction = incoming.Instruction;
             else
-                _recipeSteps.Add(new RecipeStep(Guid.NewGuid(), Id, incoming.StepNumber, incoming.Instruction));
+                _recipeSteps.Add(new RecipeStep(Guid.Empty, Id, incoming.StepNumber, incoming.Instruction));
         }
 
         return imagesToDeleteFromCloud;
@@ -128,7 +128,7 @@ public class Recipe : Entity<Guid>
             _recipeImages.Remove(existingImage);
         }
 
-        _recipeImages.Add(new RecipeImage(Guid.NewGuid(), Id, newImageUrl, newPublicId, isMain, stepId));
+        _recipeImages.Add(new RecipeImage(Guid.Empty, Id, newImageUrl, newPublicId, isMain, stepId));
 
         return oldPublicId;
     }
@@ -144,9 +144,14 @@ public class Recipe : Entity<Guid>
 
     public void ApproveByAdmin()
     {
-        if (Status != RecipeStatus.PendingAdminApproval)
-            throw new Exception(DomainConstants.OnlyLlmApprovedRecipesCanBeApprovedByAdmin);
+        if (Status != RecipeStatus.PendingAdminApproval && Status != RecipeStatus.PendingLlmApproval)
+            throw new Exception("Sadece onay bekleyen tarifler onaylanabilir.");
 
+        Status = RecipeStatus.Published;
+    }
+
+    public void ForcePublish()
+    {
         Status = RecipeStatus.Published;
     }
 
@@ -164,16 +169,16 @@ public class Recipe : Entity<Guid>
 
     public void AddIngredient(Guid? ingredientId, Guid? ingredientRequestId, decimal amount, int unitId)
     {
-        _recipeIngredients.Add(new RecipeIngredient(Guid.NewGuid(), Id, ingredientId, ingredientRequestId, amount, unitId));
+        _recipeIngredients.Add(new RecipeIngredient(Guid.Empty, Id, ingredientId, ingredientRequestId, amount, unitId));
     }
 
     public void AddStep(int stepNumber, string instruction)
     {
-        _recipeSteps.Add(new RecipeStep(Guid.NewGuid(), Id, stepNumber, instruction));
+        _recipeSteps.Add(new RecipeStep(Guid.Empty, Id, stepNumber, instruction));
     }
 
     public void AddImage(string imageUrl, string publicId, bool isMain, Guid? stepId = null)
     {
-        _recipeImages.Add(new RecipeImage(Guid.NewGuid(), Id, imageUrl, publicId, isMain, stepId));
+        _recipeImages.Add(new RecipeImage(Guid.Empty, Id, imageUrl, publicId, isMain, stepId));
     }
 }

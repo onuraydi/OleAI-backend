@@ -49,10 +49,16 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
 
         if (!(recipe!.Visibility == RecipeVisibility.Public && recipe.Status == RecipeStatus.Published))
         {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = _httpContextAccessor.HttpContext?.User;
+            var userIdClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) throw new UnauthorizedAccessException();
 
-            _recipeBusinessRules.CheckIfUserIsOwner(recipe, Guid.Parse(userIdClaim));
+            var isAdmin = user?.IsInRole("Admin") ?? false;
+
+            if (!isAdmin)
+            {
+                _recipeBusinessRules.CheckIfUserIsOwner(recipe, Guid.Parse(userIdClaim));
+            }
         }
 
         var response = _mapper.Map<RecipeDetailResponse>(recipe);

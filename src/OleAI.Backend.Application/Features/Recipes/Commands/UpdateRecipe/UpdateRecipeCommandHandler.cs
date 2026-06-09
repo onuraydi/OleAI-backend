@@ -53,7 +53,12 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
             cancellationToken: cancellationToken);
 
         _recipeBusinessRules.CheckIfRecipeExists(recipe);
-        _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
+
+        var isAdmin = _httpContextAccessor.HttpContext?.User.IsInRole("Admin") ?? false;
+        if (!isAdmin)
+        {
+            _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
+        }
 
         var ingredientIds = command.Ingredients.Where(i => i.IngredientId.HasValue).Select(i => i.IngredientId!.Value).ToList();
         await _recipeBusinessRules.CheckIfIngredientsExistAsync(ingredientIds, cancellationToken);
@@ -120,7 +125,14 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
                 await _imageService.DeleteAsync(oldStepPublicId, cancellationToken);
         }
 
-        if (recipe.Visibility == RecipeVisibility.Public)
+        if (isAdmin)
+        {
+            if (recipe.Visibility == RecipeVisibility.Public)
+            {
+                recipe.ForcePublish();
+            }
+        }
+        else if (recipe.Visibility == RecipeVisibility.Public)
         {
             bool isClean = await _localLlmService.CheckRecipeContentForSpamAsync(recipe.Title, recipe.Description, cancellationToken);
             if (isClean) recipe.PassLlmFilter();

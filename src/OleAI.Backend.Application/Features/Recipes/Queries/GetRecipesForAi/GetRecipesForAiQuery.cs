@@ -33,7 +33,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi
         {
             var options = new QueryOptions<Recipe>
             {
-                Predicate = r => r.Status == RecipeStatus.Published,
+                Predicate = r => r.DeletedDate == null && r.Status == RecipeStatus.Published,
                 Include = q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient),
                 Size = int.MaxValue,
                 EnableTracking = false
