@@ -28,7 +28,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages),
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments),
 
             Predicate = r => r.DeletedDate == null && r.Status == RecipeStatus.Published && r.Visibility == RecipeVisibility.Public
         };

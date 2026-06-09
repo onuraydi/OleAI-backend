@@ -418,6 +418,9 @@ namespace OleAI.Backend.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("ParentCommentId");
 
+                    b.Property<int?>("Rating")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("RecipeId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("RecipeId");

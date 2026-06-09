@@ -40,6 +40,7 @@ public abstract class BaseUserInteractionRecipesQueryHandler<TQuery> : IRequestH
             EnableTracking = false,
             Predicate = GetInteractionPredicate(userId),
             Include = q => q.Include(i => i.Recipe).ThenInclude(r => r.RecipeImages)
+                            .Include(i => i.Recipe).ThenInclude(r => r.Comments)
         };
 
         var interactions = await RecipeInteractionRepository.GetListAsync(query, cancellationToken);

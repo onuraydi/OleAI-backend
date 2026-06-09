@@ -41,7 +41,7 @@ public class DeleteCommentCommandHandlerTests
         var userId = Guid.NewGuid();
         SetupUser(userId);
 
-        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), userId, "Bye");
+        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), userId, "Bye", null, 5);
         _mockCommentRepository.Setup(r => r.GetAsync(
                 It.IsAny<System.Linq.Expressions.Expression<System.Func<RecipeComment, bool>>>(),
                 It.IsAny<System.Func<System.Linq.IQueryable<RecipeComment>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<RecipeComment, object>>>(),

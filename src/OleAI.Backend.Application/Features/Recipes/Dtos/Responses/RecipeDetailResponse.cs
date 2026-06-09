@@ -30,6 +30,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
         public int TotalLikes { get; set; }
         public int TotalDislikes { get; set; }
         public int TotalSaves { get; set; }
+        public double AverageRating { get; set; }
+        public int TotalRatings { get; set; }
     }
 
     public class UserInteractionResponse
@@ -54,6 +56,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
         public string? ProfileImageUrl { get; set; }
         public string Content { get; set; } = string.Empty;
         public Guid? ParentCommentId { get; set; }
+        public int? Rating { get; set; }
         public DateTime CreatedDate { get; set; }
 
         public List<RecipeCommentResponse> Replies { get; set; } = new();

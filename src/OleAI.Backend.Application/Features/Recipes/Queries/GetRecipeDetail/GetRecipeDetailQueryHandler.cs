@@ -40,7 +40,8 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
                                .ThenInclude(ri => ri.Ingredient)
                            .Include(r => r.RecipeSteps)
                            .Include(r => r.RecipeImages)
-                           .Include(r => r.Interactions),
+                           .Include(r => r.Interactions)
+                           .Include(r => r.Comments),
             enableTracking: false,
             cancellationToken: cancellationToken);
 
@@ -70,7 +71,11 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
             TotalComments = totalComments,
             TotalLikes = recipe.Interactions?.Count(i => i.IsLiked) ?? 0,
             TotalDislikes = recipe.Interactions?.Count(i => i.IsDisliked) ?? 0,
-            TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0
+            TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0,
+            AverageRating = recipe.Comments != null && recipe.Comments.Any(c => c.Rating != null)
+                ? recipe.Comments.Where(c => c.Rating != null).Average(c => c.Rating!.Value)
+                : 0,
+            TotalRatings = recipe.Comments?.Count(c => c.Rating != null) ?? 0
         };
 
         var currentUserIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
