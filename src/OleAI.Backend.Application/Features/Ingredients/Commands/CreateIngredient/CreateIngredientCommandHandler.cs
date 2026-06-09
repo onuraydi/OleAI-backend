@@ -23,6 +23,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.CreateIngredie
         {
             await _businessRules.IngredientNameCannotBeDuplicatedWhenInserted(command.Request.Name);
             var ingredient = _mapper.Map<Ingredient>(command.Request);
+            ingredient.SetPolarizing(command.Request.IsPolarizing);
             var created = await _ingredientRepository.AddAsync(ingredient);
             var response = _mapper.Map<CreatedIngredientResponse>(created);
             return response;

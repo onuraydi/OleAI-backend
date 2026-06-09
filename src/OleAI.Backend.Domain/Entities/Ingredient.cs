@@ -8,6 +8,7 @@ namespace OleAI.Backend.Domain.Entities
     {
         public string Name { get; private set; }
         public Guid CategoryId { get; private set; }
+        public bool IsPolarizing { get; private set; }
 
         /// <summary>
         /// Malzemenin ait olduğu ölçü birimi ailesi.
@@ -54,5 +55,13 @@ namespace OleAI.Backend.Domain.Entities
         /// </summary>
         public bool IsUnitCompatible(MeasurementUnit unit)
             => MeasurementUnitHelper.IsCompatible(UnitFamily, unit);
+
+        /// <summary>
+        /// Kutuplaştırıcı (çok sevilmeyen) malzeme durumunu günceller.
+        /// </summary>
+        public void SetPolarizing(bool isPolarizing)
+        {
+            IsPolarizing = isPolarizing;
+        }
     }
 }

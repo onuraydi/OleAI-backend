@@ -43,7 +43,8 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Register
             newUser.PasswordHash = passwordHash;
             newUser.PasswordSalt = passwordSalt;
             newUser.IsEmailVerified = false;
-            newUser.IsActive = true;
+            newUser.TermsAccepted = command.Request.AcceptTerms;
+            newUser.IsActive = command.Request.AcceptTerms;
 
             newUser.UserOperationClaims.Add(new UserOperationClaim
             {
