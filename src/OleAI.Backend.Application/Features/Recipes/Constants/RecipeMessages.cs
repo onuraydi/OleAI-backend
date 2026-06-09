@@ -31,5 +31,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Constants
         public const string UnauthorizedCommentAction = "Bu yorum üzerinde işlem yapma yetkiniz yok.";
         public const string CommentUpdatedSuccessfullyMessage = "Yorumunuz başarıyla güncellendi.";
         public const string CommentDeletedSuccessfullyMessage = "Yorumunuz başarıyla silindi.";
+        public const string RecipeRestored = "Tarif başarıyla çöp kutusundan geri yüklendi.";
+        public const string RecipeHardDeleted = "Tarif sistemden kalıcı olarak silindi.";
     }
 }

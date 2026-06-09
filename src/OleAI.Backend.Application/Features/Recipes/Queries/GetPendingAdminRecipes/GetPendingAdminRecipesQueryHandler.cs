@@ -24,7 +24,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminReci
         {
             QueryOptions<Recipe> query = new QueryOptions<Recipe>();
 
-            query.Predicate = r => r.Status == RecipeStatus.PendingAdminApproval;
+            query.Predicate = r => r.DeletedDate == null && r.Status == RecipeStatus.PendingAdminApproval;
 
             query.Index = request.Page;
             query.Size = request.Size;

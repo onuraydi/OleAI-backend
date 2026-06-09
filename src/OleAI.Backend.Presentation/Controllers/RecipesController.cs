@@ -12,6 +12,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.SyncAllToAi;
 using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetAllAdminRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyDislikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyLikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
@@ -54,6 +55,28 @@ public class RecipesController : BaseController
     [HttpGet("pending-approvals")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetPendingApprovals([FromQuery] GetPendingAdminRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// [Admin] Admin'in sistemdeki tüm tarifleri filtreleyip görebilmesi için (onaylı, onaysız, gizli, genel).
+    /// </summary>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAdminRecipes([FromQuery] GetAllAdminRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// [Admin] Çöp kutusuna taşınmış (Soft Delete) tarifleri listeler.
+    /// </summary>
+    [HttpGet("admin/deleted")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetDeletedAdminRecipes([FromQuery] OleAI.Backend.Application.Features.Recipes.Queries.GetDeletedAdminRecipes.GetDeletedAdminRecipesQuery query)
     {
         var result = await Mediator.Send(query);
         return Ok(result);
@@ -125,6 +148,28 @@ public class RecipesController : BaseController
 
         string resultMessage = await Mediator.Send(deleteRecipeCommand);
 
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Çöp kutusundaki bir tarifi geri yükler (Soft Delete iptali).
+    /// </summary>
+    [HttpPost("{id}/restore")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Restore([FromRoute] Guid id)
+    {
+        var resultMessage = await Mediator.Send(new OleAI.Backend.Application.Features.Recipes.Commands.RestoreRecipe.RestoreRecipeCommand { Id = id });
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Çöp kutusundaki bir tarifi sistemden ve Cloudinary'den kalıcı olarak siler.
+    /// </summary>
+    [HttpDelete("{id}/hard")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> HardDelete([FromRoute] Guid id)
+    {
+        var resultMessage = await Mediator.Send(new OleAI.Backend.Application.Features.Recipes.Commands.HardDeleteRecipe.HardDeleteRecipeCommand { Id = id });
         return Ok(new { Message = resultMessage });
     }
 

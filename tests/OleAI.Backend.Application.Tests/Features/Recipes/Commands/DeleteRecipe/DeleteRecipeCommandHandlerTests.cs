@@ -33,7 +33,7 @@ public class DeleteRecipeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenValidRequest_ShouldDeleteRecipeAndImages()
+    public async Task Handle_WhenValidRequest_ShouldDeleteRecipe()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -51,8 +51,8 @@ public class DeleteRecipeCommandHandlerTests
 
         // Assert
         result.Should().Be(RecipeMessages.RecipeDeletedWithRelatedContent);
-        _mockImageService.Verify(s => s.DeleteAsync("p1", It.IsAny<CancellationToken>()), Times.Once);
-        _mockRecipeRepository.Verify(r => r.DeleteAsync(recipe, true, It.IsAny<CancellationToken>()), Times.Once);
+        _mockImageService.Verify(s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockRecipeRepository.Verify(r => r.DeleteAsync(recipe, false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -99,7 +99,16 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
                 }
             }
 
-            if (recipe.Visibility == RecipeVisibility.Public)
+            var isAdmin = _httpContextAccessor.HttpContext?.User.IsInRole("Admin") ?? false;
+
+            if (isAdmin)
+            {
+                if (recipe.Visibility == RecipeVisibility.Public)
+                {
+                    recipe.ForcePublish();
+                }
+            }
+            else if (recipe.Visibility == RecipeVisibility.Public)
             {
                 bool isContentClean = await _localLlmService.CheckRecipeContentForSpamAsync(recipe.Title, recipe.Description, cancellationToken);
 
@@ -119,9 +128,13 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
             if (recipe.Status == RecipeStatus.Rejected)
                 return RecipeMessages.RecipeRejectedDueToSystemStandards;
 
-            return recipe.Visibility == RecipeVisibility.Private
-                ? RecipeMessages.RecipeCreatedAndSavedAsPrivate
-                : RecipeMessages.RecipeCreatedAndPendingAdminApproval;
+            if (recipe.Visibility == RecipeVisibility.Private)
+                return RecipeMessages.RecipeCreatedAndSavedAsPrivate;
+
+            if (isAdmin)
+                return "Tarif başarıyla oluşturuldu ve yayınlandı.";
+
+            return RecipeMessages.RecipeCreatedAndPendingAdminApproval;
         }
     }
 }

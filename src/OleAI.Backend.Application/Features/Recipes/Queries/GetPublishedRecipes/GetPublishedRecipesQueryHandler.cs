@@ -30,13 +30,14 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             EnableTracking = false,
             Include = q => q.Include(r => r.RecipeImages),
 
-            Predicate = r => r.Status == RecipeStatus.Published && r.Visibility == RecipeVisibility.Public
+            Predicate = r => r.DeletedDate == null && r.Status == RecipeStatus.Published && r.Visibility == RecipeVisibility.Public
         };
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             var searchTerm = request.SearchTerm.ToLower();
             query.Predicate = r =>
+                r.DeletedDate == null &&
                 r.Status == RecipeStatus.Published &&
                 r.Visibility == RecipeVisibility.Public &&
                 (r.Title.ToLower().Contains(searchTerm) || r.Description.ToLower().Contains(searchTerm));
