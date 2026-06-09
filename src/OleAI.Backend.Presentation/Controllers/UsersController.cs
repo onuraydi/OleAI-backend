@@ -29,6 +29,16 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         /// <summary>
+        /// Giriş yapan kullanıcının kişisel istatistiklerini getirir.
+        /// </summary>
+        [HttpGet("me/statistics")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var result = await Mediator.Send(new OleAI.Backend.Application.Features.Users.Queries.GetUserStatistics.GetUserStatisticsQuery());
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Giriş yapan kullanıcının temel profil bilgilerini (Ad, Soyad) günceller.
         /// </summary>
         [HttpPut("me")]

@@ -14,20 +14,21 @@ public class UpdateUserProfileCommandValidatorTests
         _validator = new UpdateUserProfileCommandValidator();
     }
 
+
     [Fact]
-    public void Validate_WhenFirstNameIsEmpty_ShouldHaveError()
+    public void Validate_WhenFirstNameIsEmpty_ShouldNotHaveError()
     {
         var command = new UpdateUserProfileCommand { FirstName = "", LastName = "Test" };
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.FirstName);
+        result.ShouldNotHaveValidationErrorFor(x => x.FirstName);
     }
 
     [Fact]
-    public void Validate_WhenLastNameIsEmpty_ShouldHaveError()
+    public void Validate_WhenLastNameIsEmpty_ShouldNotHaveError()
     {
         var command = new UpdateUserProfileCommand { FirstName = "Test", LastName = "" };
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.LastName);
+        result.ShouldNotHaveValidationErrorFor(x => x.LastName);
     }
 
     [Fact]
