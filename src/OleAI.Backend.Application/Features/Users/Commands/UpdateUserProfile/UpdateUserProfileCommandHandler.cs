@@ -14,6 +14,7 @@ namespace OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ICacheService _cacheService;
         private readonly UserBusinessRules _userBusinessRules;
+        private readonly OleAI.Backend.Application.Services.ImageStorage.IImageService _imageService;
 
         private const string ProfileCacheKeyPrefix = "user-profile:";
 
@@ -21,12 +22,14 @@ namespace OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile
             IUserRepository userRepository,
             IHttpContextAccessor httpContextAccessor,
             ICacheService cacheService,
-            UserBusinessRules userBusinessRules)
+            UserBusinessRules userBusinessRules,
+            OleAI.Backend.Application.Services.ImageStorage.IImageService imageService)
         {
             _userRepository = userRepository;
             _httpContextAccessor = httpContextAccessor;
             _cacheService = cacheService;
             _userBusinessRules = userBusinessRules;
+            _imageService = imageService;
         }
 
         public async Task<string> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
@@ -40,8 +43,25 @@ namespace OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile
 
             _userBusinessRules.CheckIfUserExists(user);
 
-            user!.FirstName = request.FirstName.Trim();
-            user.LastName = request.LastName.Trim();
+            if (!string.IsNullOrEmpty(request.FirstName))
+                user!.FirstName = request.FirstName.Trim();
+
+            if (!string.IsNullOrEmpty(request.LastName))
+                user.LastName = request.LastName.Trim();
+
+            if (!string.IsNullOrEmpty(request.Username))
+                user.Username = request.Username.Trim();
+
+            if (request.BirthDate.HasValue)
+                user.BirthDate = request.BirthDate.Value;
+
+            user.IsOnboarded = request.IsOnboarded;
+
+            if (request.ProfileImage != null)
+            {
+                var uploadResult = await _imageService.UploadAsync(request.ProfileImage, "profile_images", cancellationToken);
+                user.ProfileImageUrl = uploadResult.Url;
+            }
 
             await _userRepository.UpdateAsync(user, cancellationToken);
 

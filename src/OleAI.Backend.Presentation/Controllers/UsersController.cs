@@ -32,7 +32,7 @@ namespace OleAI.Backend.Presentation.Controllers
         /// Giriş yapan kullanıcının temel profil bilgilerini (Ad, Soyad) günceller.
         /// </summary>
         [HttpPut("me")]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileCommand command)
+        public async Task<IActionResult> UpdateProfile([FromForm] UpdateUserProfileCommand command)
         {
             var result = await Mediator.Send(command);
             return Ok(new { Message = result });

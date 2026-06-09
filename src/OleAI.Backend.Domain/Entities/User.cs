@@ -8,11 +8,17 @@ namespace OleAI.Backend.Domain.Entities
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
 
+        public string Username { get; set; } = string.Empty;
+        public DateTime? BirthDate { get; set; }
+        public string? ProfileImageUrl { get; set; }
+        public bool IsOnboarded { get; set; } = false;
+
         public byte[] PasswordHash { get; set; } = Array.Empty<byte>();
         public byte[] PasswordSalt { get; set; } = Array.Empty<byte>();
 
         public bool IsEmailVerified { get; set; } = false;
         public bool IsActive { get; set; } = true;
+        public bool TermsAccepted { get; set; } = false;
 
         public int FailedLoginAttempts { get; set; } = 0;
         public DateTime? LockoutEnd { get; set; }

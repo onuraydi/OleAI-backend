@@ -44,6 +44,17 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         /// <summary>
+        /// Kutuplaştırıcı veya topluluk tarafından en çok sevilmeyen popüler malzemeleri getirir.
+        /// </summary>
+        [HttpGet("popular-dislikes")]
+        public async Task<IActionResult> GetPopularDislikedIngredients()
+        {
+            var query = new OleAI.Backend.Application.Features.Ingredients.Queries.GetPopularDislikedIngredients.GetPopularDislikedIngredientsQuery();
+            var result = await Mediator.Send(query);
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Dolaba yeni bir malzeme ekler. Sistemde yoksa otomatik olarak onaya (LLM) gönderir.
         /// </summary>
         [HttpPost]
