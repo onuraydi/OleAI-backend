@@ -19,7 +19,9 @@ public class RecipeMappingProfile : Profile
                 src.RecipeImages.FirstOrDefault(i => i.IsMain) != null
                 ? src.RecipeImages.FirstOrDefault(i => i.IsMain)!.ImageUrl
                 : string.Empty))
-            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()));
+            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src => src.Comments != null && src.Comments.Any(c => c.Rating != null) ? src.Comments.Where(c => c.Rating != null).Average(c => c.Rating!.Value) : 0))
+            .ForMember(dest => dest.TotalRatings, opt => opt.MapFrom(src => src.Comments != null ? src.Comments.Count(c => c.Rating != null) : 0));
 
         CreateMap<Paginate<Recipe>, Paginate<RecipeListItemResponse>>();
 

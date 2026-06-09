@@ -56,7 +56,7 @@ public class AddCommentCommandHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
 
-        var command = new AddCommentCommand { RecipeId = recipe.Id, Content = "Nice!" };
+        var command = new AddCommentCommand { RecipeId = recipe.Id, Content = "Nice!", Rating = 5 };
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

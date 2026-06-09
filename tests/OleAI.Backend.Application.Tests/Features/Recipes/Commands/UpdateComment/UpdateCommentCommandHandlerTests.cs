@@ -37,7 +37,7 @@ public class UpdateCommentCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
-        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), userId, "Old");
+        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), userId, "Old", null, 5);
 
         _mockCommentRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<RecipeComment, bool>>>(), It.IsAny<Func<IQueryable<RecipeComment>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<RecipeComment, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(comment);
@@ -58,7 +58,7 @@ public class UpdateCommentCommandHandlerTests
         // Arrange
         SetupUser(Guid.NewGuid());
         var ownerId = Guid.NewGuid();
-        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), ownerId, "Old");
+        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), ownerId, "Old", null, 5);
 
         _mockCommentRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<RecipeComment, bool>>>(), It.IsAny<Func<IQueryable<RecipeComment>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<RecipeComment, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(comment);

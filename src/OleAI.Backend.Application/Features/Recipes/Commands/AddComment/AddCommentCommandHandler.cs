@@ -46,7 +46,8 @@ public class AddCommentCommandHandler : IRequestHandler<AddCommentCommand, strin
             request.RecipeId,
             userId,
             trimmedContent,
-            request.ParentCommentId);
+            request.ParentCommentId,
+            request.Rating);
 
         await _commentRepository.AddAsync(comment);
 

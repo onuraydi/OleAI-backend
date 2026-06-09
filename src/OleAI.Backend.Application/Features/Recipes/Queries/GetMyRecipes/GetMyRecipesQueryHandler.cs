@@ -33,7 +33,7 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages),
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments),
 
             Predicate = r => r.DeletedDate == null && r.UserId == userId
         };
