@@ -12,8 +12,8 @@ using OleAI.Backend.Persistence.Contexts;
 namespace OleAI.Backend.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260610031636_AddRecipeMetadataAndTaxonomy")]
-    partial class AddRecipeMetadataAndTaxonomy
+    [Migration("20260610042934_AddRecipeTaxonomyAndMetadata")]
+    partial class AddRecipeTaxonomyAndMetadata
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
