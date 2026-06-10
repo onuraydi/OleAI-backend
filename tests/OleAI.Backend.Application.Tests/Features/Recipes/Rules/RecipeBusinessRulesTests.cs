@@ -58,7 +58,7 @@ public class RecipeBusinessRulesTests
     public void CheckIfUserIsOwner_WhenNotOwner_ShouldThrowAuthorizationException()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         var otherUserId = Guid.NewGuid();
 
         // Act
@@ -87,7 +87,7 @@ public class RecipeBusinessRulesTests
         // Arrange
         var ownerId = Guid.NewGuid();
         var otherId = Guid.NewGuid();
-        var recipe = Recipe.Create(ownerId, "Title", "Desc", RecipeVisibility.Private);
+        var recipe = Recipe.Create(ownerId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private);
 
         // Act
         Action act = () => _rules.CheckIfRecipeIsInteractable(recipe, otherId);
@@ -116,3 +116,4 @@ public class RecipeBusinessRulesTests
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(RecipeMessages.TargetCommentMissing);
     }
 }
+

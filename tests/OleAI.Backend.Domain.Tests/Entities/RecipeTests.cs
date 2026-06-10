@@ -18,7 +18,7 @@ public class RecipeTests
         var visibility = RecipeVisibility.Public;
 
         // Act
-        var recipe = Recipe.Create(userId, title, description, visibility);
+        var recipe = Recipe.Create(userId, title, description, RecipeDifficulty.Medium, 2, 10, 20, visibility);
 
         // Assert
         recipe.UserId.Should().Be(userId);
@@ -35,7 +35,7 @@ public class RecipeTests
     public void Create_WhenPrivate_ShouldSetStatusToPublished()
     {
         // Act
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Private);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private);
 
         // Assert
         recipe.Status.Should().Be(RecipeStatus.Published);
@@ -45,10 +45,10 @@ public class RecipeTests
     public void UpdateDetails_ShouldUpdateProperties()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Old Title", "Old Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Old Title", "Old Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         // Act
-        recipe.UpdateDetails("New Title", "New Desc", RecipeVisibility.Private);
+        recipe.UpdateDetails("New Title", "New Desc", RecipeDifficulty.Hard, 4, 15, 45, RecipeVisibility.Private);
 
         // Assert
         recipe.Title.Should().Be("New Title");
@@ -61,7 +61,7 @@ public class RecipeTests
     public void AddIngredient_ShouldAddIngredientToCollection()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         var ingredientId = Guid.NewGuid();
 
         // Act
@@ -76,7 +76,7 @@ public class RecipeTests
     public void SyncIngredients_ShouldWorkCorrectly()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         var ing1 = Guid.NewGuid();
         var ing2 = Guid.NewGuid();
         recipe.AddIngredient(ing1, null, 100, 1);
@@ -100,7 +100,7 @@ public class RecipeTests
     public void SyncSteps_ShouldManageStepsAndReturnOrphanedImages()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.AddStep(1, "Step 1");
         recipe.AddStep(2, "Step 2");
         var step2 = recipe.RecipeSteps.First(s => s.StepNumber == 2);
@@ -129,7 +129,7 @@ public class RecipeTests
     public void ReplaceImage_ShouldHandleMainImage()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.AddImage("old_url", "old_public_id", true);
 
         // Act
@@ -144,7 +144,7 @@ public class RecipeTests
     public void ApproveByAdmin_WhenPendingAdminApproval_ShouldSetToPublished()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.PassLlmFilter(); // Status becomes PendingAdminApproval
 
         // Act
@@ -158,7 +158,7 @@ public class RecipeTests
     public void ApproveByAdmin_WhenNotPendingAdminApproval_ShouldThrowException()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Private); // Sets status to Published
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private); // Sets status to Published
 
         // Act
         Action act = () => recipe.ApproveByAdmin();
@@ -171,7 +171,7 @@ public class RecipeTests
     public void Reject_ShouldSetStatusToRejected()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         // Act
         recipe.Reject("Bad content");

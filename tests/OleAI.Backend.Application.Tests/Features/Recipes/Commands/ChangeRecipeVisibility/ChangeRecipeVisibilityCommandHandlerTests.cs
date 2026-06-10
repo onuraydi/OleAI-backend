@@ -36,7 +36,7 @@ public class ChangeRecipeVisibilityCommandHandlerTests
         var userId = Guid.NewGuid();
         SetupUser(userId);
 
-        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(userId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         _mockRecipeRepository.Setup(r => r.GetAsync(
                 It.IsAny<System.Linq.Expressions.Expression<System.Func<Recipe, bool>>>(),
                 It.IsAny<System.Func<System.Linq.IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(),
@@ -65,3 +65,4 @@ public class ChangeRecipeVisibilityCommandHandlerTests
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 }
+
