@@ -32,7 +32,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ClearExpiredUserIng
             //    // TODO Burada tarihi geçenleri belirtmek için eklenecek olan 'isExpired' alanı set edilebilir.
             //}
 
-            await _userIngredientRepository.DeleteRangeAsync(expiredItems, permanent: false, cancellationToken: cancellationToken);
+            await _userIngredientRepository.DeleteRangeAsync(expiredItems, permanent: true, cancellationToken: cancellationToken);
 
             return $"Tarihi geçmiş {expiredItems.Count} adet ürün dolabınızdan temizlendi";
         }

@@ -33,12 +33,12 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
             if (item == null)
                 await _pantryBusinessRules.InventoryItemNotFound(command.Request.Id);
 
-            item!.UpdateQuantity(command.Request.NewQuantity, command.Request.NewUnit);
+            item!.UpdateQuantity(command.Request.NewQuantity, command.Request.NewUnit ?? item.Unit);
 
             // Miktar 0'a düşünce (kullanıcı manuel sıfırladı) alışveriş listesini tetikle
             if (Math.Abs(item.Amount) <= ZeroAmountTolerance && item.IngredientId.HasValue)
             {
-                await _userIngredientRepository.DeleteAsync(item, cancellationToken: cancellationToken);
+                await _userIngredientRepository.DeleteAsync(item, permanent: true, cancellationToken: cancellationToken);
 
                 await _mediator.Publish(new IngredientDepletedEvent
                 {

@@ -55,7 +55,7 @@ public class InventoryDeductionEventHandlerTests
         // Assert
         pantryItem.Amount.Should().Be(7);
         _mockUserIngredientRepository.Verify(r => r.UpdateAsync(pantryItem, It.IsAny<CancellationToken>()), Times.Once);
-        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), false, It.IsAny<CancellationToken>()), Times.Never);
+        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), true, It.IsAny<CancellationToken>()), Times.Never);
         _mockMediator.Verify(m => m.Publish(It.IsAny<IngredientDepletedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -80,14 +80,14 @@ public class InventoryDeductionEventHandlerTests
             .ReturnsAsync(new Paginate<UserIngredient> { Items = new List<UserIngredient> { pantryItem } });
 
         _mockUserIngredientRepository
-            .Setup(r => r.DeleteAsync(pantryItem, false, It.IsAny<CancellationToken>()))
+            .Setup(r => r.DeleteAsync(pantryItem, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pantryItem);
 
         // Act
         await _handler.Handle(notification, CancellationToken.None);
 
         // Assert
-        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(pantryItem, false, It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(pantryItem, true, It.IsAny<CancellationToken>()), Times.Once);
         _mockUserIngredientRepository.Verify(r => r.UpdateAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()), Times.Never);
 
         _mockMediator.Verify(m => m.Publish(

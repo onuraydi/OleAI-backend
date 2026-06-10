@@ -79,7 +79,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
                         await _userIngredientRepository.UpdateAsync(existingMasterItem);
                     }
 
-                    await _userIngredientRepository.DeleteAsync(userInventoryItem, permanent: true); // Pending kaydını kalıcı olarak veya soft sil. DeleteAsync default'ta soft-delete yapar.
+                    await _userIngredientRepository.DeleteAsync(userInventoryItem, permanent: true); // Pending kaydını kalıcı olarak sil.
                 }
                 else
                 {
