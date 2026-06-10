@@ -21,6 +21,10 @@ public class RecipeModelBinderTests
             { "Title", "Test Recipe" },
             { "Description", "Delicious" },
             { "Visibility", "Public" },
+            { "Difficulty", "Medium" },
+            { "Servings", "2" },
+            { "PrepTime", "15" },
+            { "CookTime", "30" },
             { "IngredientsJson", "[]" },
             { "StepsJson", "[]" }
         }, "MainImage");
@@ -43,6 +47,10 @@ public class RecipeModelBinderTests
             { "Title", "Updated Recipe" },
             { "Description", "Better" },
             { "Visibility", "Private" },
+            { "Difficulty", "Hard" },
+            { "Servings", "4" },
+            { "PrepTime", "20" },
+            { "CookTime", "45" },
             { "IngredientsJson", "[]" },
             { "StepsJson", "[]" }
         }, "NewMainImage");

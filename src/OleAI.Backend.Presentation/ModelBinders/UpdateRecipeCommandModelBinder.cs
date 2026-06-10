@@ -51,6 +51,12 @@ public class UpdateRecipeCommandModelBinder : BaseRecipeCommandModelBinder<Updat
                 Title = fields.Title,
                 Description = fields.Description,
                 Visibility = fields.Visibility,
+                Difficulty = fields.Difficulty,
+                Servings = fields.Servings,
+                PrepTime = fields.PrepTime,
+                CookTime = fields.CookTime,
+                CategoryIds = fields.CategoryIds,
+                TagIds = fields.TagIds,
                 NewMainImage = newMainImage
             },
             Ingredients = ingredients,
