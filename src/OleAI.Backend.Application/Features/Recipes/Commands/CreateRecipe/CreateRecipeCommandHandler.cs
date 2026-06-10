@@ -44,7 +44,22 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe
 
             var userId = Guid.Parse(userIdClaim);
 
-            var recipe = Recipe.Create(userId, command.CreateRecipeRequest.Title, command.CreateRecipeRequest.Description, command.CreateRecipeRequest.Visibility);
+            var recipe = Recipe.Create(
+                userId,
+                command.CreateRecipeRequest.Title,
+                command.CreateRecipeRequest.Description,
+                command.CreateRecipeRequest.Difficulty,
+                command.CreateRecipeRequest.Servings,
+                command.CreateRecipeRequest.PrepTime,
+                command.CreateRecipeRequest.CookTime,
+                command.CreateRecipeRequest.Visibility
+            );
+
+            if (command.CreateRecipeRequest.CategoryIds.Any())
+                recipe.SyncCategories(command.CreateRecipeRequest.CategoryIds);
+
+            if (command.CreateRecipeRequest.TagIds.Any())
+                recipe.SyncTags(command.CreateRecipeRequest.TagIds);
 
             var mainImageUpload = await _imageService.UploadAsync(command.CreateRecipeRequest.MainImage, "recipes/main", cancellationToken);
             recipe.AddImage(mainImageUpload.Url, mainImageUpload.PublicId, isMain: true);

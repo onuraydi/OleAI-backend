@@ -9,4 +9,7 @@ public class RecipeListItemResponse
     public string StatusName { get; set; } = string.Empty;
     public double AverageRating { get; set; }
     public int TotalRatings { get; set; }
+    public int PrepTime { get; set; }
+    public int CookTime { get; set; }
+    public int Difficulty { get; set; } // Cast to int for frontend convenience if wanted, or Enum
 }

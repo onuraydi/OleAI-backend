@@ -13,6 +13,18 @@ public class CreateRecipeCommandValidator : AbstractValidator<CreateRecipeComman
         RuleFor(x => x.CreateRecipeRequest.MainImage)
             .NotNull().WithMessage("Tarifin ana kapak fotoğrafı zorunludur.");
 
+        RuleFor(x => x.CreateRecipeRequest.Servings)
+            .GreaterThan(0).WithMessage("Porsiyon 0'dan büyük olmalıdır.");
+
+        RuleFor(x => x.CreateRecipeRequest.PrepTime)
+            .GreaterThanOrEqualTo(0).WithMessage("Hazırlık süresi negatif olamaz.");
+
+        RuleFor(x => x.CreateRecipeRequest.CookTime)
+            .GreaterThanOrEqualTo(0).WithMessage("Pişirme süresi negatif olamaz.");
+
+        RuleFor(x => x.CreateRecipeRequest.Difficulty)
+            .IsInEnum().WithMessage("Geçerli bir zorluk derecesi seçilmelidir.");
+
         RuleFor(x => x.Ingredients)
             .NotEmpty().WithMessage("En az bir malzeme eklemelisiniz.");
 

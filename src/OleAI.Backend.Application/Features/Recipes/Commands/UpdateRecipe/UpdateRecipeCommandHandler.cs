@@ -63,7 +63,21 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         var ingredientIds = command.Ingredients.Where(i => i.IngredientId.HasValue).Select(i => i.IngredientId!.Value).ToList();
         await _recipeBusinessRules.CheckIfIngredientsExistAsync(ingredientIds, cancellationToken);
 
-        recipe!.UpdateDetails(command.Request.Title, command.Request.Description, command.Request.Visibility);
+        recipe!.UpdateDetails(
+            command.Request.Title,
+            command.Request.Description,
+            command.Request.Difficulty,
+            command.Request.Servings,
+            command.Request.PrepTime,
+            command.Request.CookTime,
+            command.Request.Visibility
+        );
+
+        if (command.Request.CategoryIds.Any())
+            recipe.SyncCategories(command.Request.CategoryIds);
+
+        if (command.Request.TagIds.Any())
+            recipe.SyncTags(command.Request.TagIds);
 
         var ingredientTuples = new List<(Guid? IngredientId, Guid? IngredientRequestId, decimal Amount, int UnitId)>();
         var requestsToAdd = new List<IngredientRequest>();

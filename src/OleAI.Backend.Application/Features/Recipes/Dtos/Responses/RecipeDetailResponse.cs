@@ -11,6 +11,10 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
 
         public RecipeVisibility Visibility { get; set; }
         public RecipeStatus Status { get; set; }
+        public RecipeDifficulty Difficulty { get; set; }
+        public int Servings { get; set; }
+        public int PrepTime { get; set; }
+        public int CookTime { get; set; }
 
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
@@ -18,6 +22,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
         public List<RecipeIngredientResponse> Ingredients { get; set; } = new();
         public List<RecipeStepResponse> Steps { get; set; } = new();
         public List<RecipeImageResponse> Images { get; set; } = new();
+        public List<RecipeCategoryDto> Categories { get; set; } = new();
+        public List<TagDto> Tags { get; set; } = new();
 
         public RecipeStatisticsResponse Statistics { get; set; } = new();
         public UserInteractionResponse? UserInteraction { get; set; }
@@ -60,5 +66,18 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
         public DateTime CreatedDate { get; set; }
 
         public List<RecipeCommentResponse> Replies { get; set; } = new();
+    }
+
+    public class RecipeCategoryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string IconName { get; set; } = string.Empty;
+    }
+
+    public class TagDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }
