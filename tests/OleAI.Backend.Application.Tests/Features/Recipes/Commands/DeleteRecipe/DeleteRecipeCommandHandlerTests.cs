@@ -38,7 +38,7 @@ public class DeleteRecipeCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
-        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(userId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.AddImage("url", "p1", true);
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -61,7 +61,7 @@ public class DeleteRecipeCommandHandlerTests
         // Arrange
         SetupUser(Guid.NewGuid());
         var ownerId = Guid.NewGuid();
-        var recipe = Recipe.Create(ownerId, "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(ownerId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
@@ -84,3 +84,4 @@ public class DeleteRecipeCommandHandlerTests
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 }
+

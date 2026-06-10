@@ -44,7 +44,7 @@ public class AddCommentCommandHandlerTests
         var userId = Guid.NewGuid();
         SetupUser(userId);
 
-        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(userId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.PassLlmFilter();
         recipe.ApproveByAdmin();
 
@@ -77,3 +77,4 @@ public class AddCommentCommandHandlerTests
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 }
+

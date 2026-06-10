@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Recipes.Queries.GetPublishedRecipes;
@@ -29,7 +30,7 @@ public class GetPublishedRecipesQueryHandlerTests
     {
         // Arrange
         var query = new GetPublishedRecipesQuery { Page = 0, Size = 10 };
-        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(Guid.NewGuid(), "Pub", "Desc", OleAI.Backend.Domain.Enums.RecipeVisibility.Public) } };
+        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(Guid.NewGuid(), "Pub", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public) } };
 
         _mockRecipeRepository.Setup(r => r.GetListAsync(
                 It.IsAny<QueryOptions<Recipe>>(),
@@ -63,3 +64,4 @@ public class GetPublishedRecipesQueryHandlerTests
         _mockRecipeRepository.Verify(r => r.GetListAsync(It.Is<QueryOptions<Recipe>>(o => o.Predicate != null), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+
