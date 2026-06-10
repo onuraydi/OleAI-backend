@@ -110,7 +110,7 @@ namespace OleAI.Backend.Persistence.Contexts
                 {
                     var baseIng = allIngredients[random.Next(allIngredients.Count)];
                     var title = i % 3 == 0 ? $"{baseIng.Name} Sote" : i % 2 == 0 ? $"{baseIng.Name} Çorbası" : $"{baseIng.Name} Salatası";
-                    var recipe = Recipe.Create(creatorId, title, $"{title} için açıklama metni...", RecipeVisibility.Private);
+                    var recipe = Recipe.Create(creatorId, title, $"{title} için açıklama metni...", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private);
 
                     var selectedIngredients = allIngredients.OrderBy(x => random.Next()).Take(random.Next(3, 7)).ToList();
                     foreach (var ing in selectedIngredients)
