@@ -32,6 +32,8 @@ namespace OleAI.Backend.Persistence
             services.AddScoped<IUserDietaryPreferenceRepository, UserDietaryPreferenceRepository>();
             services.AddScoped<IUserAllergyRepository, UserAllergyRepository>();
             services.AddScoped<IUserDislikedIngredientRepository, UserDislikedIngredientRepository>();
+            services.AddScoped<IRecipeCategoryRepository, RecipeCategoryRepository>();
+            services.AddScoped<ITagRepository, TagRepository>();
 
             return services;
         }

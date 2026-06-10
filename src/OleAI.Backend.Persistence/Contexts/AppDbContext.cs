@@ -26,6 +26,10 @@ public class AppDbContext : DbContext
     public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
     public DbSet<RecipeInteraction> RecipeInteractions { get; set; }
     public DbSet<RecipeComment> RecipeComments { get; set; }
+    public DbSet<RecipeCategory> RecipeCategories { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<RecipeCategoryMapping> RecipeCategoryMappings { get; set; }
+    public DbSet<RecipeTag> RecipeTags { get; set; }
     public DbSet<DietaryPreference> DietaryPreferences { get; set; }
     public DbSet<AllergyRestriction> AllergyRestrictions { get; set; }
     public DbSet<UserDietaryPreference> UserDietaryPreferences { get; set; }
