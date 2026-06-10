@@ -58,7 +58,8 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
                     break;
                 case "popular":
                 default:
-                    query.OrderBy = q => q.OrderByDescending(r => r.Comments.Count(c => c.Rating != null))
+                    // En beğenilen tarifler
+                    query.OrderBy = q => q.OrderByDescending(r => r.Interactions.Count(i => i.IsLiked))
                                           .ThenByDescending(r => r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0);
                     break;
             }
