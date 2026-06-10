@@ -75,7 +75,7 @@ public class CancelIngredientRequestCommandHandlerTests
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(PantryMessages.RequestAlreadyProcessedCannotBeCancelledMessage);
 
-        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), false, It.IsAny<CancellationToken>()), Times.Never);
+        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), true, It.IsAny<CancellationToken>()), Times.Never);
         _mockIngredientRequestRepository.Verify(r => r.UpdateAsync(It.IsAny<IngredientRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -100,7 +100,7 @@ public class CancelIngredientRequestCommandHandlerTests
             .ReturnsAsync(pendingInventoryItem);
 
         _mockUserIngredientRepository
-            .Setup(r => r.DeleteAsync(pendingInventoryItem, false, It.IsAny<CancellationToken>()))
+            .Setup(r => r.DeleteAsync(pendingInventoryItem, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pendingInventoryItem);
 
         _mockIngredientRequestRepository
@@ -115,7 +115,7 @@ public class CancelIngredientRequestCommandHandlerTests
         request.Status.Should().Be(IngredientRequestStatus.Rejected);
         request.AdminNote.Should().Be(PantryMessages.RequestCancelledByUserMessage);
 
-        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(pendingInventoryItem, false, It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(pendingInventoryItem, true, It.IsAny<CancellationToken>()), Times.Once);
         _mockIngredientRequestRepository.Verify(r => r.UpdateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -28,7 +28,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.CancelRequest
             var pendingUserInventoryItem = await _userIngredientRepository.GetAsync(ui => ui.IngredientRequestId == request.RequestId);
             if (pendingUserInventoryItem != null)
             {
-                await _userIngredientRepository.DeleteAsync(pendingUserInventoryItem);
+                await _userIngredientRepository.DeleteAsync(pendingUserInventoryItem, permanent: true);
             }
 
             ingredientRequest.Reject(PantryMessages.RequestCancelledByUserMessage);

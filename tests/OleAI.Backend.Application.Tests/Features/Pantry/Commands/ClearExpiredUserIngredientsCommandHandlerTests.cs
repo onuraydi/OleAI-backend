@@ -37,7 +37,7 @@ public class ClearExpiredUserIngredientsCommandHandlerTests
 
         // Assert
         result.Should().Be(PantryMessages.NoExpiredProductsToCleanMessage);
-        _mockUserIngredientRepository.Verify(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<UserIngredient>>(), false, It.IsAny<CancellationToken>()), Times.Never);
+        _mockUserIngredientRepository.Verify(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<UserIngredient>>(), true, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class ClearExpiredUserIngredientsCommandHandlerTests
             .ReturnsAsync(new Paginate<UserIngredient> { Items = expiredItems });
 
         _mockUserIngredientRepository
-            .Setup(r => r.DeleteRangeAsync(expiredItems, false, It.IsAny<CancellationToken>()))
+            .Setup(r => r.DeleteRangeAsync(expiredItems, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expiredItems);
 
         // Act
@@ -66,6 +66,6 @@ public class ClearExpiredUserIngredientsCommandHandlerTests
 
         // Assert
         result.Should().Be("Tarihi geçmiş 2 adet ürün dolabınızdan temizlendi");
-        _mockUserIngredientRepository.Verify(r => r.DeleteRangeAsync(expiredItems, false, It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserIngredientRepository.Verify(r => r.DeleteRangeAsync(expiredItems, true, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

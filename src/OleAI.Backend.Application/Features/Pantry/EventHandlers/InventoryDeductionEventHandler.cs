@@ -41,7 +41,7 @@ namespace OleAI.Backend.Application.Features.Pantry.EventHandlers
                 if (item.Amount <= amountNeeded)
                 {
                     // Ürün tamamen bitti: dolandan sil, alışveriş listesini tetikle
-                    await _userIngredientRepository.DeleteAsync(item, cancellationToken: cancellationToken);
+                    await _userIngredientRepository.DeleteAsync(item, permanent: true, cancellationToken: cancellationToken);
 
                     await _mediator.Publish(new IngredientDepletedEvent
                     {
