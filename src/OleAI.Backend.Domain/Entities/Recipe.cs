@@ -8,6 +8,10 @@ public class Recipe : Entity<Guid>
     public Guid UserId { get; private set; }
     public string Title { get; private set; }
     public string Description { get; private set; }
+    public RecipeDifficulty Difficulty { get; private set; }
+    public int Servings { get; private set; }
+    public int PrepTime { get; private set; }
+    public int CookTime { get; private set; }
     public RecipeVisibility Visibility { get; private set; }
     public RecipeStatus Status { get; private set; }
 
@@ -21,6 +25,12 @@ public class Recipe : Entity<Guid>
     private readonly List<RecipeImage> _recipeImages = new();
     public IReadOnlyCollection<RecipeImage> RecipeImages => _recipeImages;
 
+    private readonly List<RecipeCategoryMapping> _recipeCategories = new();
+    public IReadOnlyCollection<RecipeCategoryMapping> RecipeCategories => _recipeCategories;
+
+    private readonly List<RecipeTag> _recipeTags = new();
+    public IReadOnlyCollection<RecipeTag> RecipeTags => _recipeTags;
+
 
     public virtual ICollection<RecipeComment> Comments { get; private set; }
     public virtual ICollection<RecipeInteraction> Interactions { get; private set; }
@@ -28,23 +38,31 @@ public class Recipe : Entity<Guid>
     private Recipe() { } // EF Core için
 
     // Factory Method: Yeni tarif sadece bu yolla yaratılır
-    public static Recipe Create(Guid userId, string title, string description, RecipeVisibility visibility)
+    public static Recipe Create(Guid userId, string title, string description, RecipeDifficulty difficulty, int servings, int prepTime, int cookTime, RecipeVisibility visibility)
     {
         var recipe = new Recipe
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             Title = title,
-            Description = description
+            Description = description,
+            Difficulty = difficulty,
+            Servings = servings,
+            PrepTime = prepTime,
+            CookTime = cookTime
         };
         recipe.SetVisibilityAndStatus(visibility);
         return recipe;
     }
 
-    public void UpdateDetails(string title, string description, RecipeVisibility visibility)
+    public void UpdateDetails(string title, string description, RecipeDifficulty difficulty, int servings, int prepTime, int cookTime, RecipeVisibility visibility)
     {
         Title = title;
         Description = description;
+        Difficulty = difficulty;
+        Servings = servings;
+        PrepTime = prepTime;
+        CookTime = cookTime;
         SetVisibilityAndStatus(visibility);
     }
 
@@ -109,6 +127,34 @@ public class Recipe : Entity<Guid>
         }
 
         return imagesToDeleteFromCloud;
+    }
+
+    public void SyncCategories(IEnumerable<int> categoryIds)
+    {
+        var incoming = categoryIds.ToList();
+        _recipeCategories.RemoveAll(c => !incoming.Contains(c.RecipeCategoryId));
+
+        foreach (var id in incoming)
+        {
+            if (!_recipeCategories.Any(c => c.RecipeCategoryId == id))
+            {
+                _recipeCategories.Add(new RecipeCategoryMapping(Guid.Empty, Id, id));
+            }
+        }
+    }
+
+    public void SyncTags(IEnumerable<int> tagIds)
+    {
+        var incoming = tagIds.ToList();
+        _recipeTags.RemoveAll(t => !incoming.Contains(t.TagId));
+
+        foreach (var id in incoming)
+        {
+            if (!_recipeTags.Any(t => t.TagId == id))
+            {
+                _recipeTags.Add(new RecipeTag(Guid.Empty, Id, id));
+            }
+        }
     }
 
     /// <summary>
