@@ -102,14 +102,10 @@ namespace OleAI.Backend.Presentation.Controllers
         /// Dolaptaki bir ürünün miktarını manuel olarak günceller.
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIngredientQuantity([FromRoute] Guid id, [FromBody] double newQuantity)
+        public async Task<IActionResult> UpdateIngredientQuantity([FromRoute] Guid id, [FromBody] UpdateUserIngredientRequest request)
         {
-            var request = new UpdateUserIngredientRequest
-            {
-                Id = id,
-                UserId = LoggedInUserId,
-                NewQuantity = newQuantity
-            };
+            request.Id = id;
+            request.UserId = LoggedInUserId;
 
             var command = new UpdateUserIngredientCommand
             {
