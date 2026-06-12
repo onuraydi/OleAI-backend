@@ -74,5 +74,13 @@ namespace OleAI.Backend.Domain.Entities
             Quantity = quantity;
             Unit = unit;
         }
+
+        public void ApprovePendingRequest(Guid masterIngredientId)
+        {
+            if (IngredientRequestId == null)
+                throw new InvalidOperationException(DomainConstants.ProductAlreadyApprovedOrRequestIdMissingMessage);
+
+            IngredientId = masterIngredientId;
+        }
     }
 }
