@@ -202,8 +202,14 @@ namespace OleAI.Backend.Persistence.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("DefaultExpirationMode")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("EstimatedShelfLifeInDays")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsPolarizing")
                         .HasColumnType("bit");
@@ -280,6 +286,9 @@ namespace OleAI.Backend.Persistence.Migrations
 
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("EstimatedShelfLifeInDays")
+                        .HasColumnType("int");
 
                     b.Property<string>("LlmAnalysisResult")
                         .HasColumnType("nvarchar(max)")
