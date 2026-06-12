@@ -10,6 +10,8 @@ namespace OleAI.Backend.Application.Features.Ingredients.Dtos.Responses
         public string CategoryIconName { get; set; } = string.Empty;
         public MeasurementCategory UnitFamily { get; set; }
         public bool IsPolarizing { get; set; }
+        public int? EstimatedShelfLifeInDays { get; set; }
+        public ExpirationMode DefaultExpirationMode { get; set; }
         public DateTime? DeletedDate { get; set; } // Arayüzde "Pasif" yazabilmek için
     }
 }
