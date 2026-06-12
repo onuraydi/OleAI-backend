@@ -65,9 +65,6 @@ public class AddShoppingListItemCommandHandler
 
         if (req.IngredientId.HasValue)
         {
-            await _businessRules.ItemMustNotAlreadyExistInActiveList(
-                req.UserId, req.IngredientId.Value, cancellationToken);
-
             var cacheKey = $"{IngredientCacheKeyPrefix}{req.IngredientId}";
             var cachedIngredient = await _cacheService.GetAsync<IngredientCacheModel>(cacheKey);
 
@@ -93,11 +90,29 @@ public class AddShoppingListItemCommandHandler
                 throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
                     $"'{req.Unit}' birimi bu malzeme için geçerli değil. Uygun aile: {cachedIngredient.UnitFamily}.");
 
-            newItem = ShoppingListItem.CreateStandard(
-                userId: req.UserId,
-                ingredientId: req.IngredientId.Value,
-                quantity: req.Quantity,
-                unit: req.Unit);
+            var existingItem = await _shoppingListItemRepository.GetAsync(
+                predicate: s => s.UserId == req.UserId && s.IngredientId == req.IngredientId.Value && !s.IsPurchased,
+                enableTracking: true,
+                cancellationToken: cancellationToken);
+
+            if (existingItem != null)
+            {
+                var convertedAmount = MeasurementUnitHelper.ConvertAmount(req.Quantity, req.Unit, existingItem.Unit);
+                existingItem.UpdateQuantity(existingItem.Quantity + convertedAmount, existingItem.Unit);
+                newItem = existingItem;
+
+                await _shoppingListItemRepository.UpdateAsync(existingItem, cancellationToken);
+            }
+            else
+            {
+                newItem = ShoppingListItem.CreateStandard(
+                    userId: req.UserId,
+                    ingredientId: req.IngredientId.Value,
+                    quantity: req.Quantity,
+                    unit: req.Unit);
+
+                await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
+            }
 
             responseIngredientName = cachedIngredient.Name;
             responseCategoryName = cachedIngredient.CategoryName;
@@ -117,9 +132,9 @@ public class AddShoppingListItemCommandHandler
             responseIngredientName = ingredientRequest.RequestedName!;
             responseCategoryName = "DİĞER";
             responseCategoryIconName = "fastfood";
-        }
 
-        await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
+            await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
+        }
 
         if (!req.IngredientId.HasValue && newItem.IngredientRequest != null)
         {
