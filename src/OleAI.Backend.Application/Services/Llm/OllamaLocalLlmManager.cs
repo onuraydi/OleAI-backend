@@ -33,11 +33,11 @@ namespace OleAI.Backend.Application.Services.Llm
                 Sistemimizde kayıtlı bazı temel malzemeler şunlar: [{existingIngredientNames}]
 
                 Görevler:
-                1. Eğer kullanıcının girdiği kelime, sistemdeki temel malzemelerden birinin eşanlamlısı, yanlış yazılmış hali veya alt türüyse (örn: 'Çeri Domates' -> 'Domates' ya da 'Domates' -> 'Domaset'), IsNew=false yap ve SuggestedAliasFor alanına sistemdeki o temel malzemenin adını yaz.
-                2. Eğer bu tamamen yeni, geçerli ve yenilebilir bir malzemeyse (örn: 'Ejder Meyvesi'), IsNew=true yap, SuggestedAliasFor=null yap. Buna uygun bir Kategori (Sebze, Meyve, Süt Ürünleri, Kuru Gıda vb.) ve BaseUnitType (Gr, Adet, Litre) belirle.
+                1. Eğer kullanıcının girdiği kelime, sistemdeki temel malzemelerden birinin eşanlamlısı, yanlış yazılmış hali veya alt türüyse (örn: 'Çeri Domates' -> 'Domates' ya da 'Domates' -> 'Domaset'), IsNew=false yap ve SuggestedAliasFor alanına sistemdeki o temel malzemenin adını yaz. Ayrıca EstimatedShelfLifeInDays değerini (gün cinsinden raf ömrü) tahmin et (Örn: Süt ise 4).
+                2. Eğer bu tamamen yeni, geçerli ve yenilebilir bir malzemeyse (örn: 'Ejder Meyvesi'), IsNew=true yap, SuggestedAliasFor=null yap. Buna uygun bir Kategori (Sebze, Meyve, Süt Ürünleri, Kuru Gıda vb.), BaseUnitType (Gr, Adet, Litre) belirle ve EstimatedShelfLifeInDays değerini (gün cinsinden) tahmin et.
                 3. Eğer bu anlamsız bir metinse (örn: 'asdfg') veya yiyecek değilse, IsNew=false yap, Reason kısmına 'Geçersiz yiyecek maddesi' yaz.
 
-                SADECE geçerli bir JSON objesi döndür. Başka hiçbir metin veya markdown (```json) kullanma.";
+                SADECE geçerli bir JSON objesi döndür. JSON içinde 'EstimatedShelfLifeInDays' adında integer (sayısal) bir alan daha olsun. Başka hiçbir metin veya markdown (```json) kullanma.";
 
             try
             {
@@ -112,6 +112,7 @@ namespace OleAI.Backend.Application.Services.Llm
                 SuggestedAliasFor = (string?)null,
                 Category = "Belirsiz",
                 BaseUnitType = "Adet",
+                EstimatedShelfLifeInDays = (int?)null,
                 Reason = $"SİSTEM HATASI: {errorMessage}. Lütfen manuel karar verin."
             };
 
