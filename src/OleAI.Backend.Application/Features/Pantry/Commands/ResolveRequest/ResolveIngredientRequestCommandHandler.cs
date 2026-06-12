@@ -36,7 +36,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
                 if (!command.Request.NewCategoryId.HasValue || !command.Request.NewUnitFamily.HasValue)
                     throw new BusinessException(PantryMessages.CategoryAndUnitTypeRequiredMessage);
 
-                var newIngredient = new Ingredient(Guid.NewGuid(), ingredientRequest.RequestedName, command.Request.NewCategoryId.Value, command.Request.NewUnitFamily.Value);
+                var newIngredient = new Ingredient(Guid.NewGuid(), ingredientRequest.RequestedName, command.Request.NewCategoryId.Value, command.Request.NewUnitFamily.Value, command.Request.EstimatedShelfLifeInDays, ExpirationMode.ShelfLife);
                 await _ingredientRepository.AddAsync(newIngredient);
 
                 targetMasterIngredientId = newIngredient.Id;

@@ -11,5 +11,6 @@ namespace OleAI.Backend.Application.Features.Pantry.Dtos.Requests
         public double Quantity { get; set; }
         public MeasurementUnit Unit { get; set; } = MeasurementUnit.Piece;
         public DateTime? ExpirationDate { get; set; }
+        public int? EstimatedShelfLifeInDays { get; set; }
     }
 }
