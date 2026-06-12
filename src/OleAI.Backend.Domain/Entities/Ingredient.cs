@@ -17,6 +17,17 @@ namespace OleAI.Backend.Domain.Entities
         /// </summary>
         public MeasurementCategory UnitFamily { get; private set; }
 
+        /// <summary>
+        /// Malzemenin açılmış / normal şartlardaki ortalama raf ömrü (gün cinsinden).
+        /// AI tarafından tahmin edilebilir veya manuel girilebilir.
+        /// </summary>
+        public int? EstimatedShelfLifeInDays { get; private set; }
+
+        /// <summary>
+        /// Admin panelinden belirlenen varsayılan son kullanma tarihi takip türü (Örn: Auto, ShelfLife, ExactDate)
+        /// </summary>
+        public ExpirationMode DefaultExpirationMode { get; private set; }
+
         public virtual Category Category { get; private set; } = null!;
         public virtual ICollection<IngredientAlias> Aliases { get; private set; }
         public virtual ICollection<UserIngredient> UserIngredients { get; private set; }
@@ -27,19 +38,22 @@ namespace OleAI.Backend.Domain.Entities
         {
             Name = string.Empty;
             UnitFamily = MeasurementCategory.Other;
+            DefaultExpirationMode = ExpirationMode.Auto;
             Aliases = new HashSet<IngredientAlias>();
             UserIngredients = new HashSet<UserIngredient>();
             ShoppingListItems = new HashSet<ShoppingListItem>();
             UserDislikedIngredients = new HashSet<UserDislikedIngredient>();
         }
 
-        public Ingredient(Guid id, string name, Guid categoryId, MeasurementCategory unitFamily = MeasurementCategory.Other)
+        public Ingredient(Guid id, string name, Guid categoryId, MeasurementCategory unitFamily = MeasurementCategory.Other, int? estimatedShelfLifeInDays = null, ExpirationMode defaultExpirationMode = ExpirationMode.Auto)
             : this()
         {
             Id = id;
             Name = name;
             CategoryId = categoryId;
             UnitFamily = unitFamily;
+            EstimatedShelfLifeInDays = estimatedShelfLifeInDays;
+            DefaultExpirationMode = defaultExpirationMode;
         }
 
         /// <summary>
@@ -62,6 +76,19 @@ namespace OleAI.Backend.Domain.Entities
         public void SetPolarizing(bool isPolarizing)
         {
             IsPolarizing = isPolarizing;
+        }
+
+        /// <summary>
+        /// Ortalama raf ömrünü günceller.
+        /// </summary>
+        public void SetEstimatedShelfLifeInDays(int? days)
+        {
+            EstimatedShelfLifeInDays = days;
+        }
+
+        public void SetDefaultExpirationMode(ExpirationMode mode)
+        {
+            DefaultExpirationMode = mode;
         }
     }
 }
