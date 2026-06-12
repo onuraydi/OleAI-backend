@@ -8,6 +8,7 @@ namespace OleAI.Backend.Domain.Entities
         public Guid UserId { get; private set; }
         public Guid? CategoryId { get; private set; }
         public string RequestedName { get; private set; }
+        public int? EstimatedShelfLifeInDays { get; private set; }
         public IngredientRequestStatus Status { get; private set; }
         public string? LlmAnalysisResult { get; private set; }
         public string? AdminNote { get; private set; }
@@ -20,12 +21,13 @@ namespace OleAI.Backend.Domain.Entities
             RequestedName = string.Empty;
         }
 
-        public IngredientRequest(Guid id, Guid userId, string requestedName, Guid? categoryId = null) : this()
+        public IngredientRequest(Guid id, Guid userId, string requestedName, Guid? categoryId = null, int? estimatedShelfLifeInDays = null) : this()
         {
             Id = id;
             UserId = userId;
             RequestedName = requestedName;
             CategoryId = categoryId;
+            EstimatedShelfLifeInDays = estimatedShelfLifeInDays;
             Status = IngredientRequestStatus.Pending;
         }
 

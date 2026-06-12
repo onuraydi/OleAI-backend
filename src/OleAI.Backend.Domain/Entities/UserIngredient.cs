@@ -103,6 +103,11 @@ namespace OleAI.Backend.Domain.Entities
             Unit = newUnit;
         }
 
+        public void UpdateExpirationDate(DateTime? expirationDate)
+        {
+            ExpirationDate = expirationDate;
+        }
+
         public void ApprovePendingRequest(Guid masterIngredientId)
         {
             if (IngredientRequestId == null)
