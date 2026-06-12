@@ -13,12 +13,19 @@ namespace OleAI.Backend.Application.Tests.Features.ShoppingList.EventHandlers;
 public class PantryAdditionEventHandlerTests
 {
     private readonly Mock<IUserIngredientRepository> _mockUserIngredientRepo;
+    private readonly Mock<IIngredientRepository> _mockIngredientRepo;
+    private readonly Mock<IIngredientRequestRepository> _mockIngredientRequestRepo;
     private readonly PantryAdditionEventHandler _handler;
 
     public PantryAdditionEventHandlerTests()
     {
         _mockUserIngredientRepo = new Mock<IUserIngredientRepository>();
-        _handler = new PantryAdditionEventHandler(_mockUserIngredientRepo.Object);
+        _mockIngredientRepo = new Mock<IIngredientRepository>();
+        _mockIngredientRequestRepo = new Mock<IIngredientRequestRepository>();
+        _handler = new PantryAdditionEventHandler(
+            _mockUserIngredientRepo.Object,
+            _mockIngredientRepo.Object,
+            _mockIngredientRequestRepo.Object);
     }
 
     [Fact]

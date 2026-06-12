@@ -95,7 +95,7 @@ public class UpdateUserIngredientCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUpdatedAmountIsNearZero_AndIngredientExists_ShouldDeleteAndPublishEvent()
+    public async Task Handle_WhenUpdatedAmountIsNearZero_AndIngredientExists_ShouldDelete()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -134,10 +134,8 @@ public class UpdateUserIngredientCommandHandlerTests
 
         _mockMediator.Verify(
             m => m.Publish(
-                It.Is<IngredientDepletedEvent>(e =>
-                    e.UserId == userId &&
-                    e.MasterIngredientId == ingredientId),
+                It.IsAny<IngredientDepletedEvent>(),
                 It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Never);
     }
 }

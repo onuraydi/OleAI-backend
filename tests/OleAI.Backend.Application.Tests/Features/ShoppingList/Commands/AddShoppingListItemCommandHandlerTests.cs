@@ -164,7 +164,7 @@ public class AddShoppingListItemCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenItemAlreadyInList_ShouldThrowBusinessException()
+    public async Task Handle_WhenItemAlreadyInList_ShouldUpdateQuantity()
     {
         // Arrange: malzeme var ama zaten listede
         SetupIngredientExists();
@@ -189,10 +189,14 @@ public class AddShoppingListItemCommandHandlerTests
             }
         };
 
-        // Act & Assert
-        await FluentActions.Invoking(() => _handler.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<BusinessException>()
-            .WithMessage(ShoppingListMessages.ProductAlreadyInList);
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockShoppingListRepo.Verify(
+            r => r.UpdateAsync(It.Is<ShoppingListItem>(i => i.Quantity == 2 && i.Unit == MeasurementUnit.Gram), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }
 
