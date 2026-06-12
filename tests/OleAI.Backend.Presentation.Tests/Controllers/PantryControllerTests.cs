@@ -117,11 +117,12 @@ public class PantryControllerTests
     {
         // Arrange
         var inventoryId = Guid.NewGuid();
+        var request = new UpdateUserIngredientRequest { NewQuantity = 4.5 };
         _mockMediator.Setup(m => m.Send(It.IsAny<UpdateUserIngredientCommand>(), default))
             .ReturnsAsync("updated");
 
         // Act
-        var result = await _controller.UpdateIngredientQuantity(inventoryId, 4.5);
+        var result = await _controller.UpdateIngredientQuantity(inventoryId, request);
 
         // Assert
         (result as OkObjectResult).Should().NotBeNull();
