@@ -12,10 +12,17 @@ namespace OleAI.Backend.Application.Features.ShoppingList.EventHandlers;
 public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEvent>
 {
     private readonly IUserIngredientRepository _userIngredientRepository;
+    private readonly IIngredientRepository _ingredientRepository;
+    private readonly IIngredientRequestRepository _ingredientRequestRepository;
 
-    public PantryAdditionEventHandler(IUserIngredientRepository userIngredientRepository)
+    public PantryAdditionEventHandler(
+        IUserIngredientRepository userIngredientRepository,
+        IIngredientRepository ingredientRepository,
+        IIngredientRequestRepository ingredientRequestRepository)
     {
         _userIngredientRepository = userIngredientRepository;
+        _ingredientRepository = ingredientRepository;
+        _ingredientRequestRepository = ingredientRequestRepository;
     }
 
     public async Task Handle(ItemPurchasedEvent notification, CancellationToken cancellationToken)
@@ -30,6 +37,13 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
                 enableTracking: true,
                 cancellationToken: cancellationToken);
 
+            var ingredient = await _ingredientRepository.GetAsync(i => i.Id == notification.IngredientId.Value, cancellationToken: cancellationToken);
+            DateTime? expirationDate = null;
+            if (ingredient?.EstimatedShelfLifeInDays.HasValue == true)
+            {
+                expirationDate = DateTime.UtcNow.AddDays(ingredient.EstimatedShelfLifeInDays.Value);
+            }
+
             if (existing != null)
             {
                 if (existing.DeletedDate != null)
@@ -42,6 +56,13 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
                     existing.AddQuantity(notification.Quantity);
                 }
 
+                // Eğer ürün sepete eklendiğinde rafta mevcut değilse (sıfırdan eklendi veya yeni tarih gerekiyorsa) süresini uzatabiliriz ama en kolayı yeni alımlarda tarihi yenilemek veya dokunmamaktır.
+                // İstenen özellik: Yeni eklendiğinde tarih set edilmesi. Eğer existing var ve süresi dolmuşsa veya yoksa yenileyelim:
+                if (!existing.ExpirationDate.HasValue || existing.ExpirationDate < DateTime.UtcNow)
+                {
+                    existing.UpdateExpirationDate(expirationDate);
+                }
+
                 await _userIngredientRepository.UpdateAsync(existing, cancellationToken);
             }
             else
@@ -52,7 +73,8 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
                     userId: notification.UserId,
                     ingredientId: notification.IngredientId.Value,
                     amount: notification.Quantity,
-                    unit: notification.Unit);
+                    unit: notification.Unit,
+                    expirationDate: expirationDate);
 
                 await _userIngredientRepository.AddAsync(newEntry, cancellationToken);
             }
@@ -67,6 +89,13 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
                 enableTracking: true,
                 cancellationToken: cancellationToken);
 
+            var request = await _ingredientRequestRepository.GetAsync(r => r.Id == notification.IngredientRequestId.Value, cancellationToken: cancellationToken);
+            DateTime? expirationDate = null;
+            if (request?.EstimatedShelfLifeInDays.HasValue == true)
+            {
+                expirationDate = DateTime.UtcNow.AddDays(request.EstimatedShelfLifeInDays.Value);
+            }
+
             if (existingPending != null)
             {
                 if (existingPending.DeletedDate != null)
@@ -79,6 +108,11 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
                     existingPending.AddQuantity(notification.Quantity);
                 }
 
+                if (!existingPending.ExpirationDate.HasValue || existingPending.ExpirationDate < DateTime.UtcNow)
+                {
+                    existingPending.UpdateExpirationDate(expirationDate);
+                }
+
                 await _userIngredientRepository.UpdateAsync(existingPending, cancellationToken);
             }
             else
@@ -89,7 +123,8 @@ public class PantryAdditionEventHandler : INotificationHandler<ItemPurchasedEven
                     userId: notification.UserId,
                     ingredientRequestId: notification.IngredientRequestId.Value,
                     amount: notification.Quantity,
-                    unit: notification.Unit);
+                    unit: notification.Unit,
+                    expirationDate: expirationDate);
 
                 await _userIngredientRepository.AddAsync(newEntry, cancellationToken);
             }

@@ -70,5 +70,21 @@ namespace OleAI.Backend.Domain.Services
                 MeasurementCategory.Count => MeasurementUnit.Piece,
                 _ => MeasurementUnit.Piece
             };
+
+        /// <summary>
+        /// Miktarı bir birimden diğerine çevirir (sadece ağırlık ve hacim için uyumludur).
+        /// </summary>
+        public static double ConvertAmount(double amount, MeasurementUnit fromUnit, MeasurementUnit toUnit)
+        {
+            if (fromUnit == toUnit) return amount;
+
+            if (fromUnit == MeasurementUnit.Kilogram && toUnit == MeasurementUnit.Gram) return amount * 1000;
+            if (fromUnit == MeasurementUnit.Gram && toUnit == MeasurementUnit.Kilogram) return amount / 1000;
+
+            if (fromUnit == MeasurementUnit.Liter && toUnit == MeasurementUnit.Milliliter) return amount * 1000;
+            if (fromUnit == MeasurementUnit.Milliliter && toUnit == MeasurementUnit.Liter) return amount / 1000;
+
+            return amount;
+        }
     }
 }
