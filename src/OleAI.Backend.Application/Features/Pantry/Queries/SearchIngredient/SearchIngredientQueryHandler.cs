@@ -12,7 +12,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
     {
         private readonly IIngredientRepository _igredientRepository;
         private readonly ICacheService _cacheService;
-        private const string CacheKey = "Pantry:AllIngredientsCatalog:v2";
+        private const string CacheKey = "Pantry:AllIngredientsCatalog:v3";
         private const int MinimumSearchLength = 2;
 
         public SearchIngredientQueryHandler(IIngredientRepository igredientRepository, ICacheService cacheService)
@@ -71,7 +71,9 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                     UnitFamily = ingredient.UnitFamily,
                     CategoryId = ingredient.CategoryId,
                     CategoryName = ingredient.Category?.Name ?? "Diğer",
-                    CategoryIconName = ingredient.Category?.IconName ?? "fastfood"
+                    CategoryIconName = ingredient.Category?.IconName ?? "fastfood",
+                    EstimatedShelfLifeInDays = ingredient.EstimatedShelfLifeInDays,
+                    DefaultExpirationMode = ingredient.DefaultExpirationMode
                 });
 
                 // Arama havuzuna Eşanlamlı (Alias) kelimeleri ekle
@@ -85,7 +87,9 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                         UnitFamily = ingredient.UnitFamily,
                         CategoryId = ingredient.CategoryId,
                         CategoryName = ingredient.Category?.Name ?? "Diğer",
-                        CategoryIconName = ingredient.Category?.IconName ?? "fastfood"
+                        CategoryIconName = ingredient.Category?.IconName ?? "fastfood",
+                        EstimatedShelfLifeInDays = ingredient.EstimatedShelfLifeInDays,
+                        DefaultExpirationMode = ingredient.DefaultExpirationMode
                     });
                 }
             }

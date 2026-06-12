@@ -35,6 +35,13 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
 
             item!.UpdateQuantity(command.Request.NewQuantity, command.Request.NewUnit ?? item.Unit);
 
+            if (command.Request.ExpirationDate.HasValue || command.Request.ExpirationDate == null)
+            {
+                _pantryBusinessRules.ExpirationDateCannotBeInThePast(command.Request.ExpirationDate);
+                // UI'dan gelen tarihe guncelle (veya temizle)
+                item.UpdateExpirationDate(command.Request.ExpirationDate);
+            }
+
             // Miktar 0'a düşünce (kullanıcı manuel sıfırladı) alışveriş listesini tetikle
             if (Math.Abs(item.Amount) <= ZeroAmountTolerance && item.IngredientId.HasValue)
             {
