@@ -47,13 +47,6 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredien
             {
                 await _userIngredientRepository.DeleteAsync(item, permanent: true, cancellationToken: cancellationToken);
 
-                await _mediator.Publish(new IngredientDepletedEvent
-                {
-                    UserId = item.UserId,
-                    MasterIngredientId = item.IngredientId.Value,
-                    IngredientName = item.Ingredient?.Name ?? string.Empty
-                }, cancellationToken);
-
                 return PantryMessages.IngredientDepletedAndRemovedMessage;
             }
 

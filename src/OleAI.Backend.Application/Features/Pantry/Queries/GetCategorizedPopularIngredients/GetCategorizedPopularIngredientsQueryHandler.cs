@@ -16,14 +16,21 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.GetCategorizedPopula
     public class GetCategorizedPopularIngredientsQueryHandler : IRequestHandler<GetCategorizedPopularIngredientsQuery, List<CategorizedPopularIngredientsResponse>>
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService _cacheService;
+        private const string CacheKey = "Pantry:CategorizedPopularIngredients:v1";
 
-        public GetCategorizedPopularIngredientsQueryHandler(ICategoryRepository categoryRepository)
+        public GetCategorizedPopularIngredientsQueryHandler(ICategoryRepository categoryRepository, OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService cacheService)
         {
             _categoryRepository = categoryRepository;
+            _cacheService = cacheService;
         }
 
         public async Task<List<CategorizedPopularIngredientsResponse>> Handle(GetCategorizedPopularIngredientsQuery request, CancellationToken cancellationToken)
         {
+            var cachedPopular = await _cacheService.GetAsync<List<CategorizedPopularIngredientsResponse>>(CacheKey);
+            if (cachedPopular != null)
+                return cachedPopular;
+
             var queryOptions = new QueryOptions<Category>
             {
                 Include = c => c.Include(x => x.Ingredients).ThenInclude(i => i.UserIngredients),
@@ -65,6 +72,8 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.GetCategorizedPopula
                     });
                 }
             }
+
+            await _cacheService.SetAsync(CacheKey, result, TimeSpan.FromHours(12));
 
             return result;
         }
