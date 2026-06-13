@@ -20,6 +20,8 @@ public class RecipeMappingProfile : Profile
                 ? src.RecipeImages.FirstOrDefault(i => i.IsMain)!.ImageUrl
                 : string.Empty))
             .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.Visibility, opt => opt.MapFrom(src => (int)src.Visibility))
+            .ForMember(dest => dest.VisibilityName, opt => opt.MapFrom(src => src.Visibility.ToString()))
             .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src => src.Comments != null && src.Comments.Any(c => c.Rating != null) ? src.Comments.Where(c => c.Rating != null).Average(c => c.Rating!.Value) : 0))
             .ForMember(dest => dest.TotalRatings, opt => opt.MapFrom(src => src.Comments != null ? src.Comments.Count(c => c.Rating != null) : 0));
 
@@ -28,7 +30,18 @@ public class RecipeMappingProfile : Profile
         CreateMap<Recipe, RecipeDetailResponse>()
             .ForMember(dest => dest.Ingredients, opt => opt.MapFrom(src => src.RecipeIngredients))
             .ForMember(dest => dest.Steps, opt => opt.MapFrom(src => src.RecipeSteps))
-            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.RecipeImages));
+            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.RecipeImages))
+            .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.RecipeCategories))
+            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.RecipeTags));
+
+        CreateMap<RecipeCategoryMapping, RecipeCategoryDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.RecipeCategory.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.RecipeCategory.Name))
+            .ForMember(dest => dest.IconName, opt => opt.MapFrom(src => src.RecipeCategory.IconName));
+
+        CreateMap<RecipeTag, TagDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Tag.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Tag.Name));
 
         CreateMap<RecipeIngredient, RecipeIngredientResponse>()
             .ForMember(dest => dest.IngredientName, opt => opt.MapFrom(src => src.Ingredient.Name))
@@ -42,5 +55,12 @@ public class RecipeMappingProfile : Profile
             .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.Replies));
 
         CreateMap<Paginate<RecipeComment>, Paginate<RecipeCommentResponse>>();
+
+        CreateMap<RecipeComment, MyCommentResponse>()
+            .ForMember(dest => dest.RecipeName, opt => opt.MapFrom(src => src.Recipe != null ? src.Recipe.Title : string.Empty))
+            .ForMember(dest => dest.RecipeImageUrl, opt => opt.MapFrom(src => src.Recipe != null && src.Recipe.RecipeImages.FirstOrDefault(i => i.IsMain) != null ? src.Recipe.RecipeImages.FirstOrDefault(i => i.IsMain)!.ImageUrl : null))
+            .ForMember(dest => dest.ParentCommentContent, opt => opt.MapFrom(src => src.ParentComment != null ? src.ParentComment.Content : null));
+
+        CreateMap<Paginate<RecipeComment>, Paginate<MyCommentResponse>>();
     }
 }
