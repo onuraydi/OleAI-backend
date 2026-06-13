@@ -33,7 +33,7 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments)
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions)
         };
 
         var searchTerm = request.SearchTerm?.ToLower();
@@ -74,6 +74,6 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
         }
 
         var recipes = await _recipeRepository.GetListAsync(query, cancellationToken);
-        return _mapper.Map<Paginate<RecipeListItemResponse>>(recipes);
+        return _mapper.Map<Paginate<RecipeListItemResponse>>(recipes, opt => opt.Items["currentUserId"] = userId);
     }
 }

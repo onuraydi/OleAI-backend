@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.1.1" />
@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OleAI.Backend.Domain\OleAI.Backend.Domain.csproj" />
+    <ProjectReference Include="..\OleAI.Backend.Core\OleAI.Backend.Core.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

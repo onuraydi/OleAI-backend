@@ -73,7 +73,7 @@ public abstract class BaseUserInteractionRecipesQueryHandler<TQuery> : IRequestH
         var interactions = await RecipeInteractionRepository.GetListAsync(query, cancellationToken);
 
         var recipes = interactions.Items.Select(i => i.Recipe).ToList();
-        var mappedRecipes = Mapper.Map<IList<RecipeListItemResponse>>(recipes);
+        var mappedRecipes = Mapper.Map<IList<RecipeListItemResponse>>(recipes, opt => opt.Items["currentUserId"] = userId);
 
         return new Paginate<RecipeListItemResponse>
         {
