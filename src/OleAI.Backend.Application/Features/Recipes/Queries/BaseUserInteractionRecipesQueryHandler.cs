@@ -38,10 +38,37 @@ public abstract class BaseUserInteractionRecipesQueryHandler<TQuery> : IRequestH
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Predicate = GetInteractionPredicate(userId),
+            Predicate = GetInteractionPredicate(userId, request),
             Include = q => q.Include(i => i.Recipe).ThenInclude(r => r.RecipeImages)
                             .Include(i => i.Recipe).ThenInclude(r => r.Comments)
+                            .Include(i => i.Recipe).ThenInclude(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
+                            .Include(i => i.Recipe).ThenInclude(r => r.RecipeCategories).ThenInclude(rc => rc.RecipeCategory)
         };
+
+        if (request is IFilterableRecipeQuery filterableRequest && !string.IsNullOrWhiteSpace(filterableRequest.SortBy))
+        {
+            switch (filterableRequest.SortBy.ToLower())
+            {
+                case "highest rated":
+                    query.OrderBy = q => q.OrderByDescending(i => i.Recipe.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0);
+                    break;
+                case "quickest":
+                    query.OrderBy = q => q.OrderBy(i => i.Recipe.PrepTime + i.Recipe.CookTime);
+                    break;
+                case "popular":
+                    query.OrderBy = q => q.OrderByDescending(i => i.Recipe.Interactions.Count(interaction => interaction.IsLiked))
+                                          .ThenByDescending(i => i.Recipe.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0);
+                    break;
+                case "newest":
+                default:
+                    query.OrderBy = q => q.OrderByDescending(i => i.Recipe.CreatedDate);
+                    break;
+            }
+        }
+        else
+        {
+            query.OrderBy = q => q.OrderByDescending(i => i.CreatedDate);
+        }
 
         var interactions = await RecipeInteractionRepository.GetListAsync(query, cancellationToken);
 
@@ -58,5 +85,5 @@ public abstract class BaseUserInteractionRecipesQueryHandler<TQuery> : IRequestH
         };
     }
 
-    protected abstract Expression<Func<RecipeInteraction, bool>> GetInteractionPredicate(Guid userId);
+    protected abstract Expression<Func<RecipeInteraction, bool>> GetInteractionPredicate(Guid userId, TQuery request);
 }

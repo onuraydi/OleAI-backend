@@ -13,6 +13,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetAllAdminRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyComments;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyDislikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyLikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
@@ -204,6 +205,14 @@ public class RecipesController : BaseController
     [HttpGet("my-recipes")]
     [Authorize]
     public async Task<IActionResult> GetMyRecipes([FromQuery] GetMyRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+
+    [HttpGet("my-comments")]
+    public async Task<IActionResult> GetMyComments([FromQuery] GetMyCommentsQuery query)
     {
         var result = await Mediator.Send(query);
         return Ok(result);

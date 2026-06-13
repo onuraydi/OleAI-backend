@@ -22,9 +22,9 @@ public class GetRecipeCommentsQueryHandler : IRequestHandler<GetRecipeCommentsQu
     {
         var options = new OleAI.Backend.Core.Repositories.Options.QueryOptions<Domain.Entities.RecipeComment>
         {
-            Predicate = c => c.RecipeId == request.RecipeId && c.ParentCommentId == null,
+            Predicate = c => c.RecipeId == request.RecipeId && c.ParentCommentId == null && c.DeletedDate == null,
             Include = q => q.Include(c => c.User)
-                           .Include(c => c.Replies).ThenInclude(r => r.User),
+                           .Include(c => c.Replies.Where(r => r.DeletedDate == null)).ThenInclude(r => r.User),
             OrderBy = q => q.OrderByDescending(c => c.CreatedDate),
             Index = request.Page,
             Size = request.Size,

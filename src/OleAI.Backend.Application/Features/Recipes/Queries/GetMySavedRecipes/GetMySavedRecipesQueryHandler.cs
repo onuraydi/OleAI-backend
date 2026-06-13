@@ -13,9 +13,15 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes
         {
         }
 
-        protected override Expression<Func<RecipeInteraction, bool>> GetInteractionPredicate(Guid userId)
+        protected override Expression<Func<RecipeInteraction, bool>> GetInteractionPredicate(Guid userId, GetMySavedRecipesQuery request)
         {
-            return i => i.UserId == userId && i.IsSaved;
+            var searchTerm = request.SearchTerm?.ToLower();
+            return i => i.UserId == userId && i.IsSaved &&
+                        (string.IsNullOrWhiteSpace(searchTerm) || i.Recipe.Title.ToLower().Contains(searchTerm) || i.Recipe.Description.ToLower().Contains(searchTerm)) &&
+                        (!request.CategoryId.HasValue || i.Recipe.RecipeCategories.Any(c => c.RecipeCategoryId == request.CategoryId.Value)) &&
+                        (!request.Difficulty.HasValue || i.Recipe.Difficulty == (OleAI.Backend.Domain.Enums.RecipeDifficulty)request.Difficulty.Value) &&
+                        (!request.MaxTotalTime.HasValue || (i.Recipe.PrepTime + i.Recipe.CookTime) <= request.MaxTotalTime.Value) &&
+                        (!request.TagId.HasValue || i.Recipe.RecipeTags.Any(t => t.TagId == request.TagId.Value));
         }
     }
 }
