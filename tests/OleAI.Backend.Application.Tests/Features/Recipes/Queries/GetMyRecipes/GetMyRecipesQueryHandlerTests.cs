@@ -46,7 +46,7 @@ public class GetMyRecipesQueryHandlerTests
             .ReturnsAsync(recipes);
 
         var response = new Paginate<RecipeListItemResponse> { Items = new List<RecipeListItemResponse> { new() { Title = "My" } } };
-        _mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(recipes)).Returns(response);
+        _mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(It.IsAny<Paginate<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, Paginate<RecipeListItemResponse>>>>())).Returns(response);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);

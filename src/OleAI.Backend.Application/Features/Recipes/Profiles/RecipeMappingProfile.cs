@@ -23,7 +23,15 @@ public class RecipeMappingProfile : Profile
             .ForMember(dest => dest.Visibility, opt => opt.MapFrom(src => (int)src.Visibility))
             .ForMember(dest => dest.VisibilityName, opt => opt.MapFrom(src => src.Visibility.ToString()))
             .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src => src.Comments != null && src.Comments.Any(c => c.Rating != null) ? src.Comments.Where(c => c.Rating != null).Average(c => c.Rating!.Value) : 0))
-            .ForMember(dest => dest.TotalRatings, opt => opt.MapFrom(src => src.Comments != null ? src.Comments.Count(c => c.Rating != null) : 0));
+            .ForMember(dest => dest.TotalRatings, opt => opt.MapFrom(src => src.Comments != null ? src.Comments.Count(c => c.Rating != null) : 0))
+            .ForMember(dest => dest.IsLiked, opt => opt.MapFrom((src, dest, destMember, context) =>
+                context.TryGetItems(out var items) && items.ContainsKey("currentUserId") &&
+                src.Interactions != null &&
+                src.Interactions.Any(i => i.UserId == (Guid)items["currentUserId"] && i.IsLiked)))
+            .ForMember(dest => dest.IsSaved, opt => opt.MapFrom((src, dest, destMember, context) =>
+                context.TryGetItems(out var items) && items.ContainsKey("currentUserId") &&
+                src.Interactions != null &&
+                src.Interactions.Any(i => i.UserId == (Guid)items["currentUserId"] && i.IsSaved)));
 
         CreateMap<Paginate<Recipe>, Paginate<RecipeListItemResponse>>();
 

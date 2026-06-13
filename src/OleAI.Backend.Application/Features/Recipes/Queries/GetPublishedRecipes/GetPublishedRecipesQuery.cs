@@ -18,4 +18,7 @@ public class GetPublishedRecipesQuery : IRequest<Paginate<RecipeListItemResponse
 
     // Sorting
     public string? SortBy { get; set; }
+
+    // Custom Flags
+    public bool IsForYou { get; set; } = false;
 }

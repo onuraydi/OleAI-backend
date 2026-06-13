@@ -1,9 +1,11 @@
 using AutoMapper;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Moq;
 using OleAI.Backend.Application.Features.Recipes.Dtos.Responses;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
@@ -15,14 +17,26 @@ namespace OleAI.Backend.Application.Tests.Features.Recipes.Queries.GetPublishedR
 public class GetPublishedRecipesQueryHandlerTests
 {
     private readonly Mock<IRecipeRepository> _mockRecipeRepository;
+    private readonly Mock<IUserRepository> _mockUserRepository;
+    private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
     private readonly GetPublishedRecipesQueryHandler _handler;
 
     public GetPublishedRecipesQueryHandlerTests()
     {
         _mockRecipeRepository = new Mock<IRecipeRepository>();
+        _mockUserRepository = new Mock<IUserRepository>();
+        _mockCacheService = new Mock<ICacheService>();
         _mockMapper = new Mock<IMapper>();
-        _handler = new GetPublishedRecipesQueryHandler(_mockRecipeRepository.Object, _mockMapper.Object);
+        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+
+        _handler = new GetPublishedRecipesQueryHandler(
+            _mockRecipeRepository.Object,
+            _mockUserRepository.Object,
+            _mockCacheService.Object,
+            _mockMapper.Object,
+            _mockHttpContextAccessor.Object);
     }
 
     [Fact]
