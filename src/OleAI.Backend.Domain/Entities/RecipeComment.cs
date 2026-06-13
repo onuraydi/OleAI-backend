@@ -44,9 +44,17 @@ public class RecipeComment : Entity<Guid>
         Replies = new HashSet<RecipeComment>();
     }
 
-    public void UpdateContent(string newContent)
+    public void Update(string newContent, int? newRating)
     {
+        if (ParentCommentId == null && (newRating == null || newRating < 1 || newRating > 5))
+            throw new ArgumentException("Ana yorumlar için 1 ile 5 arasında bir puan verilmelidir.");
+        if (ParentCommentId != null && newRating != null)
+            throw new ArgumentException("Yanıt niteliğindeki yorumlara puan verilemez.");
+
         Content = newContent;
+        if (ParentCommentId == null)
+            Rating = newRating;
+
         UpdatedDate = DateTime.UtcNow;
     }
 }
