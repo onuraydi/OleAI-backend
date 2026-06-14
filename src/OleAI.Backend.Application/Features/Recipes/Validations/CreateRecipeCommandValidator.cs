@@ -25,6 +25,12 @@ public class CreateRecipeCommandValidator : AbstractValidator<CreateRecipeComman
         RuleFor(x => x.CreateRecipeRequest.Difficulty)
             .IsInEnum().WithMessage("Geçerli bir zorluk derecesi seçilmelidir.");
 
+        RuleFor(x => x.CreateRecipeRequest.CategoryIds)
+            .Must(c => c == null || c.Count <= 3).WithMessage("En fazla 3 kategori seçebilirsiniz.");
+
+        RuleFor(x => x.CreateRecipeRequest.TagIds)
+            .Must(t => t == null || t.Count <= 5).WithMessage("En fazla 5 etiket seçebilirsiniz.");
+
         RuleFor(x => x.Ingredients)
             .NotEmpty().WithMessage("En az bir malzeme eklemelisiniz.");
 
