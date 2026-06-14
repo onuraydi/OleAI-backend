@@ -44,7 +44,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions)
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
         };
 
         var searchTerm = request.SearchTerm?.ToLower();
@@ -166,7 +166,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
                 Index = 0,
                 Size = cachedTrendIds.Count,
                 EnableTracking = false,
-                Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions),
+                Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag),
                 Predicate = r =>
                     r.DeletedDate == null &&
                     r.Status == RecipeStatus.Published &&
@@ -200,7 +200,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             Index = 0,
             Size = size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions),
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag),
             Predicate = baseQuery.Predicate,
             OrderBy = q => q
                 .OrderByDescending(r => r.Interactions.Count(i => i.IsLiked && i.CreatedDate >= yesterday && i.CreatedDate < today))
