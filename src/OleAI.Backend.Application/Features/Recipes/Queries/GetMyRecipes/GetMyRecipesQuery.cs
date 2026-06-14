@@ -15,6 +15,7 @@ public class GetMyRecipesQuery : IRequest<Paginate<RecipeListItemResponse>>
     public OleAI.Backend.Domain.Enums.RecipeDifficulty? Difficulty { get; set; }
     public int? MaxTotalTime { get; set; }
     public int? TagId { get; set; }
+    public double? MinRating { get; set; }
     public OleAI.Backend.Domain.Enums.RecipeVisibility? Visibility { get; set; }
 
     // Sorting

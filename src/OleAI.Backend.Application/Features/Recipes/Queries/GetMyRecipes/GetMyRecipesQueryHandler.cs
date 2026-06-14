@@ -45,6 +45,7 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
             (!request.Difficulty.HasValue || r.Difficulty == request.Difficulty.Value) &&
             (!request.MaxTotalTime.HasValue || (r.PrepTime + r.CookTime) <= request.MaxTotalTime.Value) &&
             (!request.TagId.HasValue || r.RecipeTags.Any(t => t.TagId == request.TagId.Value)) &&
+            (!request.MinRating.HasValue || (r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0) >= request.MinRating.Value) &&
             (!request.Visibility.HasValue || r.Visibility == request.Visibility.Value);
 
         // Apply Sorting
