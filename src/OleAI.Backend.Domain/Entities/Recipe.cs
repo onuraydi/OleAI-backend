@@ -6,6 +6,7 @@ namespace OleAI.Backend.Domain.Entities;
 public class Recipe : Entity<Guid>
 {
     public Guid UserId { get; private set; }
+    public virtual User? User { get; set; }
     public string Title { get; private set; }
     public string Description { get; private set; }
     public RecipeDifficulty Difficulty { get; private set; }

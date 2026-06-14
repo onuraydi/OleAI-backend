@@ -43,7 +43,8 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
                            .Include(r => r.Interactions)
                            .Include(r => r.Comments)
                            .Include(r => r.RecipeCategories).ThenInclude(rc => rc.RecipeCategory)
-                           .Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag),
+                           .Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
+                           .Include(r => r.User),
             enableTracking: false,
             cancellationToken: cancellationToken);
 

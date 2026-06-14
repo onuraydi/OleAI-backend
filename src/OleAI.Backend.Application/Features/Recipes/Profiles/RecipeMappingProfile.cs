@@ -40,7 +40,13 @@ public class RecipeMappingProfile : Profile
             .ForMember(dest => dest.Steps, opt => opt.MapFrom(src => src.RecipeSteps))
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.RecipeImages))
             .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.RecipeCategories))
-            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.RecipeTags));
+            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.RecipeTags))
+            .ForMember(dest => dest.Author, opt => opt.MapFrom(src => src.User));
+
+        CreateMap<User, BasicUserInfo>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Username))
+            .ForMember(dest => dest.ProfileImageUrl, opt => opt.MapFrom(src => src.ProfileImageUrl));
 
         CreateMap<RecipeCategoryMapping, RecipeCategoryDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.RecipeCategory.Id))
