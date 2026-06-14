@@ -1,7 +1,9 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using DotNetEnv;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,8 @@ using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
 using OleAI.Backend.Presentation.Middlewares;
 using OleAI.Backend.Presentation.Swagger;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Serilog;
 using Serilog.Exceptions;
 using StackExchange.Redis;
@@ -80,6 +84,25 @@ builder.Services.AddRateLimiter(options =>
 // ---- Service Registrations (katman bazlı extension methods) ----
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
+
+// Monitoring / Observability (OpenTelemetry)
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("OleAI.Backend"))
+    .WithMetrics(metrics =>
+    {
+        metrics
+            .AddAspNetCoreInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddPrometheusExporter();
+    });
+
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddSqlServer(
+        connectionString: builder.Configuration.GetConnectionString("OleAIConnectionString") ?? throw new InvalidOperationException("Connection string 'OleAIConnectionString' not found."),
+        name: "SQL Server",
+        tags: new[] { "db", "sql", "sqlserver" }
+    );
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
@@ -198,6 +221,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Prometheus Scraping Endpoint
+app.MapPrometheusScrapingEndpoint("/metrics");
+
+// Health Check Endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 // Automatic Migration at Startup (Development only)
 if (app.Environment.IsDevelopment())
