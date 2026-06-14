@@ -8,6 +8,7 @@ using OleAI.Backend.Application.Services.Inventory;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Services;
 
 namespace OleAI.Backend.Application.Features.Recipes.Commands.StartCooking
 {
@@ -53,14 +54,21 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.StartCooking
             {
                 foreach (var updatedIngredient in userIngredientsResult.Items)
                 {
-                    await _userIngredientRepository.UpdateAsync(updatedIngredient);
+                    if (updatedIngredient.IsDepleted)
+                    {
+                        await _userIngredientRepository.DeleteAsync(updatedIngredient, permanent: true, cancellationToken: cancellationToken);
+                    }
+                    else
+                    {
+                        await _userIngredientRepository.UpdateAsync(updatedIngredient, cancellationToken: cancellationToken);
+                    }
                 }
             }
 
             if (depletedIngredientIds.Any())
             {
                 QueryOptions<ShoppingListItem> shoppingListQuery = new QueryOptions<ShoppingListItem>();
-                query.Predicate = s => s.UserId == userId;
+                shoppingListQuery.Predicate = s => s.UserId == userId;
 
                 var currentShoppingListResult = await _shoppingListItemRepository.GetListAsync(shoppingListQuery, cancellationToken);
 
@@ -70,12 +78,57 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.StartCooking
                 {
                     if (!currentShoppingListIds.Contains(ingredientId))
                     {
+                        var targetUnit = OleAI.Backend.Domain.Enums.MeasurementUnit.Piece;
+                        double targetQty = 1;
+                        var userIngredient = userIngredientsResult.Items.FirstOrDefault(ui => ui.IngredientId == ingredientId);
+                        var recipeIngredient = recipe.RecipeIngredients.FirstOrDefault(ri => ri.IngredientId == ingredientId);
+
+                        if (recipeIngredient != null)
+                        {
+                            targetQty = (double)recipeIngredient.Amount;
+                        }
+
+                        if (userIngredient != null)
+                        {
+                            targetUnit = userIngredient.Unit;
+
+                            if (recipeIngredient != null && targetUnit != (OleAI.Backend.Domain.Enums.MeasurementUnit)recipeIngredient.UnitId)
+                            {
+                                targetQty = MeasurementUnitHelper.ConvertAmount(
+                                    (double)recipeIngredient.Amount,
+                                    (OleAI.Backend.Domain.Enums.MeasurementUnit)recipeIngredient.UnitId,
+                                    targetUnit);
+                            }
+                        }
+                        else if (recipeIngredient != null)
+                        {
+                            targetUnit = (OleAI.Backend.Domain.Enums.MeasurementUnit)recipeIngredient.UnitId;
+                        }
+
+                        // Sürdürülebilir alışveriş miktarları (Çok küçük miktarlar yerine mantıklı paket/alım boyutları)
+                        if (targetUnit == OleAI.Backend.Domain.Enums.MeasurementUnit.Gram && targetQty < 250)
+                        {
+                            targetQty = 250;
+                        }
+                        else if (targetUnit == OleAI.Backend.Domain.Enums.MeasurementUnit.Milliliter && targetQty < 250)
+                        {
+                            targetQty = 250;
+                        }
+                        else if (targetUnit == OleAI.Backend.Domain.Enums.MeasurementUnit.Kilogram && targetQty < 0.25)
+                        {
+                            targetQty = 0.5;
+                        }
+                        else if (targetUnit == OleAI.Backend.Domain.Enums.MeasurementUnit.Liter && targetQty < 0.25)
+                        {
+                            targetQty = 0.5;
+                        }
+
                         await _shoppingListItemRepository.AddAsync(ShoppingListItem.CreateStandard(
                             userId: userId,
                             ingredientId: ingredientId,
-                            quantity: 1,
-                            unit: OleAI.Backend.Domain.Enums.MeasurementUnit.Piece
-                        ));
+                            quantity: targetQty,
+                            unit: targetUnit
+                        ), cancellationToken);
                     }
                 }
             }
