@@ -35,12 +35,21 @@ public class AppDbContext : DbContext
     public DbSet<UserDietaryPreference> UserDietaryPreferences { get; set; }
     public DbSet<UserAllergy> UserAllergies { get; set; }
     public DbSet<UserDislikedIngredient> UserDislikedIngredients { get; set; }
+    public DbSet<SystemLog> SystemLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // çalışan Assembly (proje) içindeki tüm IEntityTypeConfiguration arayüzünü uygulayan
         // sınıfları bulmasını ve otomatik olarak Apply etmesini söylüyoruz.
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Serilog creates this table automatically, EF should only read from it.
+        modelBuilder.Entity<SystemLog>().ToTable("Logs", t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<SystemLog>().HasKey(x => x.Id);
+        modelBuilder.Entity<SystemLog>().Ignore(x => x.CreatedDate);
+        modelBuilder.Entity<SystemLog>().Ignore(x => x.UpdatedDate);
+        modelBuilder.Entity<SystemLog>().Ignore(x => x.DeletedDate);
+
         base.OnModelCreating(modelBuilder);
 
     }

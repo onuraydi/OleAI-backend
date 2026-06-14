@@ -17,12 +17,22 @@ using OleAI.Backend.Core.Helpers;
 using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
+using OleAI.Backend.Presentation.Middlewares;
 using OleAI.Backend.Presentation.Swagger;
+using Serilog;
+using Serilog.Exceptions;
 using StackExchange.Redis;
 
 Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.WithExceptionDetails();
+});
 
 // CORS Config
 builder.Services.AddCors(options =>
@@ -160,8 +170,16 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+app.UseCorrelationId();
+
 // kendi yazdığımız exceptionları entegre ettik.
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseSerilogRequestLogging(options =>
+{
+    // Log the CorrelationId along with request details if needed, though it's already in the context
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+});
 
 app.UseRateLimiter();
 
@@ -204,7 +222,7 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Veritabanı tohumlanırken hata oluştu: {ex.Message}");
+    Log.Fatal(ex, "Veritabanı tohumlanırken hata oluştu.");
 }
 
 await app.RunAsync();
