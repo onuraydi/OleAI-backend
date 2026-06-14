@@ -14,6 +14,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes
         public int? Difficulty { get; set; }
         public int? MaxTotalTime { get; set; }
         public int? TagId { get; set; }
+        public double? MinRating { get; set; }
         public string? SortBy { get; set; }
     }
 }

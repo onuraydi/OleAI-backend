@@ -21,7 +21,8 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes
                         (!request.CategoryId.HasValue || i.Recipe.RecipeCategories.Any(c => c.RecipeCategoryId == request.CategoryId.Value)) &&
                         (!request.Difficulty.HasValue || i.Recipe.Difficulty == (OleAI.Backend.Domain.Enums.RecipeDifficulty)request.Difficulty.Value) &&
                         (!request.MaxTotalTime.HasValue || (i.Recipe.PrepTime + i.Recipe.CookTime) <= request.MaxTotalTime.Value) &&
-                        (!request.TagId.HasValue || i.Recipe.RecipeTags.Any(t => t.TagId == request.TagId.Value));
+                        (!request.TagId.HasValue || i.Recipe.RecipeTags.Any(t => t.TagId == request.TagId.Value)) &&
+                        (!request.MinRating.HasValue || (i.Recipe.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0) >= request.MinRating.Value);
         }
     }
 }

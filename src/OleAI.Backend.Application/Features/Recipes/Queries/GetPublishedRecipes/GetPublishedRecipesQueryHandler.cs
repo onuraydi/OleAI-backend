@@ -97,6 +97,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             (!request.Difficulty.HasValue || r.Difficulty == request.Difficulty.Value) &&
             (!request.MaxTotalTime.HasValue || (r.PrepTime + r.CookTime) <= request.MaxTotalTime.Value) &&
             (!request.TagId.HasValue || r.RecipeTags.Any(t => t.TagId == request.TagId.Value)) &&
+            (!request.MinRating.HasValue || (r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0) >= request.MinRating.Value) &&
             (!request.IsForYou || (
                 !r.RecipeIngredients.Any(ri => ri.IngredientId.HasValue && excludedIngredientIds.Contains(ri.IngredientId.Value)) &&
                 !r.RecipeIngredients.Any(ri => ri.Ingredient != null && excludedCategoryIds.Contains(ri.Ingredient.CategoryId))
