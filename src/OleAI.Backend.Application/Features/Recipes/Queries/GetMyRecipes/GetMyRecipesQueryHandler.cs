@@ -33,7 +33,7 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions)
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
         };
 
         var searchTerm = request.SearchTerm?.ToLower();

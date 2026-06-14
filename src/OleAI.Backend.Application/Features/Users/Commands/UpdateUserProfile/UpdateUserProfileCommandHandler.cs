@@ -50,7 +50,20 @@ namespace OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile
                 user.LastName = request.LastName.Trim();
 
             if (!string.IsNullOrEmpty(request.Username))
-                user.Username = request.Username.Trim();
+            {
+                var formattedUsername = request.Username.Trim();
+
+                var existingUser = await _userRepository.GetAsync(
+                    predicate: u => u.Username == formattedUsername && u.Id != userId,
+                    cancellationToken: cancellationToken);
+
+                if (existingUser != null)
+                {
+                    throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException("Bu kullanıcı adı alınmış. Lütfen farklı bir kullanıcı adı seçin.");
+                }
+
+                user.Username = formattedUsername;
+            }
 
             if (request.BirthDate.HasValue)
                 user.BirthDate = request.BirthDate.Value;

@@ -16,4 +16,5 @@ public class RecipeListItemResponse
     public int PrepTime { get; set; }
     public int CookTime { get; set; }
     public int Difficulty { get; set; }
+    public List<TagDto> Tags { get; set; } = new();
 }

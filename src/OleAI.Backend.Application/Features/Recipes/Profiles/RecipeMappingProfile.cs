@@ -31,7 +31,8 @@ public class RecipeMappingProfile : Profile
             .ForMember(dest => dest.IsSaved, opt => opt.MapFrom((src, dest, destMember, context) =>
                 context.TryGetItems(out var items) && items.ContainsKey("currentUserId") &&
                 src.Interactions != null &&
-                src.Interactions.Any(i => i.UserId == (Guid)items["currentUserId"] && i.IsSaved)));
+                src.Interactions.Any(i => i.UserId == (Guid)items["currentUserId"] && i.IsSaved)))
+            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.RecipeTags));
 
         CreateMap<Paginate<Recipe>, Paginate<RecipeListItemResponse>>();
 
