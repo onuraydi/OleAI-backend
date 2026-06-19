@@ -9,6 +9,7 @@ namespace OleAI.Backend.Domain.Entities
 
         public Guid UserId { get; private set; }
         public Guid? IngredientId { get; private set; }
+        public Guid? IngredientAliasId { get; private set; }
         public Guid? IngredientRequestId { get; private set; }
 
         public double Amount { get; private set; }
@@ -23,6 +24,7 @@ namespace OleAI.Backend.Domain.Entities
 
         public virtual User User { get; private set; } = null!;
         public virtual Ingredient? Ingredient { get; private set; }
+        public virtual IngredientAlias? IngredientAlias { get; private set; }
         public virtual IngredientRequest? IngredientRequest { get; private set; }
 
         protected UserIngredient() { }
@@ -38,13 +40,15 @@ namespace OleAI.Backend.Domain.Entities
             Guid ingredientId,
             double amount,
             MeasurementUnit unit,
-            DateTime? expirationDate = null)
+            DateTime? expirationDate = null,
+            Guid? ingredientAliasId = null)
         {
             return new UserIngredient
             {
                 Id = id,
                 UserId = userId,
                 IngredientId = ingredientId,
+                IngredientAliasId = ingredientAliasId,
                 Amount = amount,
                 Unit = unit,
                 ExpirationDate = expirationDate
