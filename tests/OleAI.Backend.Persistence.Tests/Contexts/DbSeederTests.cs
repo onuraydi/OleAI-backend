@@ -30,10 +30,10 @@ public class DbSeederTests
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var categories = await context.Set<Category>().ToListAsync();
-        categories.Should().HaveCount(7);
+        categories.Should().HaveCount(20);
         categories.Select(c => c.Name).Should().Contain(new[]
         {
-            "Sebzeler", "Et ve Tavuk", "Kuru Bakliyat", "Baharatlar", "Süt Ürünleri", "Yağlar", "Healthy"
+            "Sebzeler", "Meyveler", "Kırmızı Et", "Deniz Ürünleri", "Süt ve Süt Ürünleri", "Tahıllar ve Unlar", "Kuruyemişler ve Tohumlar"
         });
     }
 
@@ -49,7 +49,7 @@ public class DbSeederTests
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var existingCategories = new[]
             {
-                "Sebzeler", "Et ve Tavuk", "Kuru Bakliyat", "Baharatlar", "Süt Ürünleri", "Yağlar", "Healthy"
+                "Sebzeler", "Meyveler", "Kırmızı Et", "Deniz Ürünleri", "Süt ve Süt Ürünleri", "Tahıllar ve Unlar", "Kuruyemişler ve Tohumlar"
             };
 
             foreach (var name in existingCategories)
@@ -70,7 +70,7 @@ public class DbSeederTests
         categories.Should().HaveCount(7);
         categories.Select(c => c.Name).Should().Contain(new[]
         {
-            "Sebzeler", "Et ve Tavuk", "Kuru Bakliyat", "Baharatlar", "Süt Ürünleri", "Yağlar", "Healthy"
+            "Sebzeler", "Meyveler", "Kırmızı Et", "Deniz Ürünleri", "Süt ve Süt Ürünleri", "Tahıllar ve Unlar", "Kuruyemişler ve Tohumlar"
         });
     }
 }
