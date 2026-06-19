@@ -10,6 +10,12 @@ public class AppDbContext : DbContext
     {
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.EnableSensitiveDataLogging();
+    }
+
     public DbSet<User> Users { get; set; }
     public DbSet<OperationClaim> OperationClaims { get; set; }
     public DbSet<UserOperationClaim> UserOperationClaims { get; set; }
@@ -36,6 +42,9 @@ public class AppDbContext : DbContext
     public DbSet<UserAllergy> UserAllergies { get; set; }
     public DbSet<UserDislikedIngredient> UserDislikedIngredients { get; set; }
     public DbSet<SystemLog> SystemLogs { get; set; }
+    public DbSet<ContactMessage> ContactMessages { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<UserDevice> UserDevices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -18,10 +18,10 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
 
             // Aynı malzemeden dolapta iki tane olmamasını garanti altına almak için Composite Unique Index atabiliriz
             // Ancak onay bekleyen (IngredientId = null) durumlar olacağı için sadece filtreli index kullanıyoruz:
-            builder.HasIndex(u => new { u.UserId, u.IngredientId })
+            builder.HasIndex(u => new { u.UserId, u.IngredientId, u.IngredientAliasId })
                 .IsUnique()
                 .HasFilter("[IngredientId] IS NOT NULL")
-                .HasDatabaseName("UK_UserIngredients_UserId_IngredientId");
+                .HasDatabaseName("UK_UserIngredients_UserId_IngredientId_AliasId");
 
             builder.HasOne(ui => ui.User)
                 .WithMany(u => u.UserIngredients)
@@ -32,6 +32,11 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
                 .WithMany(i => i.UserIngredients)
                 .HasForeignKey(ui => ui.IngredientId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(ui => ui.IngredientAlias)
+                .WithMany()
+                .HasForeignKey(ui => ui.IngredientAliasId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         }
     }
 }
