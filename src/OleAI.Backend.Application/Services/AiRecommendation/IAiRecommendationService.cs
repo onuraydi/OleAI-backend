@@ -22,9 +22,11 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
         Task SyncRecipeAsync(
             Guid recipeId,
             string title,
-            string ingredients,
+            List<RecipeIngredientAiDto> ingredients,
             string? category = null,
             List<string>? tags = null,
+            bool isPublished = true,
+            int popularity = 0,
             CancellationToken cancellationToken = default);
     }
 }

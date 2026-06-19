@@ -44,9 +44,11 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
         public async Task SyncRecipeAsync(
             Guid recipeId,
             string title,
-            string ingredients,
+            List<RecipeIngredientAiDto> ingredients,
             string? category = null,
             List<string>? tags = null,
+            bool isPublished = true,
+            int popularity = 0,
             CancellationToken cancellationToken = default)
         {
             try
@@ -59,7 +61,9 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
                     title = title,
                     ingredients = ingredients,
                     category = category,
-                    tags = tags ?? new List<string>()
+                    tags = tags ?? new List<string>(),
+                    isPublished = isPublished,
+                    popularity = popularity
                 };
 
                 var response = await _httpClient.PostAsJsonAsync("/api/v1/recipes/sync", syncData, cancellationToken);
