@@ -17,8 +17,9 @@ namespace OleAI.Backend.Application.Features.Pantry.Profiles
                 .ForMember(dest => dest.MasterIngredientId, opt => opt.MapFrom(src => src.IngredientId))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src =>
-                    src.Ingredient != null ? src.Ingredient.Name :
-                    (src.IngredientRequest != null ? src.IngredientRequest.RequestedName : "Bilinmeyen Ürün")))
+                    src.IngredientAlias != null ? src.IngredientAlias.AliasName :
+                    (src.Ingredient != null ? src.Ingredient.Name :
+                    (src.IngredientRequest != null ? src.IngredientRequest.RequestedName : "Bilinmeyen Ürün"))))
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Ingredient != null && src.Ingredient.Category != null ? src.Ingredient.Category.Name : "Kategorisiz"))
                 .ForMember(dest => dest.CategoryIconName, opt => opt.MapFrom(src => src.Ingredient != null && src.Ingredient.Category != null ? src.Ingredient.Category.IconName : "fastfood"))
                 .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Unit.ToString()))

@@ -17,7 +17,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.GetCategorizedPopula
     {
         private readonly ICategoryRepository _categoryRepository;
         private readonly OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService _cacheService;
-        private const string CacheKey = "Pantry:CategorizedPopularIngredients:v1";
+        private const string CacheKey = "Pantry:CategorizedPopularIngredients:v2";
 
         public GetCategorizedPopularIngredientsQueryHandler(ICategoryRepository categoryRepository, OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService cacheService)
         {

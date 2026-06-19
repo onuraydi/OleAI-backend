@@ -23,8 +23,9 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.GetMyPantry
         {
             QueryOptions<UserIngredient> query = new QueryOptions<UserIngredient>();
             query.Predicate = ui => ui.UserId == command.UserId;
-            query.Include = q => q.Include(ui => ui.Ingredient!).ThenInclude(i => i.Category).Include(ui => ui.IngredientRequest!);
+            query.Include = q => q.Include(ui => ui.Ingredient!).ThenInclude(i => i.Category).Include(ui => ui.IngredientAlias).Include(ui => ui.IngredientRequest!);
             query.EnableTracking = false;
+            query.Size = 1000;
 
             var pantryList = await _userIngredientRepository.GetListAsync(query, cancellationToken);
 
