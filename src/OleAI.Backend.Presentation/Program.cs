@@ -1,6 +1,9 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using DotNetEnv;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Hangfire;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -19,6 +22,7 @@ using OleAI.Backend.Core.Helpers;
 using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
+using OleAI.Backend.Presentation.Core.CrossCuttingConcerns.Monitoring;
 using OleAI.Backend.Presentation.Middlewares;
 using OleAI.Backend.Presentation.Swagger;
 using OpenTelemetry.Metrics;
@@ -92,7 +96,10 @@ builder.Services.AddOpenTelemetry()
     {
         metrics
             .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
             .AddRuntimeInstrumentation()
+            .AddMeter("Microsoft.EntityFrameworkCore")
+            .AddMeter("OleAI.HealthChecks")
             .AddPrometheusExporter();
     });
 
@@ -103,6 +110,17 @@ builder.Services.AddHealthChecks()
         name: "SQL Server",
         tags: new[] { "db", "sql", "sqlserver" }
     );
+
+builder.Services.AddHostedService<HealthCheckMetricsService>();
+
+// Hangfire Config
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("OleAIConnectionString")));
+
+builder.Services.AddHangfireServer();
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
@@ -231,6 +249,9 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
+// Hangfire Dashboard (Development only or protected in Prod)
+app.UseHangfireDashboard("/hangfire");
+
 // Automatic Migration at Startup (Development only)
 if (app.Environment.IsDevelopment())
 {
@@ -256,5 +277,61 @@ catch (Exception ex)
 {
     Log.Fatal(ex, "Veritabanı tohumlanırken hata oluştu.");
 }
+
+try
+{
+    var firebaseCredentialsJson = builder.Configuration["Firebase:CredentialsJson"];
+    var firebaseCredentialsPath = builder.Configuration["Firebase:CredentialsPath"];
+
+    AppOptions? options = null;
+
+    if (!string.IsNullOrEmpty(firebaseCredentialsJson))
+    {
+        options = new AppOptions
+        {
+            Credential = GoogleCredential.FromJson(firebaseCredentialsJson)
+        };
+    }
+    else if (!string.IsNullOrEmpty(firebaseCredentialsPath))
+    {
+        var absolutePath = System.IO.Path.IsPathRooted(firebaseCredentialsPath)
+            ? firebaseCredentialsPath
+            : System.IO.Path.Combine(System.AppContext.BaseDirectory, firebaseCredentialsPath);
+
+        if (System.IO.File.Exists(absolutePath))
+        {
+            options = new AppOptions
+            {
+                Credential = GoogleCredential.FromFile(absolutePath)
+            };
+        }
+        else
+        {
+            Log.Warning("Firebase credentials file not found at {path}", absolutePath);
+        }
+    }
+
+    if (options != null)
+    {
+        FirebaseApp.Create(options);
+    }
+    else
+    {
+        // Fallback to GOOGLE_APPLICATION_CREDENTIALS
+        FirebaseApp.Create();
+    }
+
+    Log.Information("FirebaseApp initialized successfully.");
+}
+catch (Exception ex)
+{
+    Log.Warning(ex, "FirebaseApp initialization failed. Push notifications may not work. Make sure GOOGLE_APPLICATION_CREDENTIALS or Firebase:CredentialsPath is set.");
+}
+
+// Background Jobs Scheduling
+RecurringJob.AddOrUpdate<OleAI.Backend.Application.Features.Notifications.Jobs.ExpirationNotifierJob>(
+    "expiration-notifier",
+    job => job.ExecuteAsync(),
+    Cron.Daily);
 
 await app.RunAsync();
