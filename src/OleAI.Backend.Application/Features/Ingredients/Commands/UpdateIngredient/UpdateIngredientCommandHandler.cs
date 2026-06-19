@@ -30,6 +30,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.UpdateIngredie
             ingredient.SetPolarizing(command.Request.IsPolarizing);
             ingredient.SetEstimatedShelfLifeInDays(command.Request.EstimatedShelfLifeInDays);
             ingredient.SetDefaultExpirationMode(command.Request.DefaultExpirationMode);
+            ingredient.SetStaple(command.Request.IsStaple);
             await _ingredientRepository.UpdateAsync(ingredient!);
 
             return IngredientMessages.IngredientUpdatedMessage;

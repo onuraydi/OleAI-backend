@@ -37,7 +37,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
                 var ingredient = await _businessRules.IngredientMustExistWhenSelectedFromList(command.Request.IngredientId!.Value);
 
                 var existingItem = await _userIngredientRepository.GetAsync(
-                    predicate: ui => ui.UserId == command.Request.UserId && ui.IngredientId == command.Request.IngredientId.Value,
+                    predicate: ui => ui.UserId == command.Request.UserId && ui.IngredientId == command.Request.IngredientId.Value && ui.IngredientAliasId == command.Request.AliasId,
                     cancellationToken: cancellationToken
                     );
 
@@ -60,7 +60,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
                 }
                 else
                 {
-                    userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, command.Request.Quantity, command.Request.Unit, finalExpirationDate);
+                    userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, command.Request.Quantity, command.Request.Unit, finalExpirationDate, command.Request.AliasId);
                     await _userIngredientRepository.AddAsync(userIngredient, cancellationToken);
                     message = PantryMessages.IngredientAddedPantryMessage;
                 }
