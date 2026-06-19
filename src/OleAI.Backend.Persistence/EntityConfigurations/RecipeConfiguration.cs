@@ -12,6 +12,7 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
 
             builder.Property(r => r.Title).IsRequired().HasMaxLength(100);
             builder.Property(r => r.Description).HasMaxLength(2000);
+            builder.Property(r => r.OriginalDescription).HasMaxLength(2000);
             builder.Property(r => r.Visibility).IsRequired();
             builder.Property(r => r.Status).IsRequired();
             builder.Property(r => r.Difficulty).IsRequired();

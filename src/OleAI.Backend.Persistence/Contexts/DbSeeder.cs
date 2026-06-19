@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OleAI.Backend.Domain.Entities;
@@ -12,18 +13,31 @@ namespace OleAI.Backend.Persistence.Contexts
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            // 1. Kategoriler
+            // 1. Kategoriler (Genişletilmiş 20 Kategori)
             if (!await context.Categories.AnyAsync())
             {
                 var categories = new Dictionary<string, Category>
                 {
-                    { "Sebze", new Category(Guid.NewGuid(), "Sebzeler", "grass") },
-                    { "Et", new Category(Guid.NewGuid(), "Et ve Tavuk", "set_meal") },
-                    { "Bakliyat", new Category(Guid.NewGuid(), "Kuru Bakliyat", "grain") },
-                    { "Baharat", new Category(Guid.NewGuid(), "Baharatlar", "scatter_plot") },
-                    { "Sut", new Category(Guid.NewGuid(), "Süt Ürünleri", "water_drop") },
-                    { "Yag", new Category(Guid.NewGuid(), "Yağlar", "oil_barrel") },
-                    { "Healthy", new Category(Guid.NewGuid(), "Healthy", "health_and_safety") }
+                    { "Sebzeler", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000001"), "Sebzeler", "Carrot") },
+                    { "Mantarlar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000021"), "Mantarlar", "Mushroom") },
+                    { "Meyveler", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000002"), "Meyveler", "Apple") },
+                    { "Kırmızı Et", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000003"), "Kırmızı Et", "Beef") },
+                    { "Kümes Hayvanları", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000022"), "Kümes Hayvanları", "Drumstick") },
+                    { "Şarküteri ve İşlenmiş Etler", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000023"), "Şarküteri ve İşlenmiş Etler", "Sausage") },
+                    { "Deniz Ürünleri", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000004"), "Deniz Ürünleri", "Fish") },
+                    { "Süt ve Süt Ürünleri", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000005"), "Süt ve Süt Ürünleri", "Cheese") },
+                    { "Bitkisel Sütler ve Alternatifler", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000024"), "Bitkisel Sütler ve Alternatifler", "LeafyGreen") },
+                    { "Tahıllar ve Unlar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000006"), "Tahıllar ve Unlar", "Wheat") },
+                    { "Bakliyatlar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000025"), "Bakliyatlar", "Bean") },
+                    { "Kuruyemişler ve Tohumlar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000007"), "Kuruyemişler ve Tohumlar", "Nut") },
+                    { "Baharatlar ve Taze Otlar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000008"), "Baharatlar ve Taze Otlar", "Leaf") },
+                    { "Sıvı ve Katı Yağlar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000009"), "Sıvı ve Katı Yağlar", "Droplet") },
+                    { "Soslar, Salçalar ve Çeşniler", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000010"), "Soslar, Salçalar ve Çeşniler", "Bottle") },
+                    { "Tatlandırıcılar ve Şuruplar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000026"), "Tatlandırıcılar ve Şuruplar", "Sugar") },
+                    { "Unlu Mamuller", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000011"), "Unlu Mamuller", "Croissant") },
+                    { "Çikolata ve Kakao", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000027"), "Çikolata ve Kakao", "Cookie") },
+                    { "Hazır ve Konserve Gıdalar", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000028"), "Hazır ve Konserve Gıdalar", "Archive") },
+                    { "İçecekler", new Category(Guid.Parse("C0000000-0000-0000-0000-000000000012"), "İçecekler", "CupSoda") }
                 };
                 await context.Categories.AddRangeAsync(categories.Values);
                 await context.SaveChangesAsync();
@@ -33,24 +47,28 @@ namespace OleAI.Backend.Persistence.Contexts
             if (!await context.Ingredients.AnyAsync())
             {
                 var categoryMap = await context.Categories.ToDictionaryAsync(c => c.Name, c => c.Id);
-                var ingredients = new List<Ingredient>
+                var ingredients = new List<Ingredient>();
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var seedCategories = JsonSerializer.Deserialize<List<SeederCategoryDto>>(DbSeederData.IngredientsJson, options);
+
+                if (seedCategories != null)
                 {
-                    new Ingredient(Guid.NewGuid(), "Domates", categoryMap["Sebzeler"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Biber", categoryMap["Sebzeler"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Soğan", categoryMap["Sebzeler"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Sarımsak", categoryMap["Sebzeler"], MeasurementCategory.Count),
-                    new Ingredient(Guid.NewGuid(), "Tavuk Göğsü", categoryMap["Et ve Tavuk"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Kıyma", categoryMap["Et ve Tavuk"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Mercimek", categoryMap["Kuru Bakliyat"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Makarna", categoryMap["Kuru Bakliyat"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Tuz", categoryMap["Baharatlar"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Karabiber", categoryMap["Baharatlar"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Zeytinyağı", categoryMap["Yağlar"], MeasurementCategory.Volume),
-                    new Ingredient(Guid.NewGuid(), "Yoğurt", categoryMap["Süt Ürünleri"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Yumurta", categoryMap["Süt Ürünleri"], MeasurementCategory.Count),
-                    new Ingredient(Guid.NewGuid(), "Ispanak", categoryMap["Sebzeler"], MeasurementCategory.Weight),
-                    new Ingredient(Guid.NewGuid(), "Mantar", categoryMap["Sebzeler"], MeasurementCategory.Weight)
-                };
+                    foreach (var cat in seedCategories)
+                    {
+                        if (categoryMap.TryGetValue(cat.CategoryName, out var catId))
+                        {
+                            foreach (var ing in cat.Ingredients)
+                            {
+                                if (Enum.TryParse<MeasurementCategory>(ing.MeasurementCategory, out var measurement))
+                                {
+                                    ingredients.Add(new Ingredient(Guid.NewGuid(), ing.Name, catId, measurement));
+                                }
+                            }
+                        }
+                    }
+                }
+
                 await context.Ingredients.AddRangeAsync(ingredients);
                 await context.SaveChangesAsync();
             }
@@ -59,7 +77,7 @@ namespace OleAI.Backend.Persistence.Contexts
             var users = await context.Users.ToListAsync();
             if (!users.Any())
             {
-                var adminUser = new User { Id = Guid.NewGuid(), FirstName = "System", LastName = "Admin", Email = "admin@oleai.com", IsActive = true, IsEmailVerified = true };
+                var adminUser = new User { Id = Guid.NewGuid(), Username = "admin", FirstName = "System", LastName = "Admin", Email = "admin@oleai.com", IsActive = true, IsEmailVerified = true };
                 await context.Users.AddAsync(adminUser);
                 await context.SaveChangesAsync();
                 users.Add(adminUser);
@@ -99,31 +117,186 @@ namespace OleAI.Backend.Persistence.Contexts
             }
             await context.SaveChangesAsync();
 
-            // 4. Tarifler (Eğer 10'dan az tarif varsa 50 tane daha ekle)
-            if (await context.Recipes.CountAsync() < 10)
+            // 4. Tarifler
+            try
             {
-                var creatorId = users.First().Id;
-                var random = new Random();
-                var recipes = new List<Recipe>();
-
-                for (int i = 1; i <= 50; i++)
+                if (!await context.Recipes.AnyAsync())
                 {
-                    var baseIng = allIngredients[random.Next(allIngredients.Count)];
-                    var title = i % 3 == 0 ? $"{baseIng.Name} Sote" : i % 2 == 0 ? $"{baseIng.Name} Çorbası" : $"{baseIng.Name} Salatası";
-                    var recipe = Recipe.Create(creatorId, title, $"{title} için açıklama metni...", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private);
+                    var creatorId = users.First().Id;
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var seedRecipes = JsonSerializer.Deserialize<List<SeederRecipeDto>>(DbSeederData.RecipesJson, options);
 
-                    var selectedIngredients = allIngredients.OrderBy(x => random.Next()).Take(random.Next(3, 7)).ToList();
-                    foreach (var ing in selectedIngredients)
+                    if (seedRecipes != null)
                     {
-                        recipe.AddIngredient(ing.Id, null, random.Next(1, 500), (int)MeasurementUnit.Gram);
+                        var recipesToInsert = new List<Recipe>();
+                        foreach (var sr in seedRecipes)
+                        {
+                            _ = Enum.TryParse<RecipeDifficulty>(sr.Difficulty, out var diff);
+                            var recipe = Recipe.Create(creatorId, sr.Title, sr.Description, diff, sr.Servings, sr.PrepTime, sr.CookTime, RecipeVisibility.Private);
+
+                            foreach (var ing in sr.Ingredients)
+                            {
+                                var matchedIng = allIngredients.FirstOrDefault(i => i.Name.Equals(ing.Name, StringComparison.OrdinalIgnoreCase) || i.Name.Contains(ing.Name, StringComparison.OrdinalIgnoreCase));
+                                if (matchedIng != null)
+                                {
+                                    MeasurementUnit unit = ing.Unit switch
+                                    {
+                                        "Adet" => MeasurementUnit.Piece,
+                                        "Gram" => MeasurementUnit.Gram,
+                                        "Mililitre" => MeasurementUnit.Milliliter,
+                                        "Diş" => MeasurementUnit.Piece,
+                                        "Demet" => MeasurementUnit.Bunch,
+                                        "Çay Kaşığı" => MeasurementUnit.Pinch,
+                                        "Tatlı Kaşığı" => MeasurementUnit.Piece,
+                                        "Yemek Kaşığı" => MeasurementUnit.Piece,
+                                        "Su Bardağı" => MeasurementUnit.Milliliter,
+                                        _ => MeasurementUnit.Other
+                                    };
+                                    recipe.AddIngredient(matchedIng.Id, null, ing.Amount, (int)unit);
+                                }
+                            }
+
+                            for (int stepIdx = 0; stepIdx < sr.Steps.Count; stepIdx++)
+                            {
+                                recipe.AddStep(stepIdx + 1, sr.Steps[stepIdx]);
+                            }
+
+                            // Match Categories
+                            if (sr.Categories != null && sr.Categories.Any())
+                            {
+                                var catIds = new List<int>();
+                                foreach (var cName in sr.Categories)
+                                {
+                                    var catMatch = await context.RecipeCategories.FirstOrDefaultAsync(rc => rc.Name == cName);
+                                    if (catMatch != null) catIds.Add(catMatch.Id);
+                                }
+                                recipe.SyncCategories(catIds);
+                            }
+
+                            // Match Tags
+                            if (sr.Tags != null && sr.Tags.Any())
+                            {
+                                var tagIds = new List<int>();
+                                foreach (var tName in sr.Tags)
+                                {
+                                    var tagMatch = await context.Tags.FirstOrDefaultAsync(t => t.Name == tName);
+                                    if (tagMatch != null) tagIds.Add(tagMatch.Id);
+                                }
+                                recipe.SyncTags(tagIds);
+                            }
+
+                            recipesToInsert.Add(recipe);
+                        }
+                        await context.Recipes.AddRangeAsync(recipesToInsert);
+                        await context.SaveChangesAsync();
                     }
-                    recipe.AddStep(1, "Malzemeleri hazırla.");
-                    recipe.AddStep(2, "Hepsini karıştır ve pişir.");
-                    recipes.Add(recipe);
                 }
-                await context.Recipes.AddRangeAsync(recipes);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Recipe seed error: {ex.InnerException?.Message ?? ex.Message}");
+            }
+
+            // 5. Ekstra Veriler (Alerjiler, Diyetler, Tarif Kategorileri, Etiketler)
+            var extraDataOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var extraData = JsonSerializer.Deserialize<ExtraSeedDataDto>(DbSeederData.ExtraSeedDataJson, extraDataOptions);
+            if (extraData != null)
+            {
+                if (!await context.AllergyRestrictions.AnyAsync())
+                {
+                    var allergies = extraData.Allergies.Select(a => new AllergyRestriction { Id = Guid.NewGuid(), Name = a.Name, Description = a.Description, IconName = a.IconName }).ToList();
+                    await context.AllergyRestrictions.AddRangeAsync(allergies);
+                }
+
+                if (!await context.DietaryPreferences.AnyAsync())
+                {
+                    var diets = extraData.Dietary.Select(d => new DietaryPreference { Id = Guid.NewGuid(), Name = d.Name, Description = d.Description, IconName = d.IconName }).ToList();
+                    await context.DietaryPreferences.AddRangeAsync(diets);
+                }
+
+                if (!await context.RecipeCategories.AnyAsync())
+                {
+                    var recCats = extraData.RecipeCategories.Select(c => new RecipeCategory(0, c.Name, c.IconName)).ToList();
+                    await context.RecipeCategories.AddRangeAsync(recCats);
+                }
+
+                if (!await context.Tags.AnyAsync())
+                {
+                    var tags = extraData.Tags.Select(t => new Tag(0, t.Name)).ToList();
+                    await context.Tags.AddRangeAsync(tags);
+                }
+
                 await context.SaveChangesAsync();
             }
         }
+    }
+
+    public class SeederCategoryDto
+    {
+        public string CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public List<SeederIngredientDto> Ingredients { get; set; }
+    }
+
+    public class SeederIngredientDto
+    {
+        public string Name { get; set; }
+        public string MeasurementCategory { get; set; }
+    }
+
+    public class SeederRecipeDto
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Difficulty { get; set; }
+        public int Servings { get; set; }
+        public int PrepTime { get; set; }
+        public int CookTime { get; set; }
+        public List<SeederRecipeIngredientDto> Ingredients { get; set; }
+        public List<string> Steps { get; set; }
+        public List<string> Categories { get; set; }
+        public List<string> Tags { get; set; }
+    }
+
+    public class SeederRecipeIngredientDto
+    {
+        public string Name { get; set; }
+        public decimal Amount { get; set; }
+        public string Unit { get; set; }
+    }
+
+    public class ExtraSeedDataDto
+    {
+        public List<AllergyDto> Allergies { get; set; }
+        public List<DietaryDto> Dietary { get; set; }
+        public List<RecipeCategoryDto> RecipeCategories { get; set; }
+        public List<TagDto> Tags { get; set; }
+    }
+
+    public class AllergyDto
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string IconName { get; set; }
+    }
+
+    public class DietaryDto
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string IconName { get; set; }
+    }
+
+    public class RecipeCategoryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string IconName { get; set; }
+    }
+
+    public class TagDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

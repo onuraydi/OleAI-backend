@@ -13,6 +13,7 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
             builder.Property(i => i.Name).HasColumnName("Name").IsRequired().HasMaxLength(100);
             builder.Property(i => i.UnitFamily).HasColumnName("UnitFamily").IsRequired()
                 .HasConversion<int>();  // enum int olarak saklanır
+            builder.Property(i => i.IsStaple).HasColumnName("IsStaple").IsRequired().HasDefaultValue(false);
 
             builder.HasMany(i => i.Aliases)
                 .WithOne(a => a.Ingredient)
