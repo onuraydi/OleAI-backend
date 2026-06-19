@@ -175,7 +175,7 @@ namespace OleAI.Backend.Core.Repositories
         public async Task<TEntity> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             entity.UpdatedDate = DateTime.UtcNow;
-            _context.Set<TEntity>().Update(entity);
+            _context.Update(entity);
             await _context.SaveChangesAsync(cancellationToken);
             return entity;
         }
@@ -185,8 +185,11 @@ namespace OleAI.Backend.Core.Repositories
             foreach (var entity in entities)
             {
                 entity.UpdatedDate = DateTime.UtcNow;
+                if (_context.Entry(entity).State == EntityState.Detached)
+                {
+                    _context.Set<TEntity>().Update(entity);
+                }
             }
-            _context.Set<TEntity>().UpdateRange(entities);
             await _context.SaveChangesAsync(cancellationToken);
             return entities;
         }
