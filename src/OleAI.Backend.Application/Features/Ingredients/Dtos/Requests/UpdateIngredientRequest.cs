@@ -11,5 +11,6 @@ namespace OleAI.Backend.Application.Features.Ingredients.Dtos.Requests
         public bool IsPolarizing { get; set; } = false;
         public int? EstimatedShelfLifeInDays { get; set; }
         public ExpirationMode DefaultExpirationMode { get; set; } = ExpirationMode.Auto;
+        public bool IsStaple { get; set; } = false;
     }
 }

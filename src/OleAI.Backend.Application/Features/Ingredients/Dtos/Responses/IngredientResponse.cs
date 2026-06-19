@@ -12,6 +12,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Dtos.Responses
         public bool IsPolarizing { get; set; }
         public int? EstimatedShelfLifeInDays { get; set; }
         public ExpirationMode DefaultExpirationMode { get; set; }
+        public bool IsStaple { get; set; }
         public DateTime? DeletedDate { get; set; } // Arayüzde "Pasif" yazabilmek için
     }
 }

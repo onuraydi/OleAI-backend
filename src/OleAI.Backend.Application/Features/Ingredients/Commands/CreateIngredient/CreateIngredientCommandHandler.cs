@@ -26,6 +26,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.CreateIngredie
             ingredient.SetPolarizing(command.Request.IsPolarizing);
             ingredient.SetEstimatedShelfLifeInDays(command.Request.EstimatedShelfLifeInDays);
             ingredient.SetDefaultExpirationMode(command.Request.DefaultExpirationMode);
+            ingredient.SetStaple(command.Request.IsStaple);
             var created = await _ingredientRepository.AddAsync(ingredient);
             var response = _mapper.Map<CreatedIngredientResponse>(created);
             return response;
