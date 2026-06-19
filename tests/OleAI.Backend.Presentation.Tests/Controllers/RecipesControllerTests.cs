@@ -97,8 +97,9 @@ public class RecipesControllerTests
     public async Task StartCooking_ShouldSendCommandWithId_AndReturnOk()
     {
         var id = Guid.NewGuid();
-        _mockMediator.Setup(m => m.Send(It.IsAny<StartCookingCommand>(), default)).ReturnsAsync("Enjoy");
-        var result = await _controller.StartCooking(id);
+        var command = new StartCookingCommand();
+        _mockMediator.Setup(m => m.Send(It.IsAny<StartCookingCommand>(), default)).ReturnsAsync(new System.Collections.Generic.List<OleAI.Backend.Application.Features.Ingredients.Dtos.Responses.IngredientResponse>());
+        var result = await _controller.StartCooking(id, command);
         (result as OkObjectResult).Should().NotBeNull();
     }
 

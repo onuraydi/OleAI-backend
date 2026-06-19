@@ -7,6 +7,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Dtos.Requests;
 using OleAI.Backend.Application.Features.Recipes.Rules;
+using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
@@ -45,7 +46,8 @@ public class CreateRecipeCommandHandlerTests
             _mockHttpContextAccessor.Object,
             _rules,
             _mockLocalLlmService.Object,
-            new Mock<IMediator>().Object);
+            new Mock<IMediator>().Object,
+            new Mock<IAiRecommendationService>().Object);
     }
 
     [Fact]
