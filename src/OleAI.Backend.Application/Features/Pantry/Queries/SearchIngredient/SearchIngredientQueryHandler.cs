@@ -12,7 +12,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
     {
         private readonly IIngredientRepository _igredientRepository;
         private readonly ICacheService _cacheService;
-        private const string CacheKey = "Pantry:AllIngredientsCatalog:v3";
+        private const string CacheKey = "Pantry:AllIngredientsCatalog:v4";
         private const int MinimumSearchLength = 2;
 
         public SearchIngredientQueryHandler(IIngredientRepository igredientRepository, ICacheService cacheService)
@@ -82,6 +82,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                     catalog.Add(new IngredientSearchResultResponse
                     {
                         MasterIngredientId = ingredient.Id, // Kritik: Alias da seçilse Master ID dönüyor!
+                        AliasId = alias.Id,
                         DisplayName = alias.AliasName,
                         IsAlias = true,
                         UnitFamily = ingredient.UnitFamily,
