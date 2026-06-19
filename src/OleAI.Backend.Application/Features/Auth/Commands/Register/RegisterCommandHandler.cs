@@ -45,6 +45,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Register
             newUser.IsEmailVerified = false;
             newUser.TermsAccepted = command.Request.AcceptTerms;
             newUser.IsActive = command.Request.AcceptTerms;
+            newUser.Username = command.Request.Email;
 
             newUser.UserOperationClaims.Add(new UserOperationClaim
             {
