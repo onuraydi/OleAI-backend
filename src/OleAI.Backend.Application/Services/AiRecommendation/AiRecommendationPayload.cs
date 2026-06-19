@@ -24,12 +24,33 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
 
         [JsonPropertyName("mode")]
         public string Mode { get; set; } = "default";
+
+        [JsonPropertyName("useZeroWaste")]
+        public bool UseZeroWaste { get; set; } = false;
+
+        [JsonPropertyName("toleranceLevel")]
+        public double ToleranceLevel { get; set; } = 0.8;
+
+        [JsonPropertyName("stapleIngredientIds")]
+        public List<Guid> StapleIngredientIds { get; set; } = new();
     }
 
     public class PantryItemDto
     {
+        [JsonPropertyName("id")]
         public Guid Id { get; set; }
+
+        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("quantity")]
+        public double Quantity { get; set; }
+
+        [JsonPropertyName("unit")]
+        public string Unit { get; set; } = string.Empty;
+
+        [JsonPropertyName("expirationDate")]
+        public DateTime? ExpirationDate { get; set; }
     }
 
     public class RecipeInteractionDto
@@ -42,5 +63,14 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
 
         [JsonPropertyName("date")]
         public DateTime InteractionDate { get; set; }
+    }
+
+    public class RecipeIngredientAiDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public double Amount { get; set; }
+        public string Unit { get; set; } = string.Empty;
+        public List<string> Aliases { get; set; } = new();
     }
 }
