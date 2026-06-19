@@ -11,6 +11,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Dtos.Responses
 
         public RecipeVisibility Visibility { get; set; }
         public RecipeStatus Status { get; set; }
+        public string? LlmReviewResultJson { get; set; }
         public RecipeDifficulty Difficulty { get; set; }
         public int Servings { get; set; }
         public int PrepTime { get; set; }

@@ -41,12 +41,55 @@ public class ApproveRecipeCommandHandler : IRequestHandler<ApproveRecipeCommand,
     {
         var recipe = await _recipeRepository.GetAsync(
             predicate: r => r.Id == request.Id,
-            include: q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient),
+            include: q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).Include(r => r.RecipeSteps),
             cancellationToken: cancellationToken);
 
         _recipeBusinessRules.CheckIfRecipeExists(recipe);
 
         recipe!.ApproveByAdmin();
+
+        // Eğer admin manuel olarak düzeltmişse öncelikle onları al
+        if (!string.IsNullOrEmpty(request.EditedDescription) && request.EditedSteps != null && request.EditedSteps.Any())
+        {
+            var incomingSteps = request.EditedSteps.Select(s => (s.StepNumber, s.Instruction)).ToList();
+            recipe.ApplyLlmCorrections(request.EditedDescription, incomingSteps);
+        }
+        else if (!string.IsNullOrEmpty(recipe.LlmReviewResultJson))
+        {
+            try
+            {
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(recipe.LlmReviewResultJson);
+                var root = jsonDoc.RootElement;
+                if (root.TryGetProperty("isApproved", out var isApprovedProp) && isApprovedProp.GetBoolean())
+                {
+                    if (root.TryGetProperty("correctedDescription", out var descProp) && descProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                    {
+                        var newDesc = descProp.GetString()!;
+
+                        var incomingSteps = new List<(int StepNumber, string Instruction)>();
+                        if (root.TryGetProperty("correctedSteps", out var stepsProp) && stepsProp.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        {
+                            int stepNumber = 1;
+                            foreach (var stepElement in stepsProp.EnumerateArray())
+                            {
+                                var instruction = stepElement.GetString();
+                                if (!string.IsNullOrWhiteSpace(instruction))
+                                {
+                                    incomingSteps.Add((stepNumber, instruction));
+                                    stepNumber++;
+                                }
+                            }
+                        }
+
+                        recipe.ApplyLlmCorrections(newDesc, incomingSteps);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Parse hatası olursa sessizce geç
+            }
+        }
 
         var pendingRecipeIngredients = recipe.RecipeIngredients
             .Where(ri => ri.IngredientRequestId.HasValue && !ri.IngredientId.HasValue)
@@ -107,14 +150,32 @@ public class ApproveRecipeCommandHandler : IRequestHandler<ApproveRecipeCommand,
 
         await _recipeRepository.UpdateAsync(recipe);
 
-        var ingredientText = string.Join(" ", recipe.RecipeIngredients.Where(ri => ri.Ingredient != null).Select(ri => ri.Ingredient!.Name));
+        var structuredIngredients = recipe.RecipeIngredients.Where(ri => ri.Ingredient != null).Select(ri =>
+        {
+            var baseUnit = ri.Ingredient!.UnitFamily switch
+            {
+                OleAI.Backend.Domain.Enums.MeasurementCategory.Weight => OleAI.Backend.Domain.Enums.MeasurementUnit.Gram,
+                OleAI.Backend.Domain.Enums.MeasurementCategory.Volume => OleAI.Backend.Domain.Enums.MeasurementUnit.Milliliter,
+                _ => OleAI.Backend.Domain.Enums.MeasurementUnit.Piece
+            };
+            return new OleAI.Backend.Application.Services.AiRecommendation.RecipeIngredientAiDto
+            {
+                Id = ri.Ingredient.Id,
+                Name = ri.Ingredient.Name,
+                Amount = OleAI.Backend.Domain.Services.MeasurementUnitHelper.ConvertAmount((double)ri.Amount, (OleAI.Backend.Domain.Enums.MeasurementUnit)ri.UnitId, baseUnit),
+                Unit = baseUnit.ToString(),
+                Aliases = ri.Ingredient.Aliases.Select(a => a.AliasName).ToList()
+            };
+        }).ToList();
+
         var representativeCategory = recipe.RecipeIngredients.FirstOrDefault(ri => ri.Ingredient?.Category != null)?.Ingredient?.Category?.Name;
 
         await _aiRecommendationService.SyncRecipeAsync(
             recipe.Id,
             recipe.Title,
-            ingredientText,
+            structuredIngredients,
             representativeCategory,
+            isPublished: true,
             cancellationToken: cancellationToken);
 
         return RecipeMessages.RecipeApprovedAndPublished;

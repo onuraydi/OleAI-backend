@@ -25,7 +25,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.SyncAllToAi
             var options = new QueryOptions<Recipe>
             {
                 Predicate = r => r.Status == RecipeStatus.Published,
-                Include = q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient),
+                Include = q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).Include(r => r.Interactions),
                 Size = int.MaxValue,
                 EnableTracking = false
             };
@@ -38,14 +38,33 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.SyncAllToAi
             {
                 try
                 {
-                    var ingredientText = string.Join(" ", recipe.RecipeIngredients.Select(ri => ri.Ingredient.Name));
-                    var representativeCategory = recipe.RecipeIngredients.FirstOrDefault()?.Ingredient?.Category?.Name;
+                    var structuredIngredients = recipe.RecipeIngredients.Where(ri => ri.Ingredient != null).Select(ri =>
+                    {
+                        var baseUnit = ri.Ingredient!.UnitFamily switch
+                        {
+                            OleAI.Backend.Domain.Enums.MeasurementCategory.Weight => OleAI.Backend.Domain.Enums.MeasurementUnit.Gram,
+                            OleAI.Backend.Domain.Enums.MeasurementCategory.Volume => OleAI.Backend.Domain.Enums.MeasurementUnit.Milliliter,
+                            _ => OleAI.Backend.Domain.Enums.MeasurementUnit.Piece
+                        };
+                        return new OleAI.Backend.Application.Services.AiRecommendation.RecipeIngredientAiDto
+                        {
+                            Id = ri.Ingredient.Id,
+                            Name = ri.Ingredient.Name,
+                            Amount = OleAI.Backend.Domain.Services.MeasurementUnitHelper.ConvertAmount((double)ri.Amount, (OleAI.Backend.Domain.Enums.MeasurementUnit)ri.UnitId, baseUnit),
+                            Unit = baseUnit.ToString(),
+                            Aliases = ri.Ingredient.Aliases.Select(a => a.AliasName).ToList()
+                        };
+                    }).ToList();
+
+                    var representativeCategory = recipe.RecipeIngredients.FirstOrDefault(ri => ri.Ingredient?.Category != null)?.Ingredient?.Category?.Name;
 
                     await _aiRecommendationService.SyncRecipeAsync(
                         recipe.Id,
                         recipe.Title,
-                        ingredientText,
+                        structuredIngredients,
                         representativeCategory,
+                        isPublished: true,
+                        popularity: recipe.Interactions.Count,
                         cancellationToken: cancellationToken);
 
                     successCount++;
