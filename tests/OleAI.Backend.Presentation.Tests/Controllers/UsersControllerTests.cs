@@ -117,5 +117,31 @@ public class UsersControllerTests
         okResult.Should().NotBeNull();
         okResult!.Value.Should().Be(response);
     }
+
+    [Fact]
+    public async Task GetStatistics_ShouldSendQuery_AndReturnOk()
+    {
+        var response = new OleAI.Backend.Application.Features.Users.Queries.GetUserStatistics.GetUserStatisticsResponse();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Queries.GetUserStatistics.GetUserStatisticsQuery>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.GetStatistics();
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task GetAllUsers_ShouldSendQuery_AndReturnOk()
+    {
+        var response = new OleAI.Backend.Core.Repositories.Pagination.Paginate<OleAI.Backend.Application.Features.Users.Dtos.Responses.AdminUserListItemDto>();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Users.Queries.GetAdminUsers.GetAdminUsersQuery>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.GetAllUsers(1, 10);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
 }
 

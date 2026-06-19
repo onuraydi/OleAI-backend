@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using OleAI.Backend.Application.Features.ShoppingList.Commands.AddMultipleShoppingListItems;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.AddShoppingListItem;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.BulkMarkAsPurchased;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.MarkAsPurchased;
@@ -104,6 +105,43 @@ public class ShoppingListControllerTests
                 Math.Abs(c.Request.Quantity - request.Quantity) < 0.0001d &&
                 c.Request.Unit == request.Unit),
             default), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddMultipleItems_ShouldOverrideUserIdFromToken_AndReturnOk()
+    {
+        var request = new AddMultipleShoppingListItemsRequest
+        {
+            UserId = Guid.NewGuid(),
+            Items = new List<AddShoppingListItemRequest>()
+        };
+
+        var response = new List<ShoppingListItemResponse>();
+        _mockMediator.Setup(m => m.Send(It.IsAny<AddMultipleShoppingListItemsCommand>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.AddMultipleItems(request);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+
+        _mockMediator.Verify(m => m.Send(
+            It.Is<AddMultipleShoppingListItemsCommand>(c => c.Request.UserId == _userId),
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task SyncDepleted_ShouldSendCommand_AndReturnOk()
+    {
+        var command = new OleAI.Backend.Application.Features.ShoppingLists.Commands.SyncDepletedIngredients.SyncDepletedIngredientsCommand();
+        var response = "Depleted items synced";
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.ShoppingLists.Commands.SyncDepletedIngredients.SyncDepletedIngredientsCommand>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.SyncDepleted(command);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
     }
 
     [Fact]

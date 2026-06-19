@@ -188,4 +188,15 @@ public class IngredientsControllerTests
         (result as OkObjectResult).Should().NotBeNull();
         _mockMediator.Verify(m => m.Send(It.Is<DeleteIngredientAliasCommand>(c => c.Id == aliasId), default), Times.Once);
     }
+
+    [Fact]
+    public async Task RestoreAlias_ShouldSendCommandWithAliasId_AndReturnOk()
+    {
+        var aliasId = Guid.NewGuid();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.IngredientAliases.Commands.RestoreIngredientAlias.RestoreIngredientAliasCommand>(), default)).ReturnsAsync("restored");
+
+        var result = await _controller.RestoreAlias(aliasId);
+
+        (result as OkObjectResult).Should().NotBeNull();
+    }
 }
