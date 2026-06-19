@@ -32,7 +32,8 @@ public class GetMyShoppingListQueryHandler
             Include = q => q
                 .Include(s => s.Ingredient).ThenInclude(i => i!.Category)
                 .Include(s => s.IngredientRequest).ThenInclude(ir => ir!.Category),
-            EnableTracking = false
+            EnableTracking = false,
+            Size = 1000
         };
 
         var result = await _shoppingListItemRepository.GetListAsync(options, cancellationToken);

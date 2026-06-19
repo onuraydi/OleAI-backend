@@ -29,7 +29,8 @@ public class BulkMarkAsPurchasedCommandHandler : IRequestHandler<BulkMarkAsPurch
             Predicate = s => command.ItemIds.Contains(s.Id) &&
                              s.UserId == command.UserId &&
                              !s.IsPurchased,
-            EnableTracking = true
+            EnableTracking = true,
+            Size = 1000
         };
 
         var paginate = await _shoppingListItemRepository.GetListAsync(options, cancellationToken);
