@@ -58,7 +58,16 @@ public class ShoppingListController : BaseController
 
         var command = new AddMultipleShoppingListItemsCommand { Request = request };
         var result = await Mediator.Send(command);
+        return Ok(result);
+    }
 
+    /// <summary>
+    /// Pişirme sonrası tükenen ürünleri (Depleted) tek seferde listeye ekler.
+    /// </summary>
+    [HttpPost("sync-depleted")]
+    public async Task<IActionResult> SyncDepleted([FromBody] OleAI.Backend.Application.Features.ShoppingLists.Commands.SyncDepletedIngredients.SyncDepletedIngredientsCommand command)
+    {
+        var result = await Mediator.Send(command);
         return Ok(result);
     }
 
