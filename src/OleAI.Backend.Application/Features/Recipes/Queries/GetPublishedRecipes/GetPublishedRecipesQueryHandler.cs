@@ -44,7 +44,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag).Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient)
         };
 
         var searchTerm = request.SearchTerm?.ToLower();
@@ -54,6 +54,7 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
         var currentUserIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         Guid? currentUserId = !string.IsNullOrWhiteSpace(currentUserIdClaim) ? Guid.Parse(currentUserIdClaim) : null;
 
+        bool hasPreferences = false;
         if (request.IsForYou && currentUserId.HasValue)
         {
             var user = await _userRepository.GetAsync(
@@ -71,22 +72,24 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             {
                 foreach (var udp in user.UserDietaryPreferences)
                 {
-                    foreach (var ei in udp.DietaryPreference.ExcludedIngredients) excludedIngredientIds.Add(ei.IngredientId);
-                    foreach (var ec in udp.DietaryPreference.ExcludedCategories) excludedCategoryIds.Add(ec.CategoryId);
+                    foreach (var ei in udp.DietaryPreference.ExcludedIngredients) { excludedIngredientIds.Add(ei.IngredientId); hasPreferences = true; }
+                    foreach (var ec in udp.DietaryPreference.ExcludedCategories) { excludedCategoryIds.Add(ec.CategoryId); hasPreferences = true; }
                 }
 
                 foreach (var ua in user.UserAllergies)
                 {
-                    foreach (var ei in ua.AllergyRestriction.ExcludedIngredients) excludedIngredientIds.Add(ei.IngredientId);
-                    foreach (var ec in ua.AllergyRestriction.ExcludedCategories) excludedCategoryIds.Add(ec.CategoryId);
+                    foreach (var ei in ua.AllergyRestriction.ExcludedIngredients) { excludedIngredientIds.Add(ei.IngredientId); hasPreferences = true; }
+                    foreach (var ec in ua.AllergyRestriction.ExcludedCategories) { excludedCategoryIds.Add(ec.CategoryId); hasPreferences = true; }
                 }
 
                 foreach (var udi in user.UserDislikedIngredients)
                 {
                     excludedIngredientIds.Add(udi.IngredientId);
+                    hasPreferences = true;
                 }
             }
         }
+
 
         query.Predicate = r =>
             r.DeletedDate == null &&
@@ -99,12 +102,20 @@ public class GetPublishedRecipesQueryHandler : IRequestHandler<GetPublishedRecip
             (!request.TagId.HasValue || r.RecipeTags.Any(t => t.TagId == request.TagId.Value)) &&
             (!request.MinRating.HasValue || (r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0) >= request.MinRating.Value) &&
             (!request.IsForYou || (
+                hasPreferences &&
                 !r.RecipeIngredients.Any(ri => ri.IngredientId.HasValue && excludedIngredientIds.Contains(ri.IngredientId.Value)) &&
                 !r.RecipeIngredients.Any(ri => ri.Ingredient != null && excludedCategoryIds.Contains(ri.Ingredient.CategoryId))
             ));
 
         // Apply Sorting
-        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        if (request.IsForYou)
+        {
+            // Sana Özel sekmesinde Keşfet ile aynı görünmemesi için en popülerleri önce getir.
+            query.OrderBy = q => q.OrderByDescending(r => r.Interactions.Count(i => i.IsLiked))
+                                  .ThenByDescending(r => r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0)
+                                  .ThenByDescending(r => r.CreatedDate);
+        }
+        else if (!string.IsNullOrWhiteSpace(request.SortBy))
         {
             switch (request.SortBy.ToLower())
             {
