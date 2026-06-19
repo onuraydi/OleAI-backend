@@ -9,12 +9,14 @@ public class Recipe : Entity<Guid>
     public virtual User? User { get; set; }
     public string Title { get; private set; }
     public string Description { get; private set; }
+    public string? OriginalDescription { get; private set; }
     public RecipeDifficulty Difficulty { get; private set; }
     public int Servings { get; private set; }
     public int PrepTime { get; private set; }
     public int CookTime { get; private set; }
     public RecipeVisibility Visibility { get; private set; }
     public RecipeStatus Status { get; private set; }
+    public string? LlmReviewResultJson { get; private set; }
 
     // Dışarıdan .Add() ile rastgele veri eklenmesini engelliyoruz
     private readonly List<RecipeIngredient> _recipeIngredients = new();
@@ -47,6 +49,7 @@ public class Recipe : Entity<Guid>
             UserId = userId,
             Title = title,
             Description = description,
+            OriginalDescription = description,
             Difficulty = difficulty,
             Servings = servings,
             PrepTime = prepTime,
@@ -60,11 +63,29 @@ public class Recipe : Entity<Guid>
     {
         Title = title;
         Description = description;
+        OriginalDescription = description;
         Difficulty = difficulty;
         Servings = servings;
         PrepTime = prepTime;
         CookTime = cookTime;
         SetVisibilityAndStatus(visibility);
+
+        UpdatedDate = DateTime.UtcNow;
+    }
+
+    public void ApplyLlmCorrections(string correctedDescription, List<(int StepNumber, string CorrectedInstruction)> correctedSteps)
+    {
+        Description = correctedDescription;
+        UpdatedDate = DateTime.UtcNow;
+
+        foreach (var step in correctedSteps)
+        {
+            var existingStep = _recipeSteps.FirstOrDefault(s => s.StepNumber == step.StepNumber);
+            if (existingStep != null)
+            {
+                existingStep.ApplyLlmCorrection(step.CorrectedInstruction);
+            }
+        }
     }
 
     /// <summary>
@@ -212,6 +233,11 @@ public class Recipe : Entity<Guid>
     {
         if (Status == RecipeStatus.PendingLlmApproval)
             Status = RecipeStatus.PendingAdminApproval;
+    }
+
+    public void SetLlmReviewResult(string jsonResult)
+    {
+        LlmReviewResultJson = jsonResult;
     }
 
     public void AddIngredient(Guid? ingredientId, Guid? ingredientRequestId, decimal amount, int unitId)

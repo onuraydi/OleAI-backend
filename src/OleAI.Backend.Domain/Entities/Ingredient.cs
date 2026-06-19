@@ -11,6 +11,12 @@ namespace OleAI.Backend.Domain.Entities
         public bool IsPolarizing { get; private set; }
 
         /// <summary>
+        /// Temel Gıda mı? (Tuz, Yağ, Su vb. her evde bulunduğu varsayılan malzemeler)
+        /// Eğer true ise yapay zeka öneri motoru bunu hesaba katmaz ve tüketim işleminde dolaptan düşülmez.
+        /// </summary>
+        public bool IsStaple { get; private set; }
+
+        /// <summary>
         /// Malzemenin ait olduğu ölçü birimi ailesi.
         /// Örn: Weight → (Gram, Kilogram), Volume → (Milliliter, Liter), Count → (Piece, Bunch, ...)
         /// Kullanıcıların bu aile içindeki herhangi bir birimde ölçüm yapmasına izin verilir.
@@ -45,7 +51,7 @@ namespace OleAI.Backend.Domain.Entities
             UserDislikedIngredients = new HashSet<UserDislikedIngredient>();
         }
 
-        public Ingredient(Guid id, string name, Guid categoryId, MeasurementCategory unitFamily = MeasurementCategory.Other, int? estimatedShelfLifeInDays = null, ExpirationMode defaultExpirationMode = ExpirationMode.Auto)
+        public Ingredient(Guid id, string name, Guid categoryId, MeasurementCategory unitFamily = MeasurementCategory.Other, int? estimatedShelfLifeInDays = null, ExpirationMode defaultExpirationMode = ExpirationMode.Auto, bool isStaple = false)
             : this()
         {
             Id = id;
@@ -54,6 +60,12 @@ namespace OleAI.Backend.Domain.Entities
             UnitFamily = unitFamily;
             EstimatedShelfLifeInDays = estimatedShelfLifeInDays;
             DefaultExpirationMode = defaultExpirationMode;
+            IsStaple = isStaple;
+        }
+
+        public void SetStaple(bool isStaple)
+        {
+            IsStaple = isStaple;
         }
 
         /// <summary>
