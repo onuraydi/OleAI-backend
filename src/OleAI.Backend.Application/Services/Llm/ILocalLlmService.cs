@@ -12,5 +12,7 @@ namespace OleAI.Backend.Application.Services.Llm
         /// Temiz ise True, zararlı/spam ise False döner.
         /// </summary>
         Task<bool> CheckRecipeContentForSpamAsync(string title, string description, CancellationToken cancellationToken = default);
+
+        Task<string> AnalyzeRecipeContentAsync(string description, List<string> steps, CancellationToken cancellationToken = default);
     }
 }

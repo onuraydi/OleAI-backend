@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Recipes.Commands.AddComment;
+using OleAI.Backend.Application.Features.Recipes.Commands.AnalyzeRecipeWithLlm;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
@@ -88,9 +89,10 @@ public class RecipesController : BaseController
     /// </summary>
     [HttpPost("{id}/approve")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Approve([FromRoute] Guid id)
+    public async Task<IActionResult> Approve([FromRoute] Guid id, [FromBody] ApproveRecipeCommand? command)
     {
-        var command = new ApproveRecipeCommand { Id = id };
+        command ??= new ApproveRecipeCommand();
+        command.Id = id;
         var resultMessage = await Mediator.Send(command);
         return Ok(new { Message = resultMessage });
     }
@@ -116,6 +118,19 @@ public class RecipesController : BaseController
     public async Task<IActionResult> SyncAllToAi()
     {
         var resultMessage = await Mediator.Send(new SyncAllToAiCommand());
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Seçili tarifin içeriğini (Açıklama ve Adımlar) yerel LLM modeline gönderir,
+    /// JSON sonucu oluşturup veritabanına kaydeder.
+    /// </summary>
+    [HttpPost("{id}/analyze-with-ai")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AnalyzeWithAi([FromRoute] Guid id)
+    {
+        var command = new AnalyzeRecipeWithLlmCommand { RecipeId = id };
+        var resultMessage = await Mediator.Send(command);
         return Ok(new { Message = resultMessage });
     }
 
@@ -242,14 +257,26 @@ public class RecipesController : BaseController
     }
 
     /// <summary>
+    /// Pişirme öncesi eksik malzemeleri (dolapta hiç olmayan ve temel gıda olmayanları) kontrol eder.
+    /// </summary>
+    [HttpGet("{id}/missing-ingredients")]
+    [Authorize]
+    public async Task<IActionResult> GetMissingIngredients([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new OleAI.Backend.Application.Features.Recipes.Queries.GetMissingIngredients.GetMissingIngredientsQuery { RecipeId = id });
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Tarifi pişirme işlemini başlatır ve malzemeleri stoktan düşer.
     /// </summary>
     [HttpPost("{id}/start-cooking")]
     [Authorize]
-    public async Task<IActionResult> StartCooking([FromRoute] Guid id)
+    public async Task<IActionResult> StartCooking([FromRoute] Guid id, [FromBody] OleAI.Backend.Application.Features.Recipes.Commands.StartCooking.StartCookingCommand command)
     {
-        var resultMessage = await Mediator.Send(new StartCookingCommand { RecipeId = id });
-        return Ok(new { Message = resultMessage });
+        command.RecipeId = id;
+        var result = await Mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>
