@@ -357,4 +357,55 @@ public class AuthControllerTests
             default), Times.Once);
     }
 
+    // ──────────────────────────────────────────────
+    // Admin Endpoints
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task AssignRole_ShouldReturnOk()
+    {
+        var request = new AssignRoleRequest { UserId = Guid.NewGuid() };
+        var response = new OleAI.Backend.Application.Features.Auth.Dtos.Responses.AssignedRoleResponse { Message = "Rol başarıyla atandı" };
+
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Auth.Commands.AssignRole.AssignRoleCommand>(), default))
+            .ReturnsAsync(response);
+
+        var result = await _controller.AssignRole(request);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task UnlockUser_ShouldReturnOk()
+    {
+        var request = new UnlockUserRequest { UserId = Guid.NewGuid() };
+        var response = new OleAI.Backend.Application.Features.Auth.Dtos.Responses.UnlockedUserResponse { Message = "Kullanıcı başarıyla açıldı" };
+
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Auth.Commands.UnlockUser.UnlockUserCommand>(), default))
+            .ReturnsAsync(response);
+
+        var result = await _controller.UnlockUser(request);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task BanUser_ShouldReturnOk()
+    {
+        var request = new BanUserRequest { UserId = Guid.NewGuid() };
+        var response = new OleAI.Backend.Application.Features.Auth.Dtos.Responses.BanUserResponse { Message = "Kullanıcı başarıyla banlandı" };
+
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Auth.Commands.BanUser.BanUserCommand>(), default))
+            .ReturnsAsync(response);
+
+        var result = await _controller.BanUser(request);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
 }

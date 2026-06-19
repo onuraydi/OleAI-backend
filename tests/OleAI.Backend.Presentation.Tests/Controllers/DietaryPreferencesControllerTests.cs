@@ -91,10 +91,20 @@ public class DietaryPreferencesControllerTests
     [Fact]
     public async Task Delete_ShouldSendCommand_AndReturnOk()
     {
-        var id = Guid.NewGuid();
         _mockMediator.Setup(m => m.Send(It.IsAny<DeleteDietaryPreferenceCommand>(), default)).ReturnsAsync("deleted");
 
-        var result = await _controller.Delete(id);
+        var result = await _controller.Delete(Guid.NewGuid());
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Restore_ShouldSendCommand_AndReturnOk()
+    {
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.DietaryPreferences.Commands.RestoreDietaryPreference.RestoreDietaryPreferenceCommand>(), default)).ReturnsAsync("restored");
+
+        var result = await _controller.Restore(Guid.NewGuid());
 
         var okResult = result as OkObjectResult;
         okResult.Should().NotBeNull();
