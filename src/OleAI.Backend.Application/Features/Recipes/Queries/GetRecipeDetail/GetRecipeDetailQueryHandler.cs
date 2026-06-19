@@ -57,7 +57,7 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
             var userIdClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) throw new UnauthorizedAccessException();
 
-            var isAdmin = user?.IsInRole("Admin") ?? false;
+            var isAdmin = user!.IsInRole("Admin");
 
             if (!isAdmin)
             {
