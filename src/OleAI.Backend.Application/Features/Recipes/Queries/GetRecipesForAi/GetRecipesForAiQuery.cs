@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
+using OleAI.Backend.Domain.Services;
 
 namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi
 {
@@ -15,9 +17,11 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
-        public string Ingredients { get; set; } = string.Empty;
+        public List<RecipeIngredientAiDto> Ingredients { get; set; } = new();
         public string? Category { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsPublished { get; set; }
+        public int Popularity { get; set; }
     }
 
     public class GetRecipesForAiQueryHandler : IRequestHandler<GetRecipesForAiQuery, List<RecipeForAiDto>>
@@ -34,7 +38,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi
             var options = new QueryOptions<Recipe>
             {
                 Predicate = r => r.DeletedDate == null && r.Status == RecipeStatus.Published,
-                Include = q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient),
+                Include = q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).ThenInclude(i => i.Aliases).Include(r => r.Interactions),
                 Size = int.MaxValue,
                 EnableTracking = false
             };
@@ -45,9 +49,27 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi
             {
                 Id = r.Id,
                 Title = r.Title,
-                Ingredients = string.Join(" ", r.RecipeIngredients.Select(ri => ri.Ingredient.Name)),
+                Ingredients = r.RecipeIngredients.Where(ri => ri.Ingredient != null).Select(ri =>
+                {
+                    var baseUnit = ri.Ingredient!.UnitFamily switch
+                    {
+                        MeasurementCategory.Weight => MeasurementUnit.Gram,
+                        MeasurementCategory.Volume => MeasurementUnit.Milliliter,
+                        _ => MeasurementUnit.Piece
+                    };
+                    return new RecipeIngredientAiDto
+                    {
+                        Id = ri.Ingredient.Id,
+                        Name = ri.Ingredient.Name,
+                        Amount = MeasurementUnitHelper.ConvertAmount((double)ri.Amount, (MeasurementUnit)ri.UnitId, baseUnit),
+                        Unit = baseUnit.ToString(),
+                        Aliases = ri.Ingredient.Aliases.Select(a => a.AliasName).ToList()
+                    };
+                }).ToList(),
                 Category = r.RecipeIngredients.FirstOrDefault()?.Ingredient?.Category?.Name,
-                CreatedAt = r.CreatedDate
+                CreatedAt = r.CreatedDate,
+                IsPublished = r.Status == RecipeStatus.Published,
+                Popularity = r.Interactions.Count
             }).ToList();
         }
     }
