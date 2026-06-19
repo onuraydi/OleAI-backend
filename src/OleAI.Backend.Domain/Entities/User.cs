@@ -30,6 +30,8 @@ namespace OleAI.Backend.Domain.Entities
         public virtual ICollection<UserDislikedIngredient> UserDislikedIngredients { get; set; } = new HashSet<UserDislikedIngredient>();
         public virtual ICollection<UserIngredient> UserIngredients { get; set; } = new HashSet<UserIngredient>();
         public virtual ICollection<RecipeInteraction> Interactions { get; set; } = new HashSet<RecipeInteraction>();
+        public virtual ICollection<Notification> Notifications { get; set; } = new HashSet<Notification>();
+        public virtual ICollection<UserDevice> UserDevices { get; set; } = new HashSet<UserDevice>();
 
         public User()
         {
