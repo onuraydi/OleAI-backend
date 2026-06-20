@@ -48,6 +48,25 @@ namespace OleAI.Backend.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ContactMessages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Department = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContactMessages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DietaryPreferences",
                 columns: table => new
                 {
@@ -173,6 +192,7 @@ namespace OleAI.Backend.Persistence.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsPolarizing = table.Column<bool>(type: "bit", nullable: false),
+                    IsStaple = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     UnitFamily = table.Column<int>(type: "int", nullable: false),
                     EstimatedShelfLifeInDays = table.Column<int>(type: "int", nullable: true),
                     DefaultExpirationMode = table.Column<int>(type: "int", nullable: false),
@@ -249,6 +269,32 @@ namespace OleAI.Backend.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    RelatedEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Recipes",
                 columns: table => new
                 {
@@ -256,12 +302,14 @@ namespace OleAI.Backend.Persistence.Migrations
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    OriginalDescription = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     Difficulty = table.Column<int>(type: "int", nullable: false),
                     Servings = table.Column<int>(type: "int", nullable: false),
                     PrepTime = table.Column<int>(type: "int", nullable: false),
                     CookTime = table.Column<int>(type: "int", nullable: false),
                     Visibility = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
+                    LlmReviewResultJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -323,6 +371,30 @@ namespace OleAI.Backend.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserAllergies_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserDevices",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DeviceToken = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    Platform = table.Column<int>(type: "int", nullable: false),
+                    LastActiveAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserDevices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserDevices_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -518,43 +590,6 @@ namespace OleAI.Backend.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserIngredients",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IngredientId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IngredientRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Amount = table.Column<double>(type: "float", nullable: false),
-                    Unit = table.Column<int>(type: "int", nullable: false),
-                    ExpirationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserIngredients", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserIngredients_IngredientRequests_IngredientRequestId",
-                        column: x => x.IngredientRequestId,
-                        principalTable: "IngredientRequests",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_UserIngredients_Ingredients_IngredientId",
-                        column: x => x.IngredientId,
-                        principalTable: "Ingredients",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_UserIngredients_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RecipeCategoryMappings",
                 columns: table => new
                 {
@@ -718,6 +753,7 @@ namespace OleAI.Backend.Persistence.Migrations
                     RecipeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StepNumber = table.Column<int>(type: "int", nullable: false),
                     Instruction = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    OriginalInstruction = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -757,6 +793,49 @@ namespace OleAI.Backend.Persistence.Migrations
                         name: "FK_RecipeTags_Tags_TagId",
                         column: x => x.TagId,
                         principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserIngredients",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IngredientId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IngredientAliasId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IngredientRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Amount = table.Column<double>(type: "float", nullable: false),
+                    Unit = table.Column<int>(type: "int", nullable: false),
+                    ExpirationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserIngredients", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserIngredients_IngredientAliases_IngredientAliasId",
+                        column: x => x.IngredientAliasId,
+                        principalTable: "IngredientAliases",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_UserIngredients_IngredientRequests_IngredientRequestId",
+                        column: x => x.IngredientRequestId,
+                        principalTable: "IngredientRequests",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_UserIngredients_Ingredients_IngredientId",
+                        column: x => x.IngredientId,
+                        principalTable: "Ingredients",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_UserIngredients_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -831,6 +910,11 @@ namespace OleAI.Backend.Persistence.Migrations
                 name: "IX_Ingredients_CategoryId",
                 table: "Ingredients",
                 column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_UserId_IsRead_CreatedDate",
+                table: "Notifications",
+                columns: new[] { "UserId", "IsRead", "CreatedDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_OperationClaims_Name",
@@ -954,6 +1038,12 @@ namespace OleAI.Backend.Persistence.Migrations
                 column: "AllergyRestrictionId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserDevices_UserId_DeviceToken",
+                table: "UserDevices",
+                columns: new[] { "UserId", "DeviceToken" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserDietaryPreferences_DietaryPreferenceId",
                 table: "UserDietaryPreferences",
                 column: "DietaryPreferenceId");
@@ -968,6 +1058,11 @@ namespace OleAI.Backend.Persistence.Migrations
                 table: "UserDislikedIngredients",
                 columns: new[] { "UserId", "IngredientId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserIngredients_IngredientAliasId",
+                table: "UserIngredients",
+                column: "IngredientAliasId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserIngredients_IngredientId",
@@ -985,9 +1080,9 @@ namespace OleAI.Backend.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "UK_UserIngredients_UserId_IngredientId",
+                name: "UK_UserIngredients_UserId_IngredientId_AliasId",
                 table: "UserIngredients",
-                columns: new[] { "UserId", "IngredientId" },
+                columns: new[] { "UserId", "IngredientId", "IngredientAliasId" },
                 unique: true,
                 filter: "[IngredientId] IS NOT NULL");
 
@@ -1025,13 +1120,16 @@ namespace OleAI.Backend.Persistence.Migrations
                 name: "AllergyExcludedIngredient");
 
             migrationBuilder.DropTable(
+                name: "ContactMessages");
+
+            migrationBuilder.DropTable(
                 name: "DietaryPreferenceExcludedCategory");
 
             migrationBuilder.DropTable(
                 name: "DietaryPreferenceExcludedIngredient");
 
             migrationBuilder.DropTable(
-                name: "IngredientAliases");
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "RecipeCategoryMappings");
@@ -1064,6 +1162,9 @@ namespace OleAI.Backend.Persistence.Migrations
                 name: "UserAllergies");
 
             migrationBuilder.DropTable(
+                name: "UserDevices");
+
+            migrationBuilder.DropTable(
                 name: "UserDietaryPreferences");
 
             migrationBuilder.DropTable(
@@ -1091,13 +1192,16 @@ namespace OleAI.Backend.Persistence.Migrations
                 name: "DietaryPreferences");
 
             migrationBuilder.DropTable(
+                name: "IngredientAliases");
+
+            migrationBuilder.DropTable(
                 name: "IngredientRequests");
 
             migrationBuilder.DropTable(
-                name: "Ingredients");
+                name: "OperationClaims");
 
             migrationBuilder.DropTable(
-                name: "OperationClaims");
+                name: "Ingredients");
 
             migrationBuilder.DropTable(
                 name: "Users");
