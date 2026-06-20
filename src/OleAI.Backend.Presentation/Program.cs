@@ -258,10 +258,9 @@ if (app.Environment.IsDevelopment())
     app.UseHangfireDashboard("/hangfire");
 }
 
-// Automatic Migration at Startup (Development only)
-if (app.Environment.IsDevelopment())
+// Automatic Migration at Startup
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
@@ -335,7 +334,8 @@ catch (Exception ex)
 }
 
 // Background Jobs Scheduling
-RecurringJob.AddOrUpdate<OleAI.Backend.Application.Features.Notifications.Jobs.ExpirationNotifierJob>(
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobManager.AddOrUpdate<OleAI.Backend.Application.Features.Notifications.Jobs.ExpirationNotifierJob>(
     "expiration-notifier",
     job => job.ExecuteAsync(),
     Cron.Daily);
