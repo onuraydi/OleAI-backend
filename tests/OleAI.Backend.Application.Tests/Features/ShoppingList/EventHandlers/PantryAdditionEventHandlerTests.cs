@@ -143,4 +143,70 @@ public class PantryAdditionEventHandlerTests
             r => r.AddAsync(It.IsAny<UserIngredient>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [Fact]
+    public async Task Handle_WhenIngredientRequestNotInPantry_ShouldCreateNewEntry()
+    {
+        var userId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+
+        _mockUserIngredientRepo
+            .Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<UserIngredient, bool>>>(),
+                null, It.IsAny<bool>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserIngredient?)null);
+
+        var requestEntity = new IngredientRequest(Guid.NewGuid(), userId, "Test Req", null, 7);
+
+        _mockIngredientRequestRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<IngredientRequest, bool>>>(), It.IsAny<Func<IQueryable<IngredientRequest>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<IngredientRequest, object>>>(), false, true, It.IsAny<CancellationToken>())).ReturnsAsync(requestEntity);
+
+        var notification = new ItemPurchasedEvent
+        {
+            UserId = userId,
+            IngredientRequestId = requestId,
+            Quantity = 500,
+            Unit = MeasurementUnit.Gram
+        };
+
+        await _handler.Handle(notification, CancellationToken.None);
+
+        _mockUserIngredientRepo.Verify(
+            r => r.AddAsync(
+                It.Is<UserIngredient>(ui =>
+                    ui.UserId == userId &&
+                    ui.IngredientRequestId == requestId &&
+                    ui.Amount == 500 &&
+                    ui.ExpirationDate.HasValue),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenIngredientRequestExists_ShouldUpdateQuantity()
+    {
+        var userId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var existing = UserIngredient.CreatePending(Guid.NewGuid(), userId, requestId, 300, MeasurementUnit.Gram);
+
+        _mockUserIngredientRepo
+            .Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<UserIngredient, bool>>>(),
+                null, It.IsAny<bool>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var notification = new ItemPurchasedEvent
+        {
+            UserId = userId,
+            IngredientRequestId = requestId,
+            Quantity = 200,
+            Unit = MeasurementUnit.Gram
+        };
+
+        await _handler.Handle(notification, CancellationToken.None);
+
+        existing.Amount.Should().BeApproximately(500d, 0.0001d);
+        _mockUserIngredientRepo.Verify(
+            r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

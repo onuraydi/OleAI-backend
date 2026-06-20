@@ -55,4 +55,81 @@ public class GetPublishedRecipesQueryHandlerTests
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
     }
+
+    [Theory]
+    [InlineData("highest rated")]
+    [InlineData("quickest")]
+    [InlineData("popular")]
+    [InlineData("newest")]
+    [InlineData("invalid")]
+    public async Task Handle_WithDifferentSortBy_ShouldApplyOrderBy(string sortBy)
+    {
+        var mockRepo = new Mock<IRecipeRepository>();
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockCache = new Mock<ICacheService>();
+        var mockMapper = new Mock<IMapper>();
+        var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+
+        var userId = Guid.NewGuid();
+        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) }, "TestAuth"));
+        mockHttpContextAccessor.Setup(x => x.HttpContext).Returns(new DefaultHttpContext { User = claimsPrincipal });
+
+        var handler = new GetPublishedRecipesQueryHandler(mockRepo.Object, mockUserRepo.Object, mockCache.Object, mockMapper.Object, mockHttpContextAccessor.Object);
+        var request = new GetPublishedRecipesQuery { Page = 1, Size = 10, SortBy = sortBy };
+        var paginatedList = new Paginate<Recipe> { Items = new List<Recipe>(), TotalItems = 0 };
+
+        QueryOptions<Recipe>? capturedOptions = null;
+        mockRepo.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Recipe>>(), It.IsAny<CancellationToken>()))
+            .Callback<QueryOptions<Recipe>, CancellationToken>((o, c) => capturedOptions = o)
+            .ReturnsAsync(paginatedList);
+
+        var paginatedDtos = new Paginate<RecipeListItemResponse> { Items = new List<RecipeListItemResponse>(), TotalItems = 0 };
+        mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(It.IsAny<Paginate<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, Paginate<RecipeListItemResponse>>>>())).Returns(paginatedDtos);
+
+        await handler.Handle(request, CancellationToken.None);
+
+        capturedOptions.Should().NotBeNull();
+        capturedOptions!.OrderBy.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WithFilters_ShouldApplyPredicate()
+    {
+        var mockRepo = new Mock<IRecipeRepository>();
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockCache = new Mock<ICacheService>();
+        var mockMapper = new Mock<IMapper>();
+        var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+
+        var userId = Guid.NewGuid();
+        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) }, "TestAuth"));
+        mockHttpContextAccessor.Setup(x => x.HttpContext).Returns(new DefaultHttpContext { User = claimsPrincipal });
+
+        var handler = new GetPublishedRecipesQueryHandler(mockRepo.Object, mockUserRepo.Object, mockCache.Object, mockMapper.Object, mockHttpContextAccessor.Object);
+
+        var request = new GetPublishedRecipesQuery
+        {
+            SearchTerm = "Test",
+            CategoryId = 1,
+            Difficulty = OleAI.Backend.Domain.Enums.RecipeDifficulty.Hard,
+            MaxTotalTime = 60,
+            TagId = 1,
+            MinRating = 4.5
+        };
+
+        var paginatedList = new Paginate<Recipe> { Items = new List<Recipe>(), TotalItems = 0 };
+
+        QueryOptions<Recipe>? capturedOptions = null;
+        mockRepo.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Recipe>>(), It.IsAny<CancellationToken>()))
+            .Callback<QueryOptions<Recipe>, CancellationToken>((o, c) => capturedOptions = o)
+            .ReturnsAsync(paginatedList);
+
+        var paginatedDtos = new Paginate<RecipeListItemResponse> { Items = new List<RecipeListItemResponse>(), TotalItems = 0 };
+        mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(It.IsAny<Paginate<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, Paginate<RecipeListItemResponse>>>>())).Returns(paginatedDtos);
+
+        await handler.Handle(request, CancellationToken.None);
+
+        capturedOptions.Should().NotBeNull();
+        capturedOptions!.Predicate.Should().NotBeNull();
+    }
 }

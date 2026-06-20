@@ -58,4 +58,26 @@ public class ApproveRecipeCommandHandlerTests
 
         mockRepo.Verify(r => r.UpdateAsync(recipe, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Handle_WithNullRecipe_ShouldThrowNotFoundException()
+    {
+        var mockRepo = new Mock<IRecipeRepository>();
+        var mockIngRepo = new Mock<IIngredientRepository>();
+        var mockIngReqRepo = new Mock<IIngredientRequestRepository>();
+        var mockCommentRepo = new Mock<IRecipeCommentRepository>();
+        var rules = new RecipeBusinessRules(mockIngRepo.Object, mockCommentRepo.Object);
+        var mockAi = new Mock<IAiRecommendationService>();
+        var mockCache = new Mock<ICacheService>();
+
+        var handler = new ApproveRecipeCommandHandler(mockRepo.Object, mockIngRepo.Object, mockIngReqRepo.Object, rules, mockAi.Object, mockCache.Object);
+
+        mockRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), false, true, It.IsAny<CancellationToken>())).ReturnsAsync((Recipe)null);
+
+        var request = new ApproveRecipeCommand { Id = Guid.NewGuid() };
+
+        var act = async () => await handler.Handle(request, CancellationToken.None);
+
+        await act.Should().ThrowAsync<OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types.NotFoundException>();
+    }
 }
