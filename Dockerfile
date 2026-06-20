@@ -28,8 +28,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 EXPOSE 8080
 
-# Senior Best Practice: Uygulamayı root yetkileriyle çalıştırmak yerine standart kullanıcıya (app) geçir
-USER $APP_UID
+# Geçici olarak root kullanıcısında çalıştırıyoruz (Yetki sorununu test etmek için)
 
 # Build aşamasında ürettiğimiz publish dosyalarını bu hafif imaja kopyala
 COPY --from=build /app/publish .
