@@ -8,21 +8,31 @@ namespace OleAI.Backend.Application.Tests.Features.Ingredients.Dtos.Responses;
 public class IngredientResponseTests
 {
     [Fact]
-    public void IngredientResponse_ShouldStoreValues()
+    public void Properties_ShouldBeGettableAndSettable()
     {
-        var deletedDate = DateTime.UtcNow;
-        var dto = new IngredientResponse
-        {
-            Id = Guid.NewGuid(),
-            Name = "Domates",
-            CategoryName = "Sebze",
-            UnitFamily = MeasurementCategory.Count,
-            DeletedDate = deletedDate
-        };
+        var dto = new IngredientResponse();
+        var id = System.Guid.NewGuid();
 
-        dto.Name.Should().Be("Domates");
-        dto.CategoryName.Should().Be("Sebze");
-        dto.UnitFamily.Should().Be(MeasurementCategory.Count);
-        dto.DeletedDate.Should().Be(deletedDate);
+        dto.Id = id;
+        dto.Name = "Tomato";
+        dto.CategoryName = "Vegetable";
+        dto.CategoryIconName = "icon";
+        dto.UnitFamily = MeasurementCategory.Weight;
+        dto.IsPolarizing = false;
+        dto.EstimatedShelfLifeInDays = 7;
+        dto.DefaultExpirationMode = ExpirationMode.Auto;
+        dto.IsStaple = true;
+        dto.DeletedDate = System.DateTime.UtcNow;
+
+        dto.Id.Should().Be(id);
+        dto.Name.Should().Be("Tomato");
+        dto.CategoryName.Should().Be("Vegetable");
+        dto.CategoryIconName.Should().Be("icon");
+        dto.UnitFamily.Should().Be(MeasurementCategory.Weight);
+        dto.IsPolarizing.Should().BeFalse();
+        dto.EstimatedShelfLifeInDays.Should().Be(7);
+        dto.DefaultExpirationMode.Should().Be(ExpirationMode.Auto);
+        dto.IsStaple.Should().BeTrue();
+        dto.DeletedDate.Should().NotBeNull();
     }
 }
