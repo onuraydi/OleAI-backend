@@ -56,7 +56,7 @@ jobs:
             ConnectionStrings__Redis=redis:6379,abortConnect=false,connectTimeout=10000
             TokenOptions__Audience=OleAIUsers
             TokenOptions__Issuer=OleAIBackend
-            TokenOptions__SecurityKey=OleAI_Super_Secret_Key_For_Production_123456789!
+            TokenOptions__SecurityKey=${{ secrets.JWT_SECURITY_KEY }}
             TokenOptions__AccessTokenExpiration=15
             TokenOptions__RefreshTokenExpiration=7
             TokenOptions__MaxActiveTokens=5
