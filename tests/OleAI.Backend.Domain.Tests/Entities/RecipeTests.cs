@@ -179,4 +179,88 @@ public class RecipeTests
         // Assert
         recipe.Status.Should().Be(RecipeStatus.Rejected);
     }
+
+    [Fact]
+    public void ApplyLlmCorrections_ShouldUpdateDescriptionAndSteps()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Old Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.AddStep(1, "Old Step 1");
+        recipe.AddStep(2, "Old Step 2");
+
+        var correctedSteps = new List<(int StepNumber, string CorrectedInstruction)>
+        {
+            (1, "New Step 1"),
+            (2, "New Step 2")
+        };
+
+        // Act
+        recipe.ApplyLlmCorrections("New Desc", correctedSteps);
+
+        // Assert
+        recipe.Description.Should().Be("New Desc");
+        recipe.RecipeSteps.First(s => s.StepNumber == 1).Instruction.Should().Be("New Step 1");
+        recipe.RecipeSteps.First(s => s.StepNumber == 2).Instruction.Should().Be("New Step 2");
+    }
+
+    [Fact]
+    public void SyncCategories_ShouldManageCategories()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.SyncCategories(new[] { 1, 2 });
+
+        // Act
+        recipe.SyncCategories(new[] { 2, 3 });
+
+        // Assert
+        recipe.RecipeCategories.Should().HaveCount(2);
+        recipe.RecipeCategories.Should().ContainSingle(c => c.RecipeCategoryId == 2);
+        recipe.RecipeCategories.Should().ContainSingle(c => c.RecipeCategoryId == 3);
+        recipe.RecipeCategories.Should().NotContain(c => c.RecipeCategoryId == 1);
+    }
+
+    [Fact]
+    public void SyncTags_ShouldManageTags()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.SyncTags(new[] { 1, 2 });
+
+        // Act
+        recipe.SyncTags(new[] { 2, 3 });
+
+        // Assert
+        recipe.RecipeTags.Should().HaveCount(2);
+        recipe.RecipeTags.Should().ContainSingle(t => t.TagId == 2);
+        recipe.RecipeTags.Should().ContainSingle(t => t.TagId == 3);
+        recipe.RecipeTags.Should().NotContain(t => t.TagId == 1);
+    }
+
+    [Fact]
+    public void ForcePublish_ShouldSetStatusToPublished()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+
+        // Act
+        recipe.ForcePublish();
+
+        // Assert
+        recipe.Status.Should().Be(RecipeStatus.Published);
+    }
+
+    [Fact]
+    public void SetLlmReviewResult_ShouldSetProperty()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        var json = "{\"status\":\"approved\"}";
+
+        // Act
+        recipe.SetLlmReviewResult(json);
+
+        // Assert
+        recipe.LlmReviewResultJson.Should().Be(json);
+    }
 }
