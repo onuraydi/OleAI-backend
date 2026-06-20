@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Application.Features.Users.Commands.UpdateUserAllergies;
 using OleAI.Backend.Application.Features.Users.Commands.UpdateUserPreferences;
 using OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile;
+using OleAI.Backend.Application.Features.Users.Queries.GetAdminUsers;
 using OleAI.Backend.Application.Features.Users.Queries.GetRecommendation;
 using OleAI.Backend.Application.Features.Users.Queries.GetUserProfile;
 
@@ -27,10 +29,20 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         /// <summary>
+        /// Giriş yapan kullanıcının kişisel istatistiklerini getirir.
+        /// </summary>
+        [HttpGet("me/statistics")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var result = await Mediator.Send(new OleAI.Backend.Application.Features.Users.Queries.GetUserStatistics.GetUserStatisticsQuery());
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Giriş yapan kullanıcının temel profil bilgilerini (Ad, Soyad) günceller.
         /// </summary>
         [HttpPut("me")]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileCommand command)
+        public async Task<IActionResult> UpdateProfile([FromForm] UpdateUserProfileCommand command)
         {
             var result = await Mediator.Send(command);
             return Ok(new { Message = result });
@@ -73,9 +85,20 @@ namespace OleAI.Backend.Presentation.Controllers
         /// Kullanıcının diyet tercihleri ve alerjilerine göre AI destekli kişiselleştirilmiş tarif önerileri alır.
         /// </summary>
         [HttpGet("me/recommendations")]
-        public async Task<IActionResult> GetRecommendations()
+        public async Task<IActionResult> GetRecommendations([FromQuery] GetRecommendationQuery query)
         {
-            var result = await Mediator.Send(new GetRecommendationQuery());
+            var result = await Mediator.Send(query);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Sadece Admin rolüne sahip kullanıcıların tüm kullanıcı listesini (rolleri, kilit durumu vs.) sayfalamalı olarak getirmesini sağlar.
+        /// </summary>
+        [HttpGet("all")]
+        [Authorize(Roles = AuthRoles.Admin)]
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int size = 10)
+        {
+            var result = await Mediator.Send(new GetAdminUsersQuery { PageNumber = page, PageSize = size });
             return Ok(result);
         }
     }

@@ -24,6 +24,7 @@ public class GetAllergyRestrictionListQueryHandler : IRequestHandler<GetAllergyR
             {
                 Include = q => q.Include(ar => ar.ExcludedIngredients).Include(ar => ar.ExcludedCategories),
                 EnableTracking = false,
+                WithDeleted = true,
                 Size = 1000
             },
             cancellationToken: cancellationToken);

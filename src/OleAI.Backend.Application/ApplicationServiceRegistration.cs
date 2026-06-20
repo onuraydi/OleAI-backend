@@ -19,6 +19,7 @@ using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.AuthService;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
+using OleAI.Backend.Application.Services.PushNotifications;
 using OleAI.Backend.Application.Services.UserProfiles;
 
 namespace OleAI.Backend.Application
@@ -64,13 +65,19 @@ namespace OleAI.Backend.Application
 
             services.Configure<OllamaSettings>(configuration.GetSection("OllamaSettings"));
             services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+            services.Configure<AiServiceSettings>(configuration.GetSection("AiService"));
+
             services.AddHttpClient<ILocalLlmService, OllamaLocalLlmManager>();
+            services.AddHttpClient<IAiRecommendationService, HttpAiRecommendationService>();
+            services.AddHttpClient<IUserProfileVectorService, HttpUserProfileVectorService>();
+
             services.AddScoped<IImageService, CloudinaryImageManager>();
-            services.AddScoped<IUserProfileVectorService, DummyUserProfileVectorService>();
+            services.AddScoped<IPushNotificationService, FirebasePushNotificationManager>();
+            services.AddScoped<OleAI.Backend.Application.Services.Restock.ISmartRestockService, OleAI.Backend.Application.Services.Restock.SmartRestockService>();
+
             services.AddScoped<UserBusinessRules>();
             services.AddScoped<DietaryPreferenceBusinessRules>();
             services.AddScoped<AllergyRestrictionBusinessRules>();
-            services.AddScoped<IAiRecommendationService, DummyAiRecommendationService>();
 
             return services;
         }

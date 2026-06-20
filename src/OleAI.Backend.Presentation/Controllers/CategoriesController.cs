@@ -49,5 +49,12 @@ namespace OleAI.Backend.Presentation.Controllers
             var result = await Mediator.Send(new DeleteCategoryCommand { Id = id });
             return Ok(new { Message = result });
         }
+
+        [HttpPatch("{id}/restore")]
+        public async Task<IActionResult> Restore([FromRoute] Guid id)
+        {
+            var result = await Mediator.Send(new OleAI.Backend.Application.Features.IngredientCategories.Commands.RestoreCategory.RestoreCategoryCommand { Id = id });
+            return Ok(new { Message = result });
+        }
     }
 }

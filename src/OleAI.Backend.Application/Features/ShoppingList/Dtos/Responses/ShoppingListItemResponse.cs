@@ -5,10 +5,13 @@ namespace OleAI.Backend.Application.Features.ShoppingList.Dtos.Responses;
 public class ShoppingListItemResponse
 {
     public Guid Id { get; set; }
-    public Guid IngredientId { get; set; }
+    public Guid? IngredientId { get; set; }
+    public Guid? IngredientRequestId { get; set; }
     public string IngredientName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
+    public string CategoryIconName { get; set; } = string.Empty;
     public double Quantity { get; set; }
     public MeasurementUnit Unit { get; set; }
     public bool IsPurchased { get; set; }
+    public bool IsPendingApproval => IngredientRequestId.HasValue && !IngredientId.HasValue;
 }

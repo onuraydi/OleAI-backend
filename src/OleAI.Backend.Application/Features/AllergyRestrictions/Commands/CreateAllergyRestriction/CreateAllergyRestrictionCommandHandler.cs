@@ -41,6 +41,7 @@ public class CreateAllergyRestrictionCommandHandler : IRequestHandler<CreateAlle
         {
             Name = request.Name.Trim(),
             Description = request.Description?.Trim(),
+            IconName = request.IconName,
             IsActive = true
         };
 

@@ -13,17 +13,20 @@ namespace OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
 public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery, RecipeDetailResponse>
 {
     private readonly IRecipeRepository _recipeRepository;
+    private readonly IRecipeCommentRepository _recipeCommentRepository;
     private readonly IMapper _mapper;
     private readonly RecipeBusinessRules _recipeBusinessRules;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public GetRecipeDetailQueryHandler(
         IRecipeRepository recipeRepository,
+        IRecipeCommentRepository recipeCommentRepository,
         IMapper mapper,
         RecipeBusinessRules recipeBusinessRules,
         IHttpContextAccessor httpContextAccessor)
     {
         _recipeRepository = recipeRepository;
+        _recipeCommentRepository = recipeCommentRepository;
         _mapper = mapper;
         _recipeBusinessRules = recipeBusinessRules;
         _httpContextAccessor = httpContextAccessor;
@@ -34,10 +37,14 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
         var recipe = await _recipeRepository.GetAsync(
             predicate: r => r.Id == request.Id,
             include: q => q.Include(r => r.RecipeIngredients)
+                               .ThenInclude(ri => ri.Ingredient)
                            .Include(r => r.RecipeSteps)
                            .Include(r => r.RecipeImages)
+                           .Include(r => r.Interactions)
                            .Include(r => r.Comments)
-                           .Include(r => r.Interactions),
+                           .Include(r => r.RecipeCategories).ThenInclude(rc => rc.RecipeCategory)
+                           .Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
+                           .Include(r => r.User),
             enableTracking: false,
             cancellationToken: cancellationToken);
 
@@ -46,20 +53,32 @@ public class GetRecipeDetailQueryHandler : IRequestHandler<GetRecipeDetailQuery,
 
         if (!(recipe!.Visibility == RecipeVisibility.Public && recipe.Status == RecipeStatus.Published))
         {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = _httpContextAccessor.HttpContext?.User;
+            var userIdClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) throw new UnauthorizedAccessException();
 
-            _recipeBusinessRules.CheckIfUserIsOwner(recipe, Guid.Parse(userIdClaim));
+            var isAdmin = user!.IsInRole("Admin");
+
+            if (!isAdmin)
+            {
+                _recipeBusinessRules.CheckIfUserIsOwner(recipe, Guid.Parse(userIdClaim));
+            }
         }
 
         var response = _mapper.Map<RecipeDetailResponse>(recipe);
 
+        var totalComments = await _recipeCommentRepository.GetCountAsync(c => c.RecipeId == recipe.Id, cancellationToken: cancellationToken);
+
         response.Statistics = new RecipeStatisticsResponse
         {
-            TotalComments = recipe!.Comments?.Count ?? 0,
+            TotalComments = totalComments,
             TotalLikes = recipe.Interactions?.Count(i => i.IsLiked) ?? 0,
             TotalDislikes = recipe.Interactions?.Count(i => i.IsDisliked) ?? 0,
-            TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0
+            TotalSaves = recipe.Interactions?.Count(i => i.IsSaved) ?? 0,
+            AverageRating = recipe.Comments != null && recipe.Comments.Any(c => c.Rating != null)
+                ? recipe.Comments.Where(c => c.Rating != null).Average(c => c.Rating!.Value)
+                : 0,
+            TotalRatings = recipe.Comments?.Count(c => c.Rating != null) ?? 0
         };
 
         var currentUserIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

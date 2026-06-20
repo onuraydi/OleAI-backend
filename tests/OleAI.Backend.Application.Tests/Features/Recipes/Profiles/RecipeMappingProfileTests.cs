@@ -26,7 +26,7 @@ public class RecipeMappingProfileTests
     public void Map_RecipeToRecipeListItemResponse_ShouldWork()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.AddImage("main_url", "p1", true);
 
         // Act
@@ -42,9 +42,9 @@ public class RecipeMappingProfileTests
     public void Map_RecipeToRecipeDetailResponse_ShouldIncludeRelatedData()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
-        recipe.AddIngredient(Guid.NewGuid(), 100, 1);
-        recipe.AddStep(1, "Cook it");
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.AddIngredient(Guid.NewGuid(), null, 100, 1);
+        recipe.AddStep(1, "Step 1");
 
         // Act
         var result = _mapper.Map<RecipeDetailResponse>(recipe);
@@ -52,6 +52,7 @@ public class RecipeMappingProfileTests
         // Assert
         result.Ingredients.Should().HaveCount(1);
         result.Steps.Should().HaveCount(1);
-        result.Steps.First().Instruction.Should().Be("Cook it");
+        result.Steps.First().Instruction.Should().Be("Step 1");
     }
 }
+

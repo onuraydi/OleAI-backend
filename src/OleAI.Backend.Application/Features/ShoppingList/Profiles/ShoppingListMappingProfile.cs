@@ -15,6 +15,11 @@ public class ShoppingListMappingProfile : Profile
                 opt => opt.MapFrom(src =>
                     src.Ingredient != null && src.Ingredient.Category != null
                         ? src.Ingredient.Category.Name
-                        : string.Empty));
+                        : string.Empty))
+            .ForMember(dest => dest.CategoryIconName,
+                opt => opt.MapFrom(src =>
+                    src.Ingredient != null && src.Ingredient.Category != null
+                        ? src.Ingredient.Category.IconName
+                        : "fastfood"));
     }
 }

@@ -40,8 +40,8 @@ public class BulkMarkAsPurchasedCommandHandlerTests
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
 
-        var item1 = new ShoppingListItem(_userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
-        var item2 = new ShoppingListItem(_userId, Guid.NewGuid(), 500, MeasurementUnit.Gram);
+        var item1 = ShoppingListItem.CreateStandard(_userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item2 = ShoppingListItem.CreateStandard(_userId, Guid.NewGuid(), 500, MeasurementUnit.Gram);
 
         var paginate = new Paginate<ShoppingListItem>
         {
@@ -149,3 +149,4 @@ public class BulkMarkAsPurchasedCommandHandlerTests
             .WithMessage("En az bir ürün seçmelisiniz.");
     }
 }
+

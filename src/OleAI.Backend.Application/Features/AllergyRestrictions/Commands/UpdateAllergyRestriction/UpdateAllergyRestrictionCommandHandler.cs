@@ -48,6 +48,7 @@ public class UpdateAllergyRestrictionCommandHandler : IRequestHandler<UpdateAlle
 
         restriction!.Name = request.Name.Trim();
         restriction.Description = request.Description?.Trim();
+        restriction.IconName = request.IconName;
         restriction.IsActive = request.IsActive;
 
         // Upsert for Excluded Ingredients

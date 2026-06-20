@@ -31,7 +31,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment
 
             _recipeBusinessRules.CheckIfUserIsCommentOwner(comment, userId);
 
-            comment!.UpdateContent(request.NewContent);
+            comment!.Update(request.NewContent, request.Rating ?? comment.Rating);
             await _commentRepository.UpdateAsync(comment);
 
             // AI'a güncelleme sinyali gönder

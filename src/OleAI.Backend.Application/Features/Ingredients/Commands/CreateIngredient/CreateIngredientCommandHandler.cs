@@ -23,6 +23,10 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.CreateIngredie
         {
             await _businessRules.IngredientNameCannotBeDuplicatedWhenInserted(command.Request.Name);
             var ingredient = _mapper.Map<Ingredient>(command.Request);
+            ingredient.SetPolarizing(command.Request.IsPolarizing);
+            ingredient.SetEstimatedShelfLifeInDays(command.Request.EstimatedShelfLifeInDays);
+            ingredient.SetDefaultExpirationMode(command.Request.DefaultExpirationMode);
+            ingredient.SetStaple(command.Request.IsStaple);
             var created = await _ingredientRepository.AddAsync(ingredient);
             var response = _mapper.Map<CreatedIngredientResponse>(created);
             return response;

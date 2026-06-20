@@ -47,7 +47,7 @@ public class DeleteCategoryCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenCategoryHasDependentIngredients_ShouldThrowBusinessException()
+    public async Task Handle_WhenCategoryHasDependentIngredients_ShouldDeleteAndReturnSuccessMessage()
     {
         // Arrange
         var category = new Category(Guid.NewGuid(), "Bakliyat");
@@ -61,14 +61,16 @@ public class DeleteCategoryCommandHandlerTests
             .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Ingredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Ingredient(Guid.NewGuid(), "Mercimek", category.Id, MeasurementCategory.Weight));
 
+        _mockCategoryRepository
+            .Setup(r => r.DeleteAsync(category, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(category);
+
         // Act
-        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage(CategoryMessages.CategoryCannotBeDeletedDueToDependenciesMessage);
-
-        _mockCategoryRepository.Verify(r => r.DeleteAsync(It.IsAny<Category>(), false, It.IsAny<CancellationToken>()), Times.Never);
+        result.Should().Be(CategoryMessages.DeletedCategoryMessage);
+        _mockCategoryRepository.Verify(r => r.DeleteAsync(category, false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

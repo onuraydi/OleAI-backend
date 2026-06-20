@@ -4,5 +4,6 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Dtos.Requests
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string IconName { get; set; } = string.Empty;
     }
 }

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
@@ -7,6 +8,7 @@ using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Dtos.Requests;
 using OleAI.Backend.Application.Features.Recipes.Rules;
+using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
@@ -41,10 +43,13 @@ public class UpdateRecipeCommandHandlerTests
 
         _handler = new UpdateRecipeCommandHandler(
             _mockRecipeRepository.Object,
+            new Mock<IIngredientRequestRepository>().Object,
             _rules,
             _mockHttpContextAccessor.Object,
             _mockLocalLlmService.Object,
-            _mockImageService.Object);
+            _mockImageService.Object,
+            new Mock<IMediator>().Object,
+            new Mock<IAiRecommendationService>().Object);
     }
 
     [Fact]
@@ -53,7 +58,7 @@ public class UpdateRecipeCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         SetupUser(userId);
-        var existingRecipe = Recipe.Create(userId, "Old", "Old", RecipeVisibility.Public);
+        var existingRecipe = Recipe.Create(userId, "Old", "Old", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingRecipe);
@@ -74,7 +79,7 @@ public class UpdateRecipeCommandHandlerTests
         // Arrange
         SetupUser(Guid.NewGuid());
         var ownerId = Guid.NewGuid();
-        var existingRecipe = Recipe.Create(ownerId, "Title", "Desc", RecipeVisibility.Public);
+        var existingRecipe = Recipe.Create(ownerId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingRecipe);
@@ -114,3 +119,4 @@ public class UpdateRecipeCommandHandlerTests
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 }
+

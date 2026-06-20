@@ -21,6 +21,10 @@ public class RecipeModelBinderTests
             { "Title", "Test Recipe" },
             { "Description", "Delicious" },
             { "Visibility", "Public" },
+            { "Difficulty", "Medium" },
+            { "Servings", "2" },
+            { "PrepTime", "15" },
+            { "CookTime", "30" },
             { "IngredientsJson", "[]" },
             { "StepsJson", "[]" }
         }, "MainImage");
@@ -43,6 +47,10 @@ public class RecipeModelBinderTests
             { "Title", "Updated Recipe" },
             { "Description", "Better" },
             { "Visibility", "Private" },
+            { "Difficulty", "Hard" },
+            { "Servings", "4" },
+            { "PrepTime", "20" },
+            { "CookTime", "45" },
             { "IngredientsJson", "[]" },
             { "StepsJson", "[]" }
         }, "NewMainImage");
@@ -72,6 +80,48 @@ public class RecipeModelBinderTests
         // Assert
         context.ModelState.ContainsKey("IngredientsJson").Should().BeTrue();
         context.ModelState["IngredientsJson"]!.Errors.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task BaseRecipeCommandModelBinder_WithInvalidEnums_ShouldHaveModelStateError()
+    {
+        var binder = new CreateRecipeCommandModelBinder();
+        var context = CreateBindingContext("multipart/form-data", new Dictionary<string, StringValues>
+            {
+                { "Visibility", "InvalidVis" },
+                { "Difficulty", "InvalidDiff" }
+            });
+
+        await binder.BindModelAsync(context);
+
+        context.ModelState.ContainsKey("Visibility").Should().BeTrue();
+        context.ModelState.ContainsKey("Difficulty").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task BaseRecipeCommandModelBinder_WithInvalidIntList_ShouldHaveModelStateError()
+    {
+        var binder = new CreateRecipeCommandModelBinder();
+        var context = CreateBindingContext("multipart/form-data", new Dictionary<string, StringValues>
+            {
+                { "CategoryIds", "1, invalid, 3" }
+            });
+
+        await binder.BindModelAsync(context);
+
+        context.ModelState.ContainsKey("CategoryIds").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task BaseRecipeCommandModelBinder_WithNotFormContentType_ShouldFail()
+    {
+        var binder = new CreateRecipeCommandModelBinder();
+        var context = CreateBindingContext("application/json", new Dictionary<string, StringValues>());
+
+        await binder.BindModelAsync(context);
+
+        context.Result.IsModelSet.Should().BeFalse();
+        context.ModelState.ErrorCount.Should().BeGreaterThan(0);
     }
 
     private static DefaultModelBindingContext CreateBindingContext(string contentType, Dictionary<string, StringValues> formFields, string? fileName = null)

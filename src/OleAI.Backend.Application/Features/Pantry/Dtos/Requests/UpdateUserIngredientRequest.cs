@@ -7,6 +7,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Dtos.Requests
         public Guid UserId { get; set; }    // Controller'da token'dan doldurulacak
         public Guid Id { get; set; }        // Güncellenecek UserIngredient kaydının ID'si
         public double NewQuantity { get; set; }
-        public MeasurementUnit NewUnit { get; set; } = MeasurementUnit.Piece;
+        public MeasurementUnit? NewUnit { get; set; }
+        public DateTime? ExpirationDate { get; set; }
     }
 }

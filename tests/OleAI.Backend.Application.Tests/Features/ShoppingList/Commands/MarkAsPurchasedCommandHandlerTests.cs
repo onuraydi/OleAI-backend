@@ -44,7 +44,7 @@ public class MarkAsPurchasedCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         var ingredientId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, ingredientId, 2, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, ingredientId, 2, MeasurementUnit.Piece);
 
         _mockShoppingListRepo
             .Setup(r => r.GetAsync(
@@ -81,7 +81,7 @@ public class MarkAsPurchasedCommandHandlerTests
     public async Task Handle_WhenItemAlreadyPurchased_ShouldThrowBusinessException_AndNotPublishEvent()
     {
         var userId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 2, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 2, MeasurementUnit.Piece);
         item.MarkAsPurchased();
 
         _mockShoppingListRepo
@@ -129,3 +129,4 @@ public class MarkAsPurchasedCommandHandlerTests
             Times.Never);
     }
 }
+

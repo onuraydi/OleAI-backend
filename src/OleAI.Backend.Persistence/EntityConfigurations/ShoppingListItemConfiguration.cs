@@ -12,7 +12,8 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
 
             builder.Property(s => s.Id).HasColumnName("Id").IsRequired();
             builder.Property(s => s.UserId).HasColumnName("UserId").IsRequired();
-            builder.Property(s => s.IngredientId).HasColumnName("IngredientId").IsRequired();
+            builder.Property(s => s.IngredientId).HasColumnName("IngredientId").IsRequired(false);
+            builder.Property(s => s.IngredientRequestId).HasColumnName("IngredientRequestId").IsRequired(false);
             builder.Property(s => s.Quantity).HasColumnName("Quantity").IsRequired();
             builder.Property(s => s.Unit).HasColumnName("Unit").IsRequired();
             builder.Property(s => s.IsPurchased).HasColumnName("IsPurchased").IsRequired();
@@ -26,6 +27,11 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
             builder.HasOne(s => s.Ingredient)
                    .WithMany(i => i.ShoppingListItems)
                    .HasForeignKey(s => s.IngredientId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(s => s.IngredientRequest)
+                   .WithMany()
+                   .HasForeignKey(s => s.IngredientRequestId)
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -28,6 +28,13 @@ namespace OleAI.Backend.Application.Features.Ingredients.Queries.GetIngredientLi
             query.Size = request.Size;
             query.EnableTracking = false;
 
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.ToLower();
+                query.Predicate = i => i.Name.ToLower().Contains(keyword) ||
+                                       (i.Category != null && i.Category.Name.ToLower().Contains(keyword));
+            }
+
             var ingredients = await _ingredientRepository.GetListAsync(query, cancellationToken: cancellationToken);
 
             return _mapper.Map<Paginate<IngredientResponse>>(ingredients);

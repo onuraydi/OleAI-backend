@@ -44,7 +44,7 @@ public class AddCommentCommandHandlerTests
         var userId = Guid.NewGuid();
         SetupUser(userId);
 
-        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(userId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.PassLlmFilter();
         recipe.ApproveByAdmin();
 
@@ -56,7 +56,7 @@ public class AddCommentCommandHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
 
-        var command = new AddCommentCommand { RecipeId = recipe.Id, Content = "Nice!" };
+        var command = new AddCommentCommand { RecipeId = recipe.Id, Content = "Nice!", Rating = 5 };
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -77,3 +77,4 @@ public class AddCommentCommandHandlerTests
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 }
+

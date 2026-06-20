@@ -95,4 +95,15 @@ public class AllergyRestrictionsControllerTests
         var okResult = result as OkObjectResult;
         okResult.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task Restore_ShouldSendCommand_AndReturnOk()
+    {
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.AllergyRestrictions.Commands.RestoreAllergyRestriction.RestoreAllergyRestrictionCommand>(), default)).ReturnsAsync("restored");
+
+        var result = await _controller.Restore(Guid.NewGuid());
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+    }
 }

@@ -113,15 +113,63 @@ public class PantryControllerTests
     }
 
     [Fact]
+    public async Task AddMultipleIngredients_ShouldOverrideUserId_AndReturnCreated()
+    {
+        var command = new OleAI.Backend.Application.Features.Pantry.Commands.AddMultipleUserIngredients.AddMultipleUserIngredientsCommand
+        {
+            Request = new OleAI.Backend.Application.Features.Pantry.Dtos.Requests.AddMultipleUserIngredientsRequest
+            {
+                Ingredients = new List<AddUserIngredientRequest> { new AddUserIngredientRequest { RequestedName = "Test" } }
+            }
+        };
+
+        var response = new List<OleAI.Backend.Application.Features.Pantry.Dtos.Responses.AddedUserIngredientResponse>();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Pantry.Commands.AddMultipleUserIngredients.AddMultipleUserIngredientsCommand>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.AddMultipleIngredients(command);
+
+        var createdResult = result as CreatedResult;
+        createdResult.Should().NotBeNull();
+        createdResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task GetPopularDislikedIngredients_ShouldReturnOk()
+    {
+        var response = new List<OleAI.Backend.Application.Features.Ingredients.Queries.GetPopularDislikedIngredients.GetPopularDislikedIngredientsResponse>();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Ingredients.Queries.GetPopularDislikedIngredients.GetPopularDislikedIngredientsQuery>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.GetPopularDislikedIngredients();
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task GetPopularIngredientsByCategory_ShouldReturnOk()
+    {
+        var response = new List<OleAI.Backend.Application.Features.Pantry.Dtos.Responses.CategorizedPopularIngredientsResponse>();
+        _mockMediator.Setup(m => m.Send(It.IsAny<OleAI.Backend.Application.Features.Pantry.Queries.GetCategorizedPopularIngredients.GetCategorizedPopularIngredientsQuery>(), default)).ReturnsAsync(response);
+
+        var result = await _controller.GetPopularIngredientsByCategory();
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        okResult!.Value.Should().Be(response);
+    }
+
+    [Fact]
     public async Task UpdateIngredientQuantity_ShouldSendCommandWithRouteAndUser_AndReturnOk()
     {
         // Arrange
         var inventoryId = Guid.NewGuid();
+        var request = new UpdateUserIngredientRequest { NewQuantity = 4.5 };
         _mockMediator.Setup(m => m.Send(It.IsAny<UpdateUserIngredientCommand>(), default))
             .ReturnsAsync("updated");
 
         // Act
-        var result = await _controller.UpdateIngredientQuantity(inventoryId, 4.5);
+        var result = await _controller.UpdateIngredientQuantity(inventoryId, request);
 
         // Assert
         (result as OkObjectResult).Should().NotBeNull();

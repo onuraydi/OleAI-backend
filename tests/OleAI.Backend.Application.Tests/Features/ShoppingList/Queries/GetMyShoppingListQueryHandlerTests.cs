@@ -34,7 +34,7 @@ public class GetMyShoppingListQueryHandlerTests
 
         var items = new List<ShoppingListItem>
         {
-            new ShoppingListItem(userId, ingredientId, 2, MeasurementUnit.Piece)
+            ShoppingListItem.CreateStandard(userId, ingredientId, 2, MeasurementUnit.Piece)
         };
 
         var paginate = new Paginate<ShoppingListItem>
@@ -52,12 +52,15 @@ public class GetMyShoppingListQueryHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(paginate);
 
-        var expectedResponse = new List<ShoppingListItemResponse>
+        var expectedResponse = new ShoppingListItemResponse
         {
-            new() { Id = Guid.NewGuid(), IngredientId = ingredientId, Quantity = 2, Unit = MeasurementUnit.Piece }
+            Id = Guid.NewGuid(),
+            IngredientId = ingredientId,
+            Quantity = 2,
+            Unit = MeasurementUnit.Piece
         };
         _mockMapper
-            .Setup(m => m.Map<List<ShoppingListItemResponse>>(items))
+            .Setup(m => m.Map<ShoppingListItemResponse>(It.IsAny<ShoppingListItem>()))
             .Returns(expectedResponse);
 
         var query = new GetMyShoppingListQuery { UserId = userId };
@@ -82,8 +85,8 @@ public class GetMyShoppingListQueryHandlerTests
             .ReturnsAsync(new Paginate<ShoppingListItem> { Items = new List<ShoppingListItem>() });
 
         _mockMapper
-            .Setup(m => m.Map<List<ShoppingListItemResponse>>(It.IsAny<List<ShoppingListItem>>()))
-            .Returns(new List<ShoppingListItemResponse>());
+            .Setup(m => m.Map<ShoppingListItemResponse>(It.IsAny<ShoppingListItem>()))
+            .Returns(new ShoppingListItemResponse());
 
         var query = new GetMyShoppingListQuery { UserId = Guid.NewGuid() };
 
@@ -94,3 +97,4 @@ public class GetMyShoppingListQueryHandlerTests
         result.Should().BeEmpty();
     }
 }
+

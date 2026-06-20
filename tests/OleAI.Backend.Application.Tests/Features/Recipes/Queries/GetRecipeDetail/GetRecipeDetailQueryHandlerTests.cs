@@ -28,10 +28,12 @@ public class GetRecipeDetailQueryHandlerTests
         _mockRecipeRepository = new Mock<IRecipeRepository>();
         _mockMapper = new Mock<IMapper>();
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
-        _rules = new RecipeBusinessRules(Mock.Of<IIngredientRepository>(), Mock.Of<IRecipeCommentRepository>());
+        var recipeCommentRepositoryMock = new Mock<IRecipeCommentRepository>();
+        _rules = new RecipeBusinessRules(Mock.Of<IIngredientRepository>(), recipeCommentRepositoryMock.Object);
 
         _handler = new GetRecipeDetailQueryHandler(
             _mockRecipeRepository.Object,
+            recipeCommentRepositoryMock.Object,
             _mockMapper.Object,
             _rules,
             _mockHttpContextAccessor.Object);
@@ -40,7 +42,7 @@ public class GetRecipeDetailQueryHandlerTests
     [Fact]
     public async Task Handle_WhenRecipeIsPublicAndPublished_ShouldReturnDetail()
     {
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.PassLlmFilter();
         recipe.ApproveByAdmin();
 
@@ -62,7 +64,7 @@ public class GetRecipeDetailQueryHandlerTests
     {
         var userId = Guid.NewGuid();
         SetupUser(userId);
-        var recipe = Recipe.Create(userId, "Title", "Desc", RecipeVisibility.Private);
+        var recipe = Recipe.Create(userId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private);
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
@@ -82,7 +84,7 @@ public class GetRecipeDetailQueryHandlerTests
     {
         var userId = Guid.NewGuid();
         SetupUser(userId);
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.PassLlmFilter();
         recipe.ApproveByAdmin();
 
@@ -123,3 +125,4 @@ public class GetRecipeDetailQueryHandlerTests
         property?.SetValue(recipe, comments);
     }
 }
+

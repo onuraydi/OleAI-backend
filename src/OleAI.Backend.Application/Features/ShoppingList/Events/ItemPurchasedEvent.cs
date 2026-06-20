@@ -11,7 +11,8 @@ namespace OleAI.Backend.Application.Features.ShoppingList.Events;
 public class ItemPurchasedEvent : INotification
 {
     public Guid UserId { get; init; }
-    public Guid IngredientId { get; init; }
+    public Guid? IngredientId { get; init; }
+    public Guid? IngredientRequestId { get; init; }
     public double Quantity { get; init; }
     public MeasurementUnit Unit { get; init; }
 }

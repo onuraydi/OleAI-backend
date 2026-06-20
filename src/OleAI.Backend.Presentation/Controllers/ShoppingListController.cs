@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OleAI.Backend.Application.Features.ShoppingList.Commands.AddMultipleShoppingListItems;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.AddShoppingListItem;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.BulkMarkAsPurchased;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.MarkAsPurchased;
@@ -45,6 +46,29 @@ public class ShoppingListController : BaseController
         var result = await Mediator.Send(command);
 
         return Created($"api/shopping-list/{result.Id}", result);
+    }
+
+    /// <summary>
+    /// Alışveriş listesine toplu olarak birden fazla malzeme ekler.
+    /// </summary>
+    [HttpPost("bulk")]
+    public async Task<IActionResult> AddMultipleItems([FromBody] AddMultipleShoppingListItemsRequest request)
+    {
+        request.UserId = LoggedInUserId;
+
+        var command = new AddMultipleShoppingListItemsCommand { Request = request };
+        var result = await Mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Pişirme sonrası tükenen ürünleri (Depleted) tek seferde listeye ekler.
+    /// </summary>
+    [HttpPost("sync-depleted")]
+    public async Task<IActionResult> SyncDepleted([FromBody] OleAI.Backend.Application.Features.ShoppingLists.Commands.SyncDepletedIngredients.SyncDepletedIngredientsCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>

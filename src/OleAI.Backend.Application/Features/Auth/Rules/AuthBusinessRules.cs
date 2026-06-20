@@ -112,7 +112,7 @@ namespace OleAI.Backend.Application.Features.Auth.Rules
         {
             if (user != null && !user.IsEmailVerified)
             {
-                throw new BusinessException(AuthMessages.UserShouldBeVerifiedEmail);
+                throw new BusinessException(AuthMessages.UserShouldBeVerifiedEmail, "EMAIL_NOT_VERIFIED");
             }
         }
 

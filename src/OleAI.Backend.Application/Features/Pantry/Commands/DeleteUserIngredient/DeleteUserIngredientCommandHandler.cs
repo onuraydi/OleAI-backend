@@ -25,7 +25,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.DeleteUserIngredien
                 await _pantryBusinessRules.InventoryItemNotFound(request.Id);
             }
 
-            await _userIngredientRepository.DeleteAsync(item!);
+            await _userIngredientRepository.DeleteAsync(item!, permanent: true);
 
             return PantryMessages.IngredientDeletedMessage;
         }

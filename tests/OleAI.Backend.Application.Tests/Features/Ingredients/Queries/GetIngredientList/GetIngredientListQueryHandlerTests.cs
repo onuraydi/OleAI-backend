@@ -108,4 +108,27 @@ public class GetIngredientListQueryHandlerTests
         result.Items.Should().BeEmpty();
         result.TotalItems.Should().Be(0);
     }
+
+    [Fact]
+    public async Task Handle_WithKeyword_ShouldApplyPredicate()
+    {
+        // Arrange
+        var query = new GetIngredientListQuery { Page = 1, Size = 15, Keyword = "Test" };
+        var repositoryResult = new Paginate<Ingredient> { Items = new List<Ingredient>() };
+
+        QueryOptions<Ingredient>? capturedOptions = null;
+        _mockIngredientRepository.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()))
+            .Callback<QueryOptions<Ingredient>, CancellationToken>((o, c) => capturedOptions = o)
+            .ReturnsAsync(repositoryResult);
+
+        var mappedResult = new Paginate<IngredientResponse> { Items = new List<IngredientResponse>() };
+        _mockMapper.Setup(m => m.Map<Paginate<IngredientResponse>>(repositoryResult)).Returns(mappedResult);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        capturedOptions.Should().NotBeNull();
+        capturedOptions!.Predicate.Should().NotBeNull();
+    }
 }

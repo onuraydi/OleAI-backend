@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using FluentAssertions;
+using MediatR;
 using Moq;
 using OleAI.Backend.Application.Features.Pantry.Dtos;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.AddShoppingListItem;
@@ -23,6 +24,8 @@ public class AddShoppingListItemCommandHandlerTests
     private readonly Mock<IIngredientRepository> _mockIngredientRepo;
     private readonly Mock<ICacheService> _mockCache;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IIngredientRequestRepository> _mockIngredientRequestRepo;
+    private readonly Mock<IMediator> _mockMediator;
     private readonly ShoppingListBusinessRules _rules;
     private readonly AddShoppingListItemCommandHandler _handler;
 
@@ -35,6 +38,8 @@ public class AddShoppingListItemCommandHandlerTests
         _mockIngredientRepo = new Mock<IIngredientRepository>();
         _mockCache = new Mock<ICacheService>();
         _mockMapper = new Mock<IMapper>();
+        _mockIngredientRequestRepo = new Mock<IIngredientRequestRepository>();
+        _mockMediator = new Mock<IMediator>();
 
         _rules = new ShoppingListBusinessRules(
             _mockShoppingListRepo.Object,
@@ -43,9 +48,11 @@ public class AddShoppingListItemCommandHandlerTests
         _handler = new AddShoppingListItemCommandHandler(
             _mockShoppingListRepo.Object,
             _mockIngredientRepo.Object,
+            _mockIngredientRequestRepo.Object,
             _mockCache.Object,
             _rules,
-            _mockMapper.Object);
+            _mockMapper.Object,
+            _mockMediator.Object);
     }
 
     private void SetupIngredientExists(MeasurementCategory family = MeasurementCategory.Weight)
@@ -86,7 +93,7 @@ public class AddShoppingListItemCommandHandlerTests
         SetupIngredientExists(MeasurementCategory.Weight);
         SetupNoExistingListItem();
 
-        var addedItem = new ShoppingListItem(_userId, _ingredientId, 500, MeasurementUnit.Gram);
+        var addedItem = ShoppingListItem.CreateStandard(_userId, _ingredientId, 500, MeasurementUnit.Gram);
         _mockShoppingListRepo
             .Setup(r => r.AddAsync(It.IsAny<ShoppingListItem>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(addedItem);
@@ -157,7 +164,7 @@ public class AddShoppingListItemCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenItemAlreadyInList_ShouldThrowBusinessException()
+    public async Task Handle_WhenItemAlreadyInList_ShouldUpdateQuantity()
     {
         // Arrange: malzeme var ama zaten listede
         SetupIngredientExists();
@@ -169,7 +176,7 @@ public class AddShoppingListItemCommandHandlerTests
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ShoppingListItem(_userId, _ingredientId, 1, MeasurementUnit.Gram));
+            .ReturnsAsync(ShoppingListItem.CreateStandard(_userId, _ingredientId, 1, MeasurementUnit.Gram));
 
         var command = new AddShoppingListItemCommand
         {
@@ -182,9 +189,14 @@ public class AddShoppingListItemCommandHandlerTests
             }
         };
 
-        // Act & Assert
-        await FluentActions.Invoking(() => _handler.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<BusinessException>()
-            .WithMessage(ShoppingListMessages.ProductAlreadyInList);
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockShoppingListRepo.Verify(
+            r => r.UpdateAsync(It.Is<ShoppingListItem>(i => i.Quantity == 2 && i.Unit == MeasurementUnit.Gram), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }
+

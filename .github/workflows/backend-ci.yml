@@ -78,6 +78,7 @@ jobs:
           --logger trx \
           --collect:"XPlat Code Coverage" \
           --results-directory ./coverage \
+          -m:1 \
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       # 4. SonarQube analizini bitir ve sonuçları sunucuya gönder

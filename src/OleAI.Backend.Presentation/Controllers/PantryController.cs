@@ -1,12 +1,14 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OleAI.Backend.Application.Features.Pantry.Commands.AddMultipleUserIngredients;
 using OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient;
 using OleAI.Backend.Application.Features.Pantry.Commands.CancelRequest;
 using OleAI.Backend.Application.Features.Pantry.Commands.ClearExpiredUserIngredients;
 using OleAI.Backend.Application.Features.Pantry.Commands.DeleteUserIngredient;
 using OleAI.Backend.Application.Features.Pantry.Commands.UpdateUserIngredient;
 using OleAI.Backend.Application.Features.Pantry.Dtos.Requests;
+using OleAI.Backend.Application.Features.Pantry.Queries.GetCategorizedPopularIngredients;
 using OleAI.Backend.Application.Features.Pantry.Queries.GetMyPantry;
 using OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient;
 
@@ -44,6 +46,28 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         /// <summary>
+        /// Kutuplaştırıcı veya topluluk tarafından en çok sevilmeyen popüler malzemeleri getirir.
+        /// </summary>
+        [HttpGet("popular-dislikes")]
+        public async Task<IActionResult> GetPopularDislikedIngredients()
+        {
+            var query = new OleAI.Backend.Application.Features.Ingredients.Queries.GetPopularDislikedIngredients.GetPopularDislikedIngredientsQuery();
+            var result = await Mediator.Send(query);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Kategori bazında popüler malzemeleri getirir.
+        /// </summary>
+        [HttpGet("popular-by-category")]
+        public async Task<IActionResult> GetPopularIngredientsByCategory()
+        {
+            var query = new GetCategorizedPopularIngredientsQuery();
+            var result = await Mediator.Send(query);
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Dolaba yeni bir malzeme ekler. Sistemde yoksa otomatik olarak onaya (LLM) gönderir.
         /// </summary>
         [HttpPost]
@@ -58,17 +82,30 @@ namespace OleAI.Backend.Presentation.Controllers
         }
 
         /// <summary>
+        /// Dolaba birden fazla malzemeyi aynı anda ekler.
+        /// </summary>
+        [HttpPost("bulk")]
+        public async Task<IActionResult> AddMultipleIngredients([FromBody] AddMultipleUserIngredientsCommand command)
+        {
+            // GÜVENLİK: Her bir istekteki UserId'yi eziyoruz
+            foreach (var req in command.Request.Ingredients)
+            {
+                req.UserId = LoggedInUserId;
+            }
+
+            var result = await Mediator.Send(command);
+
+            return Created("", result);
+        }
+
+        /// <summary>
         /// Dolaptaki bir ürünün miktarını manuel olarak günceller.
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIngredientQuantity([FromRoute] Guid id, [FromBody] double newQuantity)
+        public async Task<IActionResult> UpdateIngredientQuantity([FromRoute] Guid id, [FromBody] UpdateUserIngredientRequest request)
         {
-            var request = new UpdateUserIngredientRequest
-            {
-                Id = id,
-                UserId = LoggedInUserId,
-                NewQuantity = newQuantity
-            };
+            request.Id = id;
+            request.UserId = LoggedInUserId;
 
             var command = new UpdateUserIngredientCommand
             {

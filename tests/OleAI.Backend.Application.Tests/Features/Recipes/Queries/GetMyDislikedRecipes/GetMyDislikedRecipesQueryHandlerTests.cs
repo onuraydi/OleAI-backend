@@ -47,7 +47,7 @@ public class GetMyDislikedRecipesQueryHandlerTests
             .ReturnsAsync(interactions);
 
         var response = new List<RecipeListItemResponse> { new() { Title = "Disliked" } };
-        _mockMapper.Setup(m => m.Map<IList<RecipeListItemResponse>>(It.IsAny<List<Recipe>>())).Returns(response);
+        _mockMapper.Setup(m => m.Map<IList<RecipeListItemResponse>>(It.IsAny<List<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, IList<RecipeListItemResponse>>>>())).Returns(response);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);

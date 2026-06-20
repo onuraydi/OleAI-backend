@@ -8,7 +8,8 @@ namespace OleAI.Backend.Domain.Entities
     public class DietaryPreference : Entity<Guid>
     {
         public string Name { get; set; } = string.Empty;
-        public string? Desciption { get; set; }
+        public string? Description { get; set; }
+        public string IconName { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
 
         public virtual ICollection<UserDietaryPreference> UserDietaryPreferences { get; set; }

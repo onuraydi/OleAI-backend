@@ -18,6 +18,7 @@ public class UpdateUserProfileCommandHandlerTests
     private readonly Mock<IUserRepository> _mockUserRepo;
     private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
     private readonly Mock<ICacheService> _mockCacheService;
+    private readonly Mock<OleAI.Backend.Application.Services.ImageStorage.IImageService> _mockImageService;
     private readonly UserBusinessRules _userBusinessRules;
     private readonly UpdateUserProfileCommandHandler _handler;
 
@@ -26,6 +27,7 @@ public class UpdateUserProfileCommandHandlerTests
         _mockUserRepo = new Mock<IUserRepository>();
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
         _mockCacheService = new Mock<ICacheService>();
+        _mockImageService = new Mock<OleAI.Backend.Application.Services.ImageStorage.IImageService>();
 
         _userBusinessRules = new UserBusinessRules(
             Mock.Of<IDietaryPreferenceRepository>(),
@@ -35,7 +37,8 @@ public class UpdateUserProfileCommandHandlerTests
             _mockUserRepo.Object,
             _mockHttpContextAccessor.Object,
             _mockCacheService.Object,
-            _userBusinessRules);
+            _userBusinessRules,
+            _mockImageService.Object);
     }
 
     [Fact]
