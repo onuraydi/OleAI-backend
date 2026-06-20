@@ -1,83 +1,114 @@
-using System.Linq.Expressions;
-using System.Reflection;
-using FluentAssertions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
-using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
-using OleAI.Backend.Core.Repositories;
+using OleAI.Backend.Core.Repositories.Options;
+using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
+using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Recipes.Commands.ApproveRecipe;
 
 public class ApproveRecipeCommandHandlerTests
 {
-    [Fact]
-    public async Task Handle_WithValidRequest_ShouldApproveRecipe()
+    private readonly Mock<IRecipeRepository> _mockRecipeRepository;
+    private readonly Mock<IIngredientRepository> _mockIngredientRepository;
+    private readonly Mock<IIngredientRequestRepository> _mockIngredientRequestRepository;
+    private readonly RecipeBusinessRules _recipeBusinessRules;
+    private readonly Mock<IAiRecommendationService> _mockAiRecommendationService;
+    private readonly Mock<ICacheService> _mockCacheService;
+    private readonly ApproveRecipeCommandHandler _handler;
+
+    public ApproveRecipeCommandHandlerTests()
     {
-        var mockRepo = new Mock<IRecipeRepository>();
-        var mockIngRepo = new Mock<IIngredientRepository>();
-        var mockIngReqRepo = new Mock<IIngredientRequestRepository>();
+        _mockRecipeRepository = new Mock<IRecipeRepository>();
+        _mockIngredientRepository = new Mock<IIngredientRepository>();
+        _mockIngredientRequestRepository = new Mock<IIngredientRequestRepository>();
         var mockCommentRepo = new Mock<IRecipeCommentRepository>();
-        var rules = new RecipeBusinessRules(mockIngRepo.Object, mockCommentRepo.Object);
-        var mockAi = new Mock<IAiRecommendationService>();
-        var mockCache = new Mock<ICacheService>();
+        _recipeBusinessRules = new RecipeBusinessRules(_mockIngredientRepository.Object, mockCommentRepo.Object);
+        _mockAiRecommendationService = new Mock<IAiRecommendationService>();
+        _mockCacheService = new Mock<ICacheService>();
 
-        var handler = new ApproveRecipeCommandHandler(mockRepo.Object, mockIngRepo.Object, mockIngReqRepo.Object, rules, mockAi.Object, mockCache.Object);
-
-        var recipeId = Guid.NewGuid();
-        var recipe = Recipe.Create(Guid.NewGuid(), "T", "D", OleAI.Backend.Domain.Enums.RecipeDifficulty.Easy, 1, 1, 1, OleAI.Backend.Domain.Enums.RecipeVisibility.Public);
-        var idProp = typeof(Entity<Guid>).GetProperty("Id");
-        idProp.SetValue(recipe, recipeId);
-
-        var step = new RecipeStep { Id = Guid.NewGuid(), RecipeId = recipeId, StepNumber = 1, Instruction = "Old" };
-        var stepsField = typeof(Recipe).GetField("_recipeSteps", BindingFlags.NonPublic | BindingFlags.Instance);
-        var stepsList = (List<RecipeStep>)stepsField.GetValue(recipe);
-        stepsList.Add(step);
-
-        mockRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), false, true, It.IsAny<CancellationToken>())).ReturnsAsync(recipe);
-
-        var request = new ApproveRecipeCommand
-        {
-            Id = recipeId,
-            EditedDescription = "New Desc",
-            EditedSteps = new List<EditedStepDto> { new EditedStepDto { StepNumber = 1, Instruction = "New Inst" } }
-        };
-
-        var result = await handler.Handle(request, CancellationToken.None);
-
-        result.Should().Be("Tarif başarıyla onaylandı ve topluluğa açıldı.");
-        recipe.Status.Should().Be(OleAI.Backend.Domain.Enums.RecipeStatus.Published);
-        recipe.Description.Should().Be("New Desc");
-        recipe.RecipeSteps.First().Instruction.Should().Be("New Inst");
-
-        mockRepo.Verify(r => r.UpdateAsync(recipe, It.IsAny<CancellationToken>()), Times.Once);
+        _handler = new ApproveRecipeCommandHandler(
+            _mockRecipeRepository.Object,
+            _mockIngredientRepository.Object,
+            _mockIngredientRequestRepository.Object,
+            _recipeBusinessRules,
+            _mockAiRecommendationService.Object,
+            _mockCacheService.Object
+        );
     }
 
     [Fact]
-    public async Task Handle_WithNullRecipe_ShouldThrowNotFoundException()
+    public async Task Handle_ShouldApproveRecipeAndHandlePendingIngredients()
     {
-        var mockRepo = new Mock<IRecipeRepository>();
-        var mockIngRepo = new Mock<IIngredientRepository>();
-        var mockIngReqRepo = new Mock<IIngredientRequestRepository>();
-        var mockCommentRepo = new Mock<IRecipeCommentRepository>();
-        var rules = new RecipeBusinessRules(mockIngRepo.Object, mockCommentRepo.Object);
-        var mockAi = new Mock<IAiRecommendationService>();
-        var mockCache = new Mock<ICacheService>();
+        var recipeId = Guid.NewGuid();
+        var command = new ApproveRecipeCommand
+        {
+            Id = recipeId,
+            EditedDescription = "New Desc",
+            EditedSteps = new List<EditedStepDto> { new EditedStepDto { StepNumber = 1, Instruction = "New Step" } }
+        };
 
-        var handler = new ApproveRecipeCommandHandler(mockRepo.Object, mockIngRepo.Object, mockIngReqRepo.Object, rules, mockAi.Object, mockCache.Object);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Easy, 1, 10, 10, RecipeVisibility.Public);
+        var ingredientRequest = new IngredientRequest(Guid.NewGuid(), Guid.NewGuid(), "PendingIng", Guid.NewGuid());
+        recipe.AddIngredient(null, ingredientRequest.Id, 1, 0); // Pending ingredient
+        recipe.AddStep(1, "Old Step");
 
-        mockRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(), false, true, It.IsAny<CancellationToken>())).ReturnsAsync((Recipe)null);
+        _mockRecipeRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(),
+            It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(),
+            It.IsAny<bool>(),
+            It.IsAny<bool>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
 
-        var request = new ApproveRecipeCommand { Id = Guid.NewGuid() };
+        var requestPaginated = new Paginate<IngredientRequest> { Items = new List<IngredientRequest> { ingredientRequest } };
+        _mockIngredientRequestRepository.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<IngredientRequest>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(requestPaginated);
 
-        var act = async () => await handler.Handle(request, CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        await act.Should().ThrowAsync<OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types.NotFoundException>();
+        Assert.Equal("Tarif başarıyla onaylandı ve topluluğa açıldı.", result);
+        Assert.Equal(RecipeStatus.Published, recipe.Status);
+        Assert.Equal("New Desc", recipe.Description);
+        
+        _mockIngredientRepository.Verify(r => r.AddRangeAsync(It.IsAny<List<Ingredient>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockIngredientRequestRepository.Verify(r => r.UpdateRangeAsync(It.IsAny<List<IngredientRequest>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockAiRecommendationService.Verify(a => a.SyncRecipeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<List<OleAI.Backend.Application.Services.AiRecommendation.RecipeIngredientAiDto>>(), It.IsAny<string>(), null, true, It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WithLlmReviewJson_ShouldParseAndApplyCorrections()
+    {
+        var recipeId = Guid.NewGuid();
+        var command = new ApproveRecipeCommand { Id = recipeId };
+
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Easy, 1, 10, 10, RecipeVisibility.Public);
+        recipe.AddStep(1, "Old Step 1");
+        recipe.SetLlmReviewResult("{\"isApproved\": true, \"correctedDescription\": \"Llm Desc\", \"correctedSteps\": [\"Llm Step 1\"]}");
+
+        _mockRecipeRepository.Setup(r => r.GetAsync(
+            It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(),
+            It.IsAny<Func<IQueryable<Recipe>, IIncludableQueryable<Recipe, object>>>(),
+            It.IsAny<bool>(),
+            It.IsAny<bool>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recipe);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal("Tarif başarıyla onaylandı ve topluluğa açıldı.", result);
+        Assert.Equal("Llm Desc", recipe.Description);
+        Assert.Equal("Llm Step 1", recipe.RecipeSteps.First().Instruction);
     }
 }
