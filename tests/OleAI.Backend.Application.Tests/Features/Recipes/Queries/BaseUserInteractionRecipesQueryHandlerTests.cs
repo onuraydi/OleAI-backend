@@ -16,10 +16,11 @@ using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Recipes.Queries;
 
-public class DummyQuery : IRequest<Paginate<RecipeListItemResponse>>, IPageableRequest
+public class DummyQuery : IRequest<Paginate<RecipeListItemResponse>>, IPageableRequest, IFilterableRecipeQuery
 {
     public int Page { get; set; } = 1;
     public int Size { get; set; } = 10;
+    public string? SortBy { get; set; }
 }
 
 public class DummyQueryHandler : BaseUserInteractionRecipesQueryHandler<DummyQuery>
@@ -70,5 +71,44 @@ public class BaseUserInteractionRecipesQueryHandlerTests
         result.Should().NotBeNull();
         result.Items.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
+    }
+
+    [Theory]
+    [InlineData("highest rated")]
+    [InlineData("quickest")]
+    [InlineData("popular")]
+    [InlineData("newest")]
+    [InlineData("invalid")]
+    public async Task Handle_WithDifferentSortBy_ShouldApplyOrderBy(string sortBy)
+    {
+        var mockRepo = new Mock<IRecipeInteractionRepository>();
+        var mockMapper = new Mock<IMapper>();
+        var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+
+        var userId = Guid.NewGuid();
+        var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+        mockHttpContextAccessor.Setup(x => x.HttpContext).Returns(new DefaultHttpContext { User = claimsPrincipal });
+
+        var interaction = new RecipeInteraction();
+        var recipe = Recipe.Create(Guid.NewGuid(), "T", "D", OleAI.Backend.Domain.Enums.RecipeDifficulty.Easy, 1, 1, 1, OleAI.Backend.Domain.Enums.RecipeVisibility.Public);
+        typeof(RecipeInteraction).GetProperty("Recipe", BindingFlags.Public | BindingFlags.Instance)?.SetValue(interaction, recipe);
+        var paginate = new Paginate<RecipeInteraction> { Items = new List<RecipeInteraction> { interaction }, TotalItems = 1 };
+
+        QueryOptions<RecipeInteraction>? capturedOptions = null;
+        mockRepo.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<RecipeInteraction>>(), It.IsAny<CancellationToken>()))
+            .Callback<QueryOptions<RecipeInteraction>, CancellationToken>((o, c) => capturedOptions = o)
+            .ReturnsAsync(paginate);
+
+        mockMapper.Setup(m => m.Map<IList<RecipeListItemResponse>>(It.IsAny<List<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, IList<RecipeListItemResponse>>>>()))
+            .Returns(new List<RecipeListItemResponse> { new RecipeListItemResponse { Id = recipe.Id, Title = "T" } });
+
+        var handler = new DummyQueryHandler(mockRepo.Object, mockMapper.Object, mockHttpContextAccessor.Object);
+        var query = new DummyQuery { SortBy = sortBy };
+
+        await handler.Handle(query, CancellationToken.None);
+
+        capturedOptions.Should().NotBeNull();
+        capturedOptions!.OrderBy.Should().NotBeNull();
     }
 }

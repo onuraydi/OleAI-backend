@@ -126,4 +126,21 @@ public class CategoriesControllerTests
         (result as OkObjectResult).Should().NotBeNull();
         _mockMediator.Verify(m => m.Send(It.Is<DeleteCategoryCommand>(c => c.Id == categoryId), default), Times.Once);
     }
+
+    [Fact]
+    public async Task Restore_ShouldSendCommand_AndReturnOk()
+    {
+        var categoryId = Guid.NewGuid();
+        var expectedMessage = "Kategori başarıyla geri yüklendi.";
+
+        _mockMediator
+            .Setup(m => m.Send(It.Is<OleAI.Backend.Application.Features.IngredientCategories.Commands.RestoreCategory.RestoreCategoryCommand>(c => c.Id == categoryId), default))
+            .ReturnsAsync(expectedMessage);
+
+        var result = await _controller.Restore(categoryId);
+
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        _mockMediator.Verify(m => m.Send(It.Is<OleAI.Backend.Application.Features.IngredientCategories.Commands.RestoreCategory.RestoreCategoryCommand>(c => c.Id == categoryId), default), Times.Once);
+    }
 }
