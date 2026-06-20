@@ -31,7 +31,10 @@ using Serilog;
 using Serilog.Exceptions;
 using StackExchange.Redis;
 
-Env.TraversePath().Load();
+if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production")
+{
+    Env.TraversePath().Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +50,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("OleAI-Web",
         policy => policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins("http://localhost:5173", "https://oleai.com", "https://www.oleai.com")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -250,7 +253,10 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 });
 
 // Hangfire Dashboard (Development only or protected in Prod)
-app.UseHangfireDashboard("/hangfire");
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire");
+}
 
 // Automatic Migration at Startup (Development only)
 if (app.Environment.IsDevelopment())
