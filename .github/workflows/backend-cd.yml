@@ -1,0 +1,70 @@
+name: Backend CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: cd-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.ACR_LOGIN_SERVER }}/oleai-backend:latest
+
+      - name: Copy files via ssh
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "docker-compose.prod.yml,nginx,monitoring"
+          target: "~/deploy"
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/deploy
+            
+            # Create .env.prod file
+            cat <<EOF > .env.prod
+            ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
+            Env_SerilogConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
+            ConnectionStrings__OleAIConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
+            ConnectionStrings__Redis=redis:6379,abortConnect=false,connectTimeout=10000
+            EOF
+            
+            # Login to ACR on the VM
+            echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+            
+            # Create dummy certs if they don't exist to prevent Nginx from failing to start
+            mkdir -p nginx/certs
+            if [ ! -f nginx/certs/fullchain.pem ]; then
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx/certs/privkey.pem -out nginx/certs/fullchain.pem -subj "/C=TR/ST=Istanbul/L=Istanbul/O=OleAI/CN=api.oleai.com"
+            fi
+            
+            # Pull new image and restart services
+            docker compose -f docker-compose.prod.yml pull backend
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
