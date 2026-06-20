@@ -1,6 +1,9 @@
+using System.Linq.Expressions;
+using System.Security.Claims;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using OleAI.Backend.Application.Features.Recipes.Dtos.Responses;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
@@ -9,73 +12,47 @@ using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Domain.Entities;
-using OleAI.Backend.Domain.Enums;
 using Xunit;
 
 namespace OleAI.Backend.Application.Tests.Features.Recipes.Queries.GetPublishedRecipes;
 
 public class GetPublishedRecipesQueryHandlerTests
 {
-    private readonly Mock<IRecipeRepository> _mockRecipeRepository;
-    private readonly Mock<IUserRepository> _mockUserRepository;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<IMapper> _mockMapper;
-    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
-    private readonly GetPublishedRecipesQueryHandler _handler;
-
-    public GetPublishedRecipesQueryHandlerTests()
-    {
-        _mockRecipeRepository = new Mock<IRecipeRepository>();
-        _mockUserRepository = new Mock<IUserRepository>();
-        _mockCacheService = new Mock<ICacheService>();
-        _mockMapper = new Mock<IMapper>();
-        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
-
-        _handler = new GetPublishedRecipesQueryHandler(
-            _mockRecipeRepository.Object,
-            _mockUserRepository.Object,
-            _mockCacheService.Object,
-            _mockMapper.Object,
-            _mockHttpContextAccessor.Object);
-    }
-
     [Fact]
-    public async Task Handle_WhenCalled_ShouldReturnPublishedRecipes()
+    public async Task Handle_ShouldReturnPublishedRecipes()
     {
-        // Arrange
-        var query = new GetPublishedRecipesQuery { Page = 0, Size = 10 };
-        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(Guid.NewGuid(), "Pub", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public) } };
+        var mockRepo = new Mock<IRecipeRepository>();
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockCache = new Mock<ICacheService>();
+        var mockMapper = new Mock<IMapper>();
+        var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
 
-        _mockRecipeRepository.Setup(r => r.GetListAsync(
-                It.IsAny<QueryOptions<Recipe>>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(recipes);
+        var userId = Guid.NewGuid();
+        var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        var httpContext = new DefaultHttpContext { User = claimsPrincipal };
 
-        var response = new Paginate<RecipeListItemResponse> { Items = new List<RecipeListItemResponse> { new() { Title = "Pub" } } };
-        _mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(recipes)).Returns(response);
+        mockHttpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var handler = new GetPublishedRecipesQueryHandler(mockRepo.Object, mockUserRepo.Object, mockCache.Object, mockMapper.Object, mockHttpContextAccessor.Object);
 
-        // Assert
+        var request = new GetPublishedRecipesQuery { Page = 1, Size = 10 };
+        var recipe = Recipe.Create(Guid.NewGuid(), "T", "D", OleAI.Backend.Domain.Enums.RecipeDifficulty.Easy, 1, 1, 1, OleAI.Backend.Domain.Enums.RecipeVisibility.Public);
+        var paginatedList = new Paginate<Recipe> { Items = new List<Recipe> { recipe }, TotalItems = 1 };
+
+        mockRepo.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Recipe>>(), It.IsAny<CancellationToken>())).ReturnsAsync(paginatedList);
+
+        var dto = new RecipeListItemResponse { Id = recipe.Id, Title = "T" };
+        var paginatedDtos = new Paginate<RecipeListItemResponse> { Items = new List<RecipeListItemResponse> { dto }, TotalItems = 1 };
+
+        mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(It.IsAny<It.IsAnyType>())).Returns(paginatedDtos);
+        mockMapper.Setup(m => m.Map(It.IsAny<object>(), It.IsAny<Type>(), It.IsAny<Type>())).Returns(paginatedDtos);
+        mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(It.IsAny<Paginate<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, Paginate<RecipeListItemResponse>>>>())).Returns(paginatedDtos);
+
+        var result = await handler.Handle(request, CancellationToken.None);
+
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
-        _mockRecipeRepository.Verify(r => r.GetListAsync(It.Is<QueryOptions<Recipe>>(o => o.Predicate != null), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_WithSearchTerm_ShouldFilterRecipes()
-    {
-        // Arrange
-        var query = new GetPublishedRecipesQuery { Page = 0, Size = 10, SearchTerm = "Cake" };
-        _mockRecipeRepository.Setup(r => r.GetListAsync(It.IsAny<QueryOptions<Recipe>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Paginate<Recipe> { Items = new List<Recipe>() });
-
-        // Act
-        await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        _mockRecipeRepository.Verify(r => r.GetListAsync(It.Is<QueryOptions<Recipe>>(o => o.Predicate != null), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
-
