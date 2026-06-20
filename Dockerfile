@@ -34,5 +34,9 @@ USER $APP_UID
 # Build aşamasında ürettiğimiz publish dosyalarını bu hafif imaja kopyala
 COPY --from=build /app/publish .
 
+# Container Apps & Docker Compose Health Check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
 # Uygulamayı başlat
 ENTRYPOINT ["dotnet", "OleAI.Backend.Presentation.dll"]
