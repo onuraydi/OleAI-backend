@@ -34,23 +34,33 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
             // Sistemde olan (master) bir ürün eklemek
             if (command.Request.IngredientId.HasValue)
             {
-                await _businessRules.IngredientMustExistWhenSelectedFromList(command.Request.IngredientId!.Value);
+                var ingredient = await _businessRules.IngredientMustExistWhenSelectedFromList(command.Request.IngredientId!.Value);
 
                 var existingItem = await _userIngredientRepository.GetAsync(
-                    predicate: ui => ui.UserId == command.Request.UserId && ui.IngredientId == command.Request.IngredientId.Value,
+                    predicate: ui => ui.UserId == command.Request.UserId && ui.IngredientId == command.Request.IngredientId.Value && ui.IngredientAliasId == command.Request.AliasId,
                     cancellationToken: cancellationToken
                     );
+
+                DateTime? finalExpirationDate = command.Request.ExpirationDate;
+                if (!finalExpirationDate.HasValue && ingredient.EstimatedShelfLifeInDays.HasValue)
+                {
+                    finalExpirationDate = DateTime.UtcNow.AddDays(ingredient.EstimatedShelfLifeInDays.Value);
+                }
 
                 if (existingItem != null)
                 {
                     existingItem.AddQuantity(command.Request.Quantity);
+                    if (finalExpirationDate.HasValue)
+                    {
+                        existingItem.UpdateExpirationDate(finalExpirationDate);
+                    }
                     await _userIngredientRepository.UpdateAsync(existingItem, cancellationToken);
                     userIngredient = existingItem;
                     message = PantryMessages.IngredientQuantityUpdatedMessage;
                 }
                 else
                 {
-                    userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, command.Request.Quantity, command.Request.Unit, command.Request.ExpirationDate);
+                    userIngredient = UserIngredient.CreateStandard(Guid.NewGuid(), command.Request.UserId, command.Request.IngredientId.Value, command.Request.Quantity, command.Request.Unit, finalExpirationDate, command.Request.AliasId);
                     await _userIngredientRepository.AddAsync(userIngredient, cancellationToken);
                     message = PantryMessages.IngredientAddedPantryMessage;
                 }
@@ -59,7 +69,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.AddUserIngredient
             // Sistem olmayan bir ürünü kullanıcı serbest metinle yazdığı zaman // Direkt eklensin ancak onay bekliyor gözükmesin
             else
             {
-                var ingredientRequest = new IngredientRequest(Guid.NewGuid(), command.Request.UserId, command.Request.RequestedName!);
+                var ingredientRequest = new IngredientRequest(Guid.NewGuid(), command.Request.UserId, command.Request.RequestedName!, command.Request.SuggestedCategoryId, command.Request.EstimatedShelfLifeInDays);
                 await _ingredientRequestRepository.AddAsync(ingredientRequest, cancellationToken);
 
                 userIngredient = UserIngredient.CreatePending(Guid.NewGuid(), command.Request.UserId, ingredientRequest.Id, command.Request.Quantity, command.Request.Unit, command.Request.ExpirationDate);

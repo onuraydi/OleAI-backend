@@ -24,7 +24,7 @@ namespace OleAI.Backend.Application.Features.IngredientCategories.Commands.Updat
             var category = await _categoryRepository.GetAsync(c => c.Id == command.Request.Id, cancellationToken: cancellationToken);
             _categoryBusinessRules.CategoryMustExistWhenRequested(category);
 
-            await _categoryBusinessRules.CategoryNameCannotBeDuplicatedWhenInserted(command.Request.Name);
+            await _categoryBusinessRules.CategoryNameCannotBeDuplicatedWhenUpdated(command.Request.Id, command.Request.Name);
 
             _mapper.Map(command.Request, category);
             await _categoryRepository.UpdateAsync(category!);

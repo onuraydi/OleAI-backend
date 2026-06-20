@@ -30,10 +30,10 @@ public class DbSeederTests
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var categories = await context.Set<Category>().ToListAsync();
-        categories.Should().HaveCount(8);
+        categories.Should().HaveCount(20);
         categories.Select(c => c.Name).Should().Contain(new[]
         {
-            "Sebzeler", "Meyveler", "Süt ve Süt Ürünleri", "Kuru Bakliyat", "Baharatlar", "Yağlar", "Et ve Tavuk", "Diğer"
+            "Sebzeler", "Meyveler", "Kırmızı Et", "Deniz Ürünleri", "Süt ve Süt Ürünleri", "Tahıllar ve Unlar", "Kuruyemişler ve Tohumlar"
         });
     }
 
@@ -47,7 +47,15 @@ public class DbSeederTests
         using (var scope = provider.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await context.Set<Category>().AddAsync(new Category(Guid.NewGuid(), "Mevcut"));
+            var existingCategories = new[]
+            {
+                "Sebzeler", "Meyveler", "Kırmızı Et", "Deniz Ürünleri", "Süt ve Süt Ürünleri", "Tahıllar ve Unlar", "Kuruyemişler ve Tohumlar"
+            };
+
+            foreach (var name in existingCategories)
+            {
+                await context.Set<Category>().AddAsync(new Category(Guid.NewGuid(), name));
+            }
             await context.SaveChangesAsync();
         }
 
@@ -59,7 +67,10 @@ public class DbSeederTests
         var assertContext = assertScope.ServiceProvider.GetRequiredService<AppDbContext>();
         var categories = await assertContext.Set<Category>().ToListAsync();
 
-        categories.Should().HaveCount(1);
-        categories[0].Name.Should().Be("Mevcut");
+        categories.Should().HaveCount(7);
+        categories.Select(c => c.Name).Should().Contain(new[]
+        {
+            "Sebzeler", "Meyveler", "Kırmızı Et", "Deniz Ürünleri", "Süt ve Süt Ürünleri", "Tahıllar ve Unlar", "Kuruyemişler ve Tohumlar"
+        });
     }
 }

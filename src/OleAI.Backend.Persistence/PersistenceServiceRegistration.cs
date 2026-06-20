@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OleAI.Backend.Application.Features.Admin.Queries.GetDashboardStats;
 using OleAI.Backend.Application.Services.Repositories;
 using OleAI.Backend.Persistence.Contexts;
 using OleAI.Backend.Persistence.Repositories;
@@ -32,6 +33,13 @@ namespace OleAI.Backend.Persistence
             services.AddScoped<IUserDietaryPreferenceRepository, UserDietaryPreferenceRepository>();
             services.AddScoped<IUserAllergyRepository, UserAllergyRepository>();
             services.AddScoped<IUserDislikedIngredientRepository, UserDislikedIngredientRepository>();
+            services.AddScoped<ISystemLogRepository, SystemLogRepository>();
+            services.AddScoped<IRecipeCategoryRepository, RecipeCategoryRepository>();
+            services.AddScoped<ITagRepository, TagRepository>();
+            services.AddScoped<IAdminStatsRepository, AdminStatsRepository>();
+            services.AddScoped<IContactMessageRepository, ContactMessageRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
 
             return services;
         }

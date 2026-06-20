@@ -22,5 +22,6 @@ namespace OleAI.Backend.Application.Features.Pantry.Constants
         public const string RequestAlreadyProcessedCannotBeCancelledMessage = "Bu talep zaten yönetici tarafından incelenmiş veya karara bağlanmış. İptal edilemez.";
         public const string IngredientRequestCancelledMessage = "Talebiniz başarıyla iptal edildi ve dolabınızdan kaldırıldı.";
         public const string RequestCancelledByUserMessage = "Kullanıcı talebini kendi isteğiyle iptal etti/geri çekti.";
+        public const string ExpirationDateCannotBeInThePastMessage = "Son kullanma tarihi geçmiş bir tarih olamaz.";
     }
 }

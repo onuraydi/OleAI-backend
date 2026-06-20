@@ -13,13 +13,23 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
         private readonly IIngredientRepository _ingredientRepository;
         private readonly IIngredientAliasRepository _ingredientAliasRepository;
         private readonly IUserIngredientRepository _userIngredientRepository;
+        private readonly IShoppingListItemRepository _shoppingListItemRepository;
+        private readonly OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService _cacheService;
 
-        public ResolveIngredientRequestCommandHandler(IIngredientRequestRepository ingredientRequestRepository, IIngredientRepository ingredientRepository, IIngredientAliasRepository ingredientAliasRepository, IUserIngredientRepository userIngredientRepository)
+        public ResolveIngredientRequestCommandHandler(
+            IIngredientRequestRepository ingredientRequestRepository,
+            IIngredientRepository ingredientRepository,
+            IIngredientAliasRepository ingredientAliasRepository,
+            IUserIngredientRepository userIngredientRepository,
+            IShoppingListItemRepository shoppingListItemRepository,
+            OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService cacheService)
         {
             _ingredientRequestRepository = ingredientRequestRepository;
             _ingredientRepository = ingredientRepository;
             _ingredientAliasRepository = ingredientAliasRepository;
             _userIngredientRepository = userIngredientRepository;
+            _shoppingListItemRepository = shoppingListItemRepository;
+            _cacheService = cacheService;
         }
 
         public async Task<string> Handle(ResolveIngredientRequestCommand command, CancellationToken cancellationToken)
@@ -36,7 +46,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
                 if (!command.Request.NewCategoryId.HasValue || !command.Request.NewUnitFamily.HasValue)
                     throw new BusinessException(PantryMessages.CategoryAndUnitTypeRequiredMessage);
 
-                var newIngredient = new Ingredient(Guid.NewGuid(), ingredientRequest.RequestedName, command.Request.NewCategoryId.Value, command.Request.NewUnitFamily.Value);
+                var newIngredient = new Ingredient(Guid.NewGuid(), ingredientRequest.RequestedName, command.Request.NewCategoryId.Value, command.Request.NewUnitFamily.Value, command.Request.EstimatedShelfLifeInDays, ExpirationMode.ShelfLife);
                 await _ingredientRepository.AddAsync(newIngredient);
 
                 targetMasterIngredientId = newIngredient.Id;
@@ -64,12 +74,57 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
 
             await _ingredientRequestRepository.UpdateAsync(ingredientRequest);
 
+            if (command.Request.Action == ResolutionAction.ApproveAsNew || command.Request.Action == ResolutionAction.MergeAsAlias)
+            {
+                await _cacheService.RemoveAsync("Pantry:AllIngredientsCatalog:v3");
+            }
+
             // Eğer onaylandıysa veya birleştirildiyse, kullanıcının dolabında "Onay Bekliyor" statüsünde olan bu ürünü AKTİF hale getiriyoruz.
             var userInventoryItem = await _userIngredientRepository.GetAsync(ui => ui.IngredientRequestId == command.Request.RequestId);
             if (userInventoryItem != null)
             {
-                userInventoryItem.ApprovePendingRequest(targetMasterIngredientId);
-                await _userIngredientRepository.UpdateAsync(userInventoryItem);
+                var existingMasterItem = await _userIngredientRepository.GetAsync(ui => ui.UserId == userInventoryItem.UserId && ui.IngredientId == targetMasterIngredientId);
+
+                if (existingMasterItem != null)
+                {
+                    // Kullanıcının envanterinde bu ürün zaten var. Miktarları birleştir (aynı birimdeyse) ve pending olanı sil.
+                    if (existingMasterItem.Unit == userInventoryItem.Unit && userInventoryItem.Amount > 0)
+                    {
+                        existingMasterItem.AddQuantity(userInventoryItem.Amount);
+                        await _userIngredientRepository.UpdateAsync(existingMasterItem);
+                    }
+
+                    await _userIngredientRepository.DeleteAsync(userInventoryItem, permanent: true); // Pending kaydını kalıcı olarak sil.
+                }
+                else
+                {
+                    userInventoryItem.ApprovePendingRequest(targetMasterIngredientId);
+                    await _userIngredientRepository.UpdateAsync(userInventoryItem);
+                }
+            }
+
+            // Ayrıca, kullanıcının alışveriş listesinde bu ürünü bekleyen bir kayıt varsa onu da güncelliyoruz.
+            var shoppingListItem = await _shoppingListItemRepository.GetAsync(sl => sl.IngredientRequestId == command.Request.RequestId);
+            if (shoppingListItem != null)
+            {
+                var existingMasterItem = await _shoppingListItemRepository.GetAsync(sl => sl.UserId == shoppingListItem.UserId && sl.IngredientId == targetMasterIngredientId && !sl.IsPurchased);
+
+                if (existingMasterItem != null)
+                {
+                    // Kullanıcının alışveriş listesinde bu ürün zaten var. Miktarları birleştir ve pending olanı sil.
+                    if (existingMasterItem.Unit == shoppingListItem.Unit)
+                    {
+                        existingMasterItem.UpdateQuantity(existingMasterItem.Quantity + shoppingListItem.Quantity, existingMasterItem.Unit);
+                        await _shoppingListItemRepository.UpdateAsync(existingMasterItem);
+                    }
+
+                    await _shoppingListItemRepository.DeleteAsync(shoppingListItem, permanent: true); // Pending kaydını kalıcı olarak sil.
+                }
+                else
+                {
+                    shoppingListItem.ApprovePendingRequest(targetMasterIngredientId);
+                    await _shoppingListItemRepository.UpdateAsync(shoppingListItem);
+                }
             }
 
             return PantryMessages.RequestResolvedAndInventoryUpdatedMessage;

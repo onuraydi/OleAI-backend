@@ -16,24 +16,30 @@ public class AddShoppingListItemCommandHandler
 {
     private readonly IShoppingListItemRepository _shoppingListItemRepository;
     private readonly IIngredientRepository _ingredientRepository;
+    private readonly IIngredientRequestRepository _ingredientRequestRepository;
     private readonly ICacheService _cacheService;
     private readonly ShoppingListBusinessRules _businessRules;
     private readonly IMapper _mapper;
+    private readonly IMediator _mediator;
 
     private const string IngredientCacheKeyPrefix = "ingredient:";
 
     public AddShoppingListItemCommandHandler(
         IShoppingListItemRepository shoppingListItemRepository,
         IIngredientRepository ingredientRepository,
+        IIngredientRequestRepository ingredientRequestRepository,
         ICacheService cacheService,
         ShoppingListBusinessRules businessRules,
-        IMapper mapper)
+        IMapper mapper,
+        IMediator mediator)
     {
         _shoppingListItemRepository = shoppingListItemRepository;
         _ingredientRepository = ingredientRepository;
+        _ingredientRequestRepository = ingredientRequestRepository;
         _cacheService = cacheService;
         _businessRules = businessRules;
         _mapper = mapper;
+        _mediator = mediator;
     }
 
     public async Task<ShoppingListItemResponse> Handle(
@@ -42,48 +48,111 @@ public class AddShoppingListItemCommandHandler
     {
         var req = command.Request;
 
-        await _businessRules.ItemMustNotAlreadyExistInActiveList(
-            req.UserId, req.IngredientId, cancellationToken);
-
-        var cacheKey = $"{IngredientCacheKeyPrefix}{req.IngredientId}";
-        var cachedIngredient = await _cacheService.GetAsync<IngredientCacheModel>(cacheKey);
-
-        if (cachedIngredient == null)
+        if (!req.IngredientId.HasValue && string.IsNullOrWhiteSpace(req.RequestedName))
         {
-            var ingredient = await _ingredientRepository.GetAsync(
-                predicate: i => i.Id == req.IngredientId,
-                include: q => q.Include(i => i.Category),
-                enableTracking: false,
-                cancellationToken: cancellationToken);
-
-            if (ingredient == null)
-            {
-                throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
-                    Features.ShoppingList.Constants.ShoppingListMessages.IngredientNotFound);
-            }
-
-            cachedIngredient = _mapper.Map<IngredientCacheModel>(ingredient);
-            await _cacheService.SetAsync(cacheKey, cachedIngredient, absoluteExpiration: TimeSpan.FromHours(24));
+            throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException("Lütfen bir malzeme seçin veya yeni bir malzeme adı girin.");
         }
 
-        if (!MeasurementUnitHelper.IsCompatible(cachedIngredient.UnitFamily, req.Unit))
-            throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
-                $"'{req.Unit}' birimi bu malzeme için geçerli değil. Uygun aile: {cachedIngredient.UnitFamily}.");
+        if (req.IngredientId.HasValue && !string.IsNullOrWhiteSpace(req.RequestedName))
+        {
+            throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException("Aynı anda hem malzeme ID'si hem de özel malzeme adı gönderilemez.");
+        }
 
-        var newItem = new ShoppingListItem(
-            userId: req.UserId,
-            ingredientId: req.IngredientId,
-            quantity: req.Quantity,
-            unit: req.Unit);
+        ShoppingListItem newItem;
+        string responseIngredientName;
+        string responseCategoryName;
+        string responseCategoryIconName;
 
-        await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
+        if (req.IngredientId.HasValue)
+        {
+            var cacheKey = $"{IngredientCacheKeyPrefix}{req.IngredientId}";
+            var cachedIngredient = await _cacheService.GetAsync<IngredientCacheModel>(cacheKey);
+
+            if (cachedIngredient == null)
+            {
+                var ingredient = await _ingredientRepository.GetAsync(
+                    predicate: i => i.Id == req.IngredientId,
+                    include: q => q.Include(i => i.Category),
+                    enableTracking: false,
+                    cancellationToken: cancellationToken);
+
+                if (ingredient == null)
+                {
+                    throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
+                        Features.ShoppingList.Constants.ShoppingListMessages.IngredientNotFound);
+                }
+
+                cachedIngredient = _mapper.Map<IngredientCacheModel>(ingredient);
+                await _cacheService.SetAsync(cacheKey, cachedIngredient, absoluteExpiration: TimeSpan.FromHours(24));
+            }
+
+            if (!MeasurementUnitHelper.IsCompatible(cachedIngredient.UnitFamily, req.Unit))
+                throw new Core.CrossCuttingConcerns.Exceptions.Types.BusinessException(
+                    $"'{req.Unit}' birimi bu malzeme için geçerli değil. Uygun aile: {cachedIngredient.UnitFamily}.");
+
+            var existingItem = await _shoppingListItemRepository.GetAsync(
+                predicate: s => s.UserId == req.UserId && s.IngredientId == req.IngredientId.Value && !s.IsPurchased,
+                enableTracking: true,
+                cancellationToken: cancellationToken);
+
+            if (existingItem != null)
+            {
+                var convertedAmount = MeasurementUnitHelper.ConvertAmount(req.Quantity, req.Unit, existingItem.Unit);
+                existingItem.UpdateQuantity(existingItem.Quantity + convertedAmount, existingItem.Unit);
+                newItem = existingItem;
+
+                await _shoppingListItemRepository.UpdateAsync(existingItem, cancellationToken);
+            }
+            else
+            {
+                newItem = ShoppingListItem.CreateStandard(
+                    userId: req.UserId,
+                    ingredientId: req.IngredientId.Value,
+                    quantity: req.Quantity,
+                    unit: req.Unit);
+
+                await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
+            }
+
+            responseIngredientName = cachedIngredient.Name;
+            responseCategoryName = cachedIngredient.CategoryName;
+            responseCategoryIconName = cachedIngredient.CategoryIconName;
+        }
+        else
+        {
+            // Custom ingredient request
+            var ingredientRequest = new IngredientRequest(Guid.NewGuid(), req.UserId, req.RequestedName!, req.SuggestedCategoryId);
+
+            newItem = ShoppingListItem.CreatePending(
+                userId: req.UserId,
+                ingredientRequest: ingredientRequest,
+                quantity: req.Quantity,
+                unit: req.Unit);
+
+            responseIngredientName = ingredientRequest.RequestedName!;
+            responseCategoryName = "DİĞER";
+            responseCategoryIconName = "fastfood";
+
+            await _shoppingListItemRepository.AddAsync(newItem, cancellationToken);
+        }
+
+        if (!req.IngredientId.HasValue && newItem.IngredientRequest != null)
+        {
+            await _mediator.Publish(new Features.Pantry.Events.IngredientRequestedEvent
+            {
+                RequestId = newItem.IngredientRequestId!.Value,
+                RequestedName = newItem.IngredientRequest.RequestedName!
+            }, cancellationToken);
+        }
 
         return new ShoppingListItemResponse
         {
             Id = newItem.Id,
             IngredientId = newItem.IngredientId,
-            IngredientName = cachedIngredient.Name,
-            CategoryName = cachedIngredient.CategoryName,
+            IngredientRequestId = newItem.IngredientRequestId,
+            IngredientName = responseIngredientName,
+            CategoryName = responseCategoryName,
+            CategoryIconName = responseCategoryIconName,
             Quantity = newItem.Quantity,
             Unit = newItem.Unit,
             IsPurchased = newItem.IsPurchased

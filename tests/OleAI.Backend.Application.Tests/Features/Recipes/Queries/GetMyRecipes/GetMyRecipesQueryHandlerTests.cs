@@ -38,7 +38,7 @@ public class GetMyRecipesQueryHandlerTests
         SetupUser(userId);
 
         var query = new GetMyRecipesQuery { Page = 0, Size = 10 };
-        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(userId, "My", "Desc", RecipeVisibility.Public) } };
+        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(userId, "My", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public) } };
 
         _mockRecipeRepository.Setup(r => r.GetListAsync(
                 It.IsAny<QueryOptions<Recipe>>(),
@@ -46,7 +46,7 @@ public class GetMyRecipesQueryHandlerTests
             .ReturnsAsync(recipes);
 
         var response = new Paginate<RecipeListItemResponse> { Items = new List<RecipeListItemResponse> { new() { Title = "My" } } };
-        _mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(recipes)).Returns(response);
+        _mockMapper.Setup(m => m.Map<Paginate<RecipeListItemResponse>>(It.IsAny<Paginate<Recipe>>(), It.IsAny<Action<IMappingOperationOptions<object, Paginate<RecipeListItemResponse>>>>())).Returns(response);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -66,3 +66,4 @@ public class GetMyRecipesQueryHandlerTests
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 }
+

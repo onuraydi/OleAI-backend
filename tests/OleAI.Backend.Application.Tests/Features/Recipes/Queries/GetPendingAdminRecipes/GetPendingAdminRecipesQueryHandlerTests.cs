@@ -30,7 +30,7 @@ public class GetPendingAdminRecipesQueryHandlerTests
     {
         // Arrange
         var query = new GetPendingAdminRecipesQuery { Page = 0, Size = 10 };
-        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(Guid.NewGuid(), "Pending", "Desc", RecipeVisibility.Public) } };
+        var recipes = new Paginate<Recipe> { Items = new List<Recipe> { Recipe.Create(Guid.NewGuid(), "Pending", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public) } };
 
         _mockRecipeRepository.Setup(r => r.GetListAsync(
                 It.IsAny<QueryOptions<Recipe>>(),
@@ -49,3 +49,4 @@ public class GetPendingAdminRecipesQueryHandlerTests
         _mockRecipeRepository.Verify(r => r.GetListAsync(It.Is<QueryOptions<Recipe>>(o => o.Predicate != null), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+

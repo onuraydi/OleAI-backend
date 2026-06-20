@@ -10,6 +10,12 @@ public class AppDbContext : DbContext
     {
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.EnableSensitiveDataLogging();
+    }
+
     public DbSet<User> Users { get; set; }
     public DbSet<OperationClaim> OperationClaims { get; set; }
     public DbSet<UserOperationClaim> UserOperationClaims { get; set; }
@@ -26,17 +32,33 @@ public class AppDbContext : DbContext
     public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
     public DbSet<RecipeInteraction> RecipeInteractions { get; set; }
     public DbSet<RecipeComment> RecipeComments { get; set; }
+    public DbSet<RecipeCategory> RecipeCategories { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<RecipeCategoryMapping> RecipeCategoryMappings { get; set; }
+    public DbSet<RecipeTag> RecipeTags { get; set; }
     public DbSet<DietaryPreference> DietaryPreferences { get; set; }
     public DbSet<AllergyRestriction> AllergyRestrictions { get; set; }
     public DbSet<UserDietaryPreference> UserDietaryPreferences { get; set; }
     public DbSet<UserAllergy> UserAllergies { get; set; }
     public DbSet<UserDislikedIngredient> UserDislikedIngredients { get; set; }
+    public DbSet<SystemLog> SystemLogs { get; set; }
+    public DbSet<ContactMessage> ContactMessages { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<UserDevice> UserDevices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // çalışan Assembly (proje) içindeki tüm IEntityTypeConfiguration arayüzünü uygulayan
         // sınıfları bulmasını ve otomatik olarak Apply etmesini söylüyoruz.
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Serilog creates this table automatically, EF should only read from it.
+        modelBuilder.Entity<SystemLog>().ToTable("Logs", t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<SystemLog>().HasKey(x => x.Id);
+        modelBuilder.Entity<SystemLog>().Ignore(x => x.CreatedDate);
+        modelBuilder.Entity<SystemLog>().Ignore(x => x.UpdatedDate);
+        modelBuilder.Entity<SystemLog>().Ignore(x => x.DeletedDate);
+
         base.OnModelCreating(modelBuilder);
 
     }

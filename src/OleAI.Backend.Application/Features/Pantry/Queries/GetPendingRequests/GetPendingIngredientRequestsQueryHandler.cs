@@ -29,7 +29,9 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.GetPendingRequests
             {
                 Id = r.Id,
                 UserId = r.UserId,
-                RequestedName = r.LlmAnalysisResult,
+                RequestedName = r.RequestedName,
+                EstimatedShelfLifeInDays = r.EstimatedShelfLifeInDays,
+                LlmAnalysisResult = r.LlmAnalysisResult,
                 CreatedDate = r.CreatedDate
             }).ToList();
         }

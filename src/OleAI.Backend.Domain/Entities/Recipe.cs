@@ -6,10 +6,17 @@ namespace OleAI.Backend.Domain.Entities;
 public class Recipe : Entity<Guid>
 {
     public Guid UserId { get; private set; }
+    public virtual User? User { get; set; }
     public string Title { get; private set; }
     public string Description { get; private set; }
+    public string? OriginalDescription { get; private set; }
+    public RecipeDifficulty Difficulty { get; private set; }
+    public int Servings { get; private set; }
+    public int PrepTime { get; private set; }
+    public int CookTime { get; private set; }
     public RecipeVisibility Visibility { get; private set; }
     public RecipeStatus Status { get; private set; }
+    public string? LlmReviewResultJson { get; private set; }
 
     // Dışarıdan .Add() ile rastgele veri eklenmesini engelliyoruz
     private readonly List<RecipeIngredient> _recipeIngredients = new();
@@ -21,6 +28,12 @@ public class Recipe : Entity<Guid>
     private readonly List<RecipeImage> _recipeImages = new();
     public IReadOnlyCollection<RecipeImage> RecipeImages => _recipeImages;
 
+    private readonly List<RecipeCategoryMapping> _recipeCategories = new();
+    public IReadOnlyCollection<RecipeCategoryMapping> RecipeCategories => _recipeCategories;
+
+    private readonly List<RecipeTag> _recipeTags = new();
+    public IReadOnlyCollection<RecipeTag> RecipeTags => _recipeTags;
+
 
     public virtual ICollection<RecipeComment> Comments { get; private set; }
     public virtual ICollection<RecipeInteraction> Interactions { get; private set; }
@@ -28,38 +41,74 @@ public class Recipe : Entity<Guid>
     private Recipe() { } // EF Core için
 
     // Factory Method: Yeni tarif sadece bu yolla yaratılır
-    public static Recipe Create(Guid userId, string title, string description, RecipeVisibility visibility)
+    public static Recipe Create(Guid userId, string title, string description, RecipeDifficulty difficulty, int servings, int prepTime, int cookTime, RecipeVisibility visibility)
     {
         var recipe = new Recipe
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             Title = title,
-            Description = description
+            Description = description,
+            OriginalDescription = description,
+            Difficulty = difficulty,
+            Servings = servings,
+            PrepTime = prepTime,
+            CookTime = cookTime
         };
         recipe.SetVisibilityAndStatus(visibility);
         return recipe;
     }
 
-    public void UpdateDetails(string title, string description, RecipeVisibility visibility)
+    public void UpdateDetails(string title, string description, RecipeDifficulty difficulty, int servings, int prepTime, int cookTime, RecipeVisibility visibility)
     {
         Title = title;
         Description = description;
+        OriginalDescription = description;
+        Difficulty = difficulty;
+        Servings = servings;
+        PrepTime = prepTime;
+        CookTime = cookTime;
         SetVisibilityAndStatus(visibility);
+
+        UpdatedDate = DateTime.UtcNow;
+    }
+
+    public void ApplyLlmCorrections(string correctedDescription, List<(int StepNumber, string CorrectedInstruction)> correctedSteps)
+    {
+        Description = correctedDescription;
+        UpdatedDate = DateTime.UtcNow;
+
+        foreach (var step in correctedSteps)
+        {
+            var existingStep = _recipeSteps.FirstOrDefault(s => s.StepNumber == step.StepNumber);
+            if (existingStep != null)
+            {
+                existingStep.ApplyLlmCorrection(step.CorrectedInstruction);
+            }
+        }
     }
 
     /// <summary>
     /// Malzemeleri akıllıca senkronize eder (Eskileri siler, mevcutları günceller, yenileri ekler).
     /// </summary>
-    public void SyncIngredients(IEnumerable<(Guid IngredientId, decimal Amount, int UnitId)> incomingIngredients)
+    public void SyncIngredients(IEnumerable<(Guid? IngredientId, Guid? IngredientRequestId, decimal Amount, int UnitId)> incomingIngredients)
     {
-        var incomingIds = incomingIngredients.Select(x => x.IngredientId).ToList();
+        var incomingIngredientIds = incomingIngredients.Where(x => x.IngredientId.HasValue).Select(x => x.IngredientId).ToList();
+        var incomingRequestIds = incomingIngredients.Where(x => x.IngredientRequestId.HasValue).Select(x => x.IngredientRequestId).ToList();
 
-        _recipeIngredients.RemoveAll(i => !incomingIds.Contains(i.IngredientId));
+        _recipeIngredients.RemoveAll(i =>
+            (i.IngredientId.HasValue && !incomingIngredientIds.Contains(i.IngredientId)) ||
+            (i.IngredientRequestId.HasValue && !incomingRequestIds.Contains(i.IngredientRequestId))
+        );
 
         foreach (var incoming in incomingIngredients)
         {
-            var existing = _recipeIngredients.FirstOrDefault(i => i.IngredientId == incoming.IngredientId);
+            RecipeIngredient? existing = null;
+            if (incoming.IngredientId.HasValue)
+                existing = _recipeIngredients.FirstOrDefault(i => i.IngredientId == incoming.IngredientId);
+            else if (incoming.IngredientRequestId.HasValue)
+                existing = _recipeIngredients.FirstOrDefault(i => i.IngredientRequestId == incoming.IngredientRequestId);
+
             if (existing != null)
             {
                 existing.Amount = incoming.Amount;
@@ -67,7 +116,7 @@ public class Recipe : Entity<Guid>
             }
             else
             {
-                _recipeIngredients.Add(new RecipeIngredient(Guid.NewGuid(), Id, incoming.IngredientId, incoming.Amount, incoming.UnitId));
+                _recipeIngredients.Add(new RecipeIngredient(Guid.Empty, Id, incoming.IngredientId, incoming.IngredientRequestId, incoming.Amount, incoming.UnitId));
             }
         }
     }
@@ -96,10 +145,38 @@ public class Recipe : Entity<Guid>
             if (existing != null)
                 existing.Instruction = incoming.Instruction;
             else
-                _recipeSteps.Add(new RecipeStep(Guid.NewGuid(), Id, incoming.StepNumber, incoming.Instruction));
+                _recipeSteps.Add(new RecipeStep(Guid.Empty, Id, incoming.StepNumber, incoming.Instruction));
         }
 
         return imagesToDeleteFromCloud;
+    }
+
+    public void SyncCategories(IEnumerable<int> categoryIds)
+    {
+        var incoming = categoryIds.ToList();
+        _recipeCategories.RemoveAll(c => !incoming.Contains(c.RecipeCategoryId));
+
+        foreach (var id in incoming)
+        {
+            if (!_recipeCategories.Any(c => c.RecipeCategoryId == id))
+            {
+                _recipeCategories.Add(new RecipeCategoryMapping(Guid.Empty, Id, id));
+            }
+        }
+    }
+
+    public void SyncTags(IEnumerable<int> tagIds)
+    {
+        var incoming = tagIds.ToList();
+        _recipeTags.RemoveAll(t => !incoming.Contains(t.TagId));
+
+        foreach (var id in incoming)
+        {
+            if (!_recipeTags.Any(t => t.TagId == id))
+            {
+                _recipeTags.Add(new RecipeTag(Guid.Empty, Id, id));
+            }
+        }
     }
 
     /// <summary>
@@ -119,7 +196,7 @@ public class Recipe : Entity<Guid>
             _recipeImages.Remove(existingImage);
         }
 
-        _recipeImages.Add(new RecipeImage(Guid.NewGuid(), Id, newImageUrl, newPublicId, isMain, stepId));
+        _recipeImages.Add(new RecipeImage(Guid.Empty, Id, newImageUrl, newPublicId, isMain, stepId));
 
         return oldPublicId;
     }
@@ -135,9 +212,14 @@ public class Recipe : Entity<Guid>
 
     public void ApproveByAdmin()
     {
-        if (Status != RecipeStatus.PendingAdminApproval)
-            throw new Exception(DomainConstants.OnlyLlmApprovedRecipesCanBeApprovedByAdmin);
+        if (Status != RecipeStatus.PendingAdminApproval && Status != RecipeStatus.PendingLlmApproval)
+            throw new Exception("Sadece onay bekleyen tarifler onaylanabilir.");
 
+        Status = RecipeStatus.Published;
+    }
+
+    public void ForcePublish()
+    {
         Status = RecipeStatus.Published;
     }
 
@@ -153,18 +235,23 @@ public class Recipe : Entity<Guid>
             Status = RecipeStatus.PendingAdminApproval;
     }
 
-    public void AddIngredient(Guid ingredientId, decimal amount, int unitId)
+    public void SetLlmReviewResult(string jsonResult)
     {
-        _recipeIngredients.Add(new RecipeIngredient(Guid.NewGuid(), Id, ingredientId, amount, unitId));
+        LlmReviewResultJson = jsonResult;
+    }
+
+    public void AddIngredient(Guid? ingredientId, Guid? ingredientRequestId, decimal amount, int unitId)
+    {
+        _recipeIngredients.Add(new RecipeIngredient(Guid.Empty, Id, ingredientId, ingredientRequestId, amount, unitId));
     }
 
     public void AddStep(int stepNumber, string instruction)
     {
-        _recipeSteps.Add(new RecipeStep(Guid.NewGuid(), Id, stepNumber, instruction));
+        _recipeSteps.Add(new RecipeStep(Guid.Empty, Id, stepNumber, instruction));
     }
 
     public void AddImage(string imageUrl, string publicId, bool isMain, Guid? stepId = null)
     {
-        _recipeImages.Add(new RecipeImage(Guid.NewGuid(), Id, imageUrl, publicId, isMain, stepId));
+        _recipeImages.Add(new RecipeImage(Guid.Empty, Id, imageUrl, publicId, isMain, stepId));
     }
 }

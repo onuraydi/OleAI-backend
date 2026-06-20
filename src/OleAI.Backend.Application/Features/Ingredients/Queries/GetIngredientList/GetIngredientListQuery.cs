@@ -8,5 +8,6 @@ namespace OleAI.Backend.Application.Features.Ingredients.Queries.GetIngredientLi
     {
         public int Page { get; set; } = 0;
         public int Size { get; set; } = 10;
+        public string? Keyword { get; set; }
     }
 }

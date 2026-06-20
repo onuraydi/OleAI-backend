@@ -18,6 +18,8 @@ public class ResolveIngredientRequestCommandHandlerTests
     private readonly Mock<IIngredientRepository> _mockIngredientRepository;
     private readonly Mock<IIngredientAliasRepository> _mockIngredientAliasRepository;
     private readonly Mock<IUserIngredientRepository> _mockUserIngredientRepository;
+    private readonly Mock<IShoppingListItemRepository> _mockShoppingListItemRepository;
+    private readonly Mock<OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService> _mockCacheService;
     private readonly ResolveIngredientRequestCommandHandler _handler;
 
     public ResolveIngredientRequestCommandHandlerTests()
@@ -26,12 +28,16 @@ public class ResolveIngredientRequestCommandHandlerTests
         _mockIngredientRepository = new Mock<IIngredientRepository>();
         _mockIngredientAliasRepository = new Mock<IIngredientAliasRepository>();
         _mockUserIngredientRepository = new Mock<IUserIngredientRepository>();
+        _mockShoppingListItemRepository = new Mock<IShoppingListItemRepository>();
+        _mockCacheService = new Mock<OleAI.Backend.Core.CrossCuttingConcerns.Caching.ICacheService>();
 
         _handler = new ResolveIngredientRequestCommandHandler(
             _mockIngredientRequestRepository.Object,
             _mockIngredientRepository.Object,
             _mockIngredientAliasRepository.Object,
-            _mockUserIngredientRepository.Object);
+            _mockUserIngredientRepository.Object,
+            _mockShoppingListItemRepository.Object,
+            _mockCacheService.Object);
     }
 
     [Fact]
@@ -103,8 +109,9 @@ public class ResolveIngredientRequestCommandHandlerTests
             .ReturnsAsync(ingredientRequest);
 
         _mockUserIngredientRepository
-            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<UserIngredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(pendingInventoryItem);
+            .SetupSequence(r => r.GetAsync(It.IsAny<Expression<Func<UserIngredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pendingInventoryItem)
+            .ReturnsAsync((UserIngredient?)null);
 
         _mockUserIngredientRepository
             .Setup(r => r.UpdateAsync(pendingInventoryItem, It.IsAny<CancellationToken>()))
@@ -176,8 +183,9 @@ public class ResolveIngredientRequestCommandHandlerTests
             .ReturnsAsync(ingredientRequest);
 
         _mockUserIngredientRepository
-            .Setup(r => r.GetAsync(It.IsAny<Expression<Func<UserIngredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(pendingInventoryItem);
+            .SetupSequence(r => r.GetAsync(It.IsAny<Expression<Func<UserIngredient, bool>>>(), null, false, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pendingInventoryItem)
+            .ReturnsAsync((UserIngredient?)null);
 
         _mockUserIngredientRepository
             .Setup(r => r.UpdateAsync(pendingInventoryItem, It.IsAny<CancellationToken>()))

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Recipes.Commands.AddComment;
+using OleAI.Backend.Application.Features.Recipes.Commands.AnalyzeRecipeWithLlm;
 using OleAI.Backend.Application.Features.Recipes.Commands.ApproveRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.ChangeRecipeVisibility;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
@@ -8,9 +9,12 @@ using OleAI.Backend.Application.Features.Recipes.Commands.DeleteComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.DeleteRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.RejectRecipe;
 using OleAI.Backend.Application.Features.Recipes.Commands.StartCooking;
+using OleAI.Backend.Application.Features.Recipes.Commands.SyncAllToAi;
 using OleAI.Backend.Application.Features.Recipes.Commands.ToggleInteraction;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateComment;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetAllAdminRecipes;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetMyComments;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyDislikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyLikedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetMyRecipes;
@@ -18,6 +22,7 @@ using OleAI.Backend.Application.Features.Recipes.Queries.GetMySavedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPendingAdminRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetPublishedRecipes;
 using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeDetail;
+using OleAI.Backend.Application.Features.Recipes.Queries.GetRecipesForAi;
 using OleAI.Backend.Core.Repositories.Pagination;
 using OleAI.Backend.Presentation.ModelBinders;
 
@@ -58,13 +63,36 @@ public class RecipesController : BaseController
     }
 
     /// <summary>
+    /// [Admin] Admin'in sistemdeki tüm tarifleri filtreleyip görebilmesi için (onaylı, onaysız, gizli, genel).
+    /// </summary>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAdminRecipes([FromQuery] GetAllAdminRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// [Admin] Çöp kutusuna taşınmış (Soft Delete) tarifleri listeler.
+    /// </summary>
+    [HttpGet("admin/deleted")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetDeletedAdminRecipes([FromQuery] OleAI.Backend.Application.Features.Recipes.Queries.GetDeletedAdminRecipes.GetDeletedAdminRecipesQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// [Admin] Bekleyen bir tarifi onaylar ve topluluğa açar.
     /// </summary>
     [HttpPost("{id}/approve")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Approve([FromRoute] Guid id)
+    public async Task<IActionResult> Approve([FromRoute] Guid id, [FromBody] ApproveRecipeCommand? command)
     {
-        var command = new ApproveRecipeCommand { Id = id };
+        command ??= new ApproveRecipeCommand();
+        command.Id = id;
         var resultMessage = await Mediator.Send(command);
         return Ok(new { Message = resultMessage });
     }
@@ -77,6 +105,31 @@ public class RecipesController : BaseController
     public async Task<IActionResult> Reject([FromRoute] Guid id, [FromBody] RejectRecipeCommand command)
     {
         command.Id = id;
+        var resultMessage = await Mediator.Send(command);
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Veritabanındaki tüm onaylanmış tarifleri AI motoruna senkronize eder.
+    /// Genellikle ilk kurulumda veya veri tutarsızlığı durumunda manuel olarak kullanılır.
+    /// </summary>
+    [HttpPost("sync-all-to-ai")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> SyncAllToAi()
+    {
+        var resultMessage = await Mediator.Send(new SyncAllToAiCommand());
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Seçili tarifin içeriğini (Açıklama ve Adımlar) yerel LLM modeline gönderir,
+    /// JSON sonucu oluşturup veritabanına kaydeder.
+    /// </summary>
+    [HttpPost("{id}/analyze-with-ai")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AnalyzeWithAi([FromRoute] Guid id)
+    {
+        var command = new AnalyzeRecipeWithLlmCommand { RecipeId = id };
         var resultMessage = await Mediator.Send(command);
         return Ok(new { Message = resultMessage });
     }
@@ -111,6 +164,28 @@ public class RecipesController : BaseController
 
         string resultMessage = await Mediator.Send(deleteRecipeCommand);
 
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Çöp kutusundaki bir tarifi geri yükler (Soft Delete iptali).
+    /// </summary>
+    [HttpPost("{id}/restore")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Restore([FromRoute] Guid id)
+    {
+        var resultMessage = await Mediator.Send(new OleAI.Backend.Application.Features.Recipes.Commands.RestoreRecipe.RestoreRecipeCommand { Id = id });
+        return Ok(new { Message = resultMessage });
+    }
+
+    /// <summary>
+    /// [Admin] Çöp kutusundaki bir tarifi sistemden ve Cloudinary'den kalıcı olarak siler.
+    /// </summary>
+    [HttpDelete("{id}/hard")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> HardDelete([FromRoute] Guid id)
+    {
+        var resultMessage = await Mediator.Send(new OleAI.Backend.Application.Features.Recipes.Commands.HardDeleteRecipe.HardDeleteRecipeCommand { Id = id });
         return Ok(new { Message = resultMessage });
     }
 
@@ -150,6 +225,14 @@ public class RecipesController : BaseController
         return Ok(result);
     }
 
+
+    [HttpGet("my-comments")]
+    public async Task<IActionResult> GetMyComments([FromQuery] GetMyCommentsQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Bir tarifin tüm detaylarını (malzemeler, adımlar, resimler, etkileşimler) getirir.
     /// Gizli tarifleri sadece tarifin sahibi görebilir.
@@ -163,14 +246,37 @@ public class RecipesController : BaseController
     }
 
     /// <summary>
+    /// AI motorunun başlangıçta tüm tarifleri çekmesi için kullanılan özel endpoint.
+    /// </summary>
+    [HttpGet("ai-sync")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetForAi()
+    {
+        var result = await Mediator.Send(new GetRecipesForAiQuery());
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Pişirme öncesi eksik malzemeleri (dolapta hiç olmayan ve temel gıda olmayanları) kontrol eder.
+    /// </summary>
+    [HttpGet("{id}/missing-ingredients")]
+    [Authorize]
+    public async Task<IActionResult> GetMissingIngredients([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new OleAI.Backend.Application.Features.Recipes.Queries.GetMissingIngredients.GetMissingIngredientsQuery { RecipeId = id });
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Tarifi pişirme işlemini başlatır ve malzemeleri stoktan düşer.
     /// </summary>
     [HttpPost("{id}/start-cooking")]
     [Authorize]
-    public async Task<IActionResult> StartCooking([FromRoute] Guid id)
+    public async Task<IActionResult> StartCooking([FromRoute] Guid id, [FromBody] OleAI.Backend.Application.Features.Recipes.Commands.StartCooking.StartCookingCommand command)
     {
-        var resultMessage = await Mediator.Send(new StartCookingCommand { RecipeId = id });
-        return Ok(new { Message = resultMessage });
+        command.RecipeId = id;
+        var result = await Mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>
@@ -204,6 +310,23 @@ public class RecipesController : BaseController
     {
         var result = await Mediator.Send(new ToggleInteractionCommand { RecipeId = id, InteractionType = "Save" });
         return Ok(new { Message = result });
+    }
+
+    /// <summary>
+    /// Tarife ait ana yorumları ve onlara verilmiş cevapları sayfalamalı olarak getirir.
+    /// </summary>
+    [HttpGet("{id}/comments")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetComments([FromRoute] Guid id, [FromQuery] int page = 0, [FromQuery] int size = 10)
+    {
+        var query = new OleAI.Backend.Application.Features.Recipes.Queries.GetRecipeComments.GetRecipeCommentsQuery
+        {
+            RecipeId = id,
+            Page = page,
+            Size = size
+        };
+        var result = await Mediator.Send(query);
+        return Ok(result);
     }
 
     /// <summary>

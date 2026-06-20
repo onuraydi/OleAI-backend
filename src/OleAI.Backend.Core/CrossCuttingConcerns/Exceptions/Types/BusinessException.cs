@@ -2,6 +2,11 @@ namespace OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types
 {
     public class BusinessException : Exception
     {
-        public BusinessException(string message) : base(message) { }
+        public string? ErrorCode { get; set; }
+
+        public BusinessException(string message, string? errorCode = null) : base(message)
+        {
+            ErrorCode = errorCode;
+        }
     }
 }

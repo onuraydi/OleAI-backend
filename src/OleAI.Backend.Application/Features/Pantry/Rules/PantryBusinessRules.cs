@@ -19,11 +19,12 @@ namespace OleAI.Backend.Application.Features.Pantry.Rules
             _ingredientRequestRepository = ingredientRequestRepository;
         }
 
-        public async Task IngredientMustExistWhenSelectedFromList(Guid ingredientId)
+        public async Task<Ingredient> IngredientMustExistWhenSelectedFromList(Guid ingredientId)
         {
             var ingredient = await _ingredientRepository.GetAsync(i => i.Id == ingredientId);
             if (ingredient == null)
                 throw new BusinessException(PantryMessages.IngredientNotFoundMessage);
+            return ingredient;
         }
 
         public void CannotSendBothIdAndName(Guid? ingredientId, string requestedName)
@@ -52,6 +53,12 @@ namespace OleAI.Backend.Application.Features.Pantry.Rules
         {
             if (status != IngredientRequestStatus.Pending)
                 throw new BusinessException(PantryMessages.RequestAlreadyProcessedCannotBeCancelledMessage);
+        }
+
+        public void ExpirationDateCannotBeInThePast(DateTime? expirationDate)
+        {
+            if (expirationDate.HasValue && expirationDate.Value.Date < DateTime.UtcNow.Date)
+                throw new BusinessException(PantryMessages.ExpirationDateCannotBeInThePastMessage);
         }
     }
 }

@@ -47,7 +47,8 @@ public class UpdateDietaryPreferenceCommandHandler : IRequestHandler<UpdateDieta
             await _categoryRules.CheckIfCategoriesExistAsync(request.ExcludedCategoryIds, cancellationToken);
 
         dietaryPreference!.Name = request.Name.Trim();
-        dietaryPreference.Desciption = request.Description?.Trim();
+        dietaryPreference.Description = request.Description?.Trim();
+        dietaryPreference.IconName = request.IconName;
         dietaryPreference.IsActive = request.IsActive;
 
         // Upsert for Excluded Ingredients

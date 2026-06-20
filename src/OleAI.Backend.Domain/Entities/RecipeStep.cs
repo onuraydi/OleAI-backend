@@ -7,6 +7,7 @@ public class RecipeStep : Entity<Guid>
     public Guid RecipeId { get; set; }
     public int StepNumber { get; set; }
     public string Instruction { get; set; }
+    public string? OriginalInstruction { get; private set; }
 
     public RecipeStep() { }
 
@@ -16,5 +17,12 @@ public class RecipeStep : Entity<Guid>
         RecipeId = recipeId;
         StepNumber = stepNumber;
         Instruction = instruction;
+        OriginalInstruction = instruction;
+    }
+
+    public void ApplyLlmCorrection(string correctedInstruction)
+    {
+        Instruction = correctedInstruction;
+        UpdatedDate = DateTime.UtcNow;
     }
 }

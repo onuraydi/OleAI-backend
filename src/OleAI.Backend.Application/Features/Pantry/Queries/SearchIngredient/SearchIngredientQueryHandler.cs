@@ -12,7 +12,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
     {
         private readonly IIngredientRepository _igredientRepository;
         private readonly ICacheService _cacheService;
-        private const string CacheKey = "Pantry:AllIngredientsCatalog";
+        private const string CacheKey = "Pantry:AllIngredientsCatalog:v4";
         private const int MinimumSearchLength = 2;
 
         public SearchIngredientQueryHandler(IIngredientRepository igredientRepository, ICacheService cacheService)
@@ -52,7 +52,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
         private async Task<List<IngredientSearchResultResponse>> LoadCatalogFromDatabaseAsync(CancellationToken cancellationToken)
         {
             QueryOptions<Ingredient> query = new QueryOptions<Ingredient>();
-            query.Include = q => q.Include(i => i.Aliases);
+            query.Include = q => q.Include(i => i.Aliases).Include(i => i.Category);
             query.EnableTracking = false;
             query.Size = 25000; // tüm veriler için yeterince büyük bir değer
 
@@ -69,6 +69,11 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                     DisplayName = ingredient.Name,
                     IsAlias = false,
                     UnitFamily = ingredient.UnitFamily,
+                    CategoryId = ingredient.CategoryId,
+                    CategoryName = ingredient.Category?.Name ?? "Diğer",
+                    CategoryIconName = ingredient.Category?.IconName ?? "fastfood",
+                    EstimatedShelfLifeInDays = ingredient.EstimatedShelfLifeInDays,
+                    DefaultExpirationMode = ingredient.DefaultExpirationMode
                 });
 
                 // Arama havuzuna Eşanlamlı (Alias) kelimeleri ekle
@@ -77,9 +82,15 @@ namespace OleAI.Backend.Application.Features.Pantry.Queries.SearchIngredient
                     catalog.Add(new IngredientSearchResultResponse
                     {
                         MasterIngredientId = ingredient.Id, // Kritik: Alias da seçilse Master ID dönüyor!
+                        AliasId = alias.Id,
                         DisplayName = alias.AliasName,
                         IsAlias = true,
-                        UnitFamily = ingredient.UnitFamily
+                        UnitFamily = ingredient.UnitFamily,
+                        CategoryId = ingredient.CategoryId,
+                        CategoryName = ingredient.Category?.Name ?? "Diğer",
+                        CategoryIconName = ingredient.Category?.IconName ?? "fastfood",
+                        EstimatedShelfLifeInDays = ingredient.EstimatedShelfLifeInDays,
+                        DefaultExpirationMode = ingredient.DefaultExpirationMode
                     });
                 }
             }

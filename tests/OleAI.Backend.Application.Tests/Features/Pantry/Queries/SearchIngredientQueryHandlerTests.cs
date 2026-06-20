@@ -95,8 +95,8 @@ public class SearchIngredientQueryHandlerTests
         result.Should().Contain(r => r.DisplayName == "Tomato" && r.IsAlias == false);
 
         _mockIngredientRepository.Verify(r => r.GetListAsync(It.IsAny<QueryOptions<Ingredient>>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockCacheService.Verify(c => c.SetAsync(
-            "Pantry:AllIngredientsCatalog",
+        _mockCacheService.Verify(c => c.SetAsync<List<IngredientSearchResultResponse>>(
+            "Pantry:AllIngredientsCatalog:v4",
             It.Is<List<IngredientSearchResultResponse>>(list => list.Count >= 2),
             It.Is<TimeSpan?>(t => t == TimeSpan.FromHours(6)),
             null), Times.Once);

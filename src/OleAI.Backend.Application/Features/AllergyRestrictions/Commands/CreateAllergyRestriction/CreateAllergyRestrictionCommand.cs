@@ -6,6 +6,7 @@ public class CreateAllergyRestrictionCommand : IRequest<string>
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string IconName { get; set; } = "ShieldAlert";
     public List<Guid> ExcludedIngredientIds { get; set; } = new();
     public List<Guid> ExcludedCategoryIds { get; set; } = new();
 }

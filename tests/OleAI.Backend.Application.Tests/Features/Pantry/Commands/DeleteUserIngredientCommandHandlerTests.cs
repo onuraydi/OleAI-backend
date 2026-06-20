@@ -51,7 +51,7 @@ public class DeleteUserIngredientCommandHandlerTests
         await act.Should().ThrowAsync<NotFoundException>()
             .WithMessage(PantryMessages.InventoryItemNotFoundMessage);
 
-        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), false, It.IsAny<CancellationToken>()), Times.Never);
+        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(It.IsAny<UserIngredient>(), true, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class DeleteUserIngredientCommandHandlerTests
             .ReturnsAsync(item);
 
         _mockUserIngredientRepository
-            .Setup(r => r.DeleteAsync(item, false, It.IsAny<CancellationToken>()))
+            .Setup(r => r.DeleteAsync(item, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(item);
 
         // Act
@@ -74,6 +74,6 @@ public class DeleteUserIngredientCommandHandlerTests
 
         // Assert
         result.Should().Be(PantryMessages.IngredientDeletedMessage);
-        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(item, false, It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserIngredientRepository.Verify(r => r.DeleteAsync(item, true, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -6,6 +6,7 @@ namespace OleAI.Backend.Domain.Entities
     {
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public string IconName { get; set; } = "ShieldAlert";
         public bool IsActive { get; set; } = true;
 
         public virtual ICollection<UserAllergy> UserAllergies { get; set; }

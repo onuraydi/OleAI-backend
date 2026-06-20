@@ -29,10 +29,10 @@ public class ShoppingListItemRepositoryTests
         var targetUserId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
 
-        var activeItem = new ShoppingListItem(targetUserId, Guid.NewGuid(), 2, MeasurementUnit.Piece);
-        var purchasedItem = new ShoppingListItem(targetUserId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var activeItem = ShoppingListItem.CreateStandard(targetUserId, Guid.NewGuid(), 2, MeasurementUnit.Piece);
+        var purchasedItem = ShoppingListItem.CreateStandard(targetUserId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
         purchasedItem.MarkAsPurchased();
-        var otherUserItem = new ShoppingListItem(otherUserId, Guid.NewGuid(), 3, MeasurementUnit.Piece);
+        var otherUserItem = ShoppingListItem.CreateStandard(otherUserId, Guid.NewGuid(), 3, MeasurementUnit.Piece);
 
         await context.ShoppingListItems.AddRangeAsync(activeItem, purchasedItem, otherUserItem);
         await context.SaveChangesAsync();
@@ -58,7 +58,7 @@ public class ShoppingListItemRepositoryTests
         await using var context = GetInMemoryDbContext();
         var repository = new ShoppingListItemRepository(context);
 
-        var item = new ShoppingListItem(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(Guid.NewGuid(), Guid.NewGuid(), 1, MeasurementUnit.Piece);
         await context.ShoppingListItems.AddAsync(item);
         await context.SaveChangesAsync();
 
@@ -70,3 +70,4 @@ public class ShoppingListItemRepositoryTests
         deleted.Should().BeNull();
     }
 }
+

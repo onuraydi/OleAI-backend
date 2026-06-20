@@ -12,10 +12,16 @@ public class UserTests
         // Act
         var user = new User();
 
-        // Assert – both navigation collections must be initialized so EF
-        // proxies and LINQ queries don't throw NullReferenceException.
+        // Assert
         user.UserOperationClaims.Should().NotBeNull();
         user.RefreshTokens.Should().NotBeNull();
+        user.UserDietaryPreferences.Should().NotBeNull();
+        user.UserAllergies.Should().NotBeNull();
+        user.UserDislikedIngredients.Should().NotBeNull();
+        user.UserIngredients.Should().NotBeNull();
+        user.Interactions.Should().NotBeNull();
+        user.Notifications.Should().NotBeNull();
+        user.UserDevices.Should().NotBeNull();
     }
 
     [Fact]
@@ -39,8 +45,16 @@ public class UserTests
         user.FirstName.Should().BeEmpty();
         user.LastName.Should().BeEmpty();
         user.Email.Should().BeEmpty();
+        user.Username.Should().BeEmpty();
+        user.IsOnboarded.Should().BeFalse();
         user.IsEmailVerified.Should().BeFalse();
+        user.IsActive.Should().BeTrue();
+        user.TermsAccepted.Should().BeFalse();
+        user.FailedLoginAttempts.Should().Be(0);
         user.PasswordHash.Should().BeEmpty();
         user.PasswordSalt.Should().BeEmpty();
+        user.BirthDate.Should().BeNull();
+        user.ProfileImageUrl.Should().BeNull();
+        user.LockoutEnd.Should().BeNull();
     }
 }

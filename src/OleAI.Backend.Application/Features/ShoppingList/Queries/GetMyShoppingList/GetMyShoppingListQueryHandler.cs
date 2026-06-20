@@ -29,12 +29,36 @@ public class GetMyShoppingListQueryHandler
         var options = new QueryOptions<ShoppingListItem>
         {
             Predicate = s => s.UserId == query.UserId && !s.IsPurchased,
-            Include = q => q.Include(s => s.Ingredient).ThenInclude(i => i!.Category),
-            EnableTracking = false
+            Include = q => q
+                .Include(s => s.Ingredient).ThenInclude(i => i!.Category)
+                .Include(s => s.IngredientRequest).ThenInclude(ir => ir!.Category),
+            EnableTracking = false,
+            Size = 1000
         };
 
         var result = await _shoppingListItemRepository.GetListAsync(options, cancellationToken);
 
-        return _mapper.Map<List<ShoppingListItemResponse>>(result.Items);
+        var responseList = new List<ShoppingListItemResponse>();
+        foreach (var item in result.Items)
+        {
+            var dto = _mapper.Map<ShoppingListItemResponse>(item);
+
+            if (item.IngredientId.HasValue && item.Ingredient != null)
+            {
+                dto.IngredientName = item.Ingredient.Name;
+                dto.CategoryName = item.Ingredient.Category?.Name ?? "DİĞER";
+                dto.CategoryIconName = item.Ingredient.Category?.IconName ?? "fastfood";
+            }
+            else if (item.IngredientRequestId.HasValue && item.IngredientRequest != null)
+            {
+                dto.IngredientName = item.IngredientRequest.RequestedName;
+                dto.CategoryName = item.IngredientRequest.Category?.Name ?? "DİĞER";
+                dto.CategoryIconName = item.IngredientRequest.Category?.IconName ?? "fastfood";
+            }
+
+            responseList.Add(dto);
+        }
+
+        return responseList;
     }
 }

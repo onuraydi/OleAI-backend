@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using OleAI.Backend.Application.Features.Ingredients.Dtos.Responses;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
 using OleAI.Backend.Application.Services.Inventory;
@@ -11,24 +13,32 @@ using OleAI.Backend.Domain.Entities;
 
 namespace OleAI.Backend.Application.Features.Recipes.Commands.StartCooking
 {
-    public class StartCookingCommandHandler : IRequestHandler<StartCookingCommand, string>
+    public class StartCookingCommandHandler : IRequestHandler<StartCookingCommand, List<IngredientResponse>>
     {
         private readonly IRecipeRepository _recipeRepository;
         private readonly IUserIngredientRepository _userIngredientRepository;
-        private readonly IShoppingListItemRepository _shoppingListItemRepository;
+        private readonly IIngredientRepository _ingredientRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly RecipeBusinessRules _recipeBusinessRules;
+        private readonly IMapper _mapper;
 
-        public StartCookingCommandHandler(IRecipeRepository recipeRepository, IUserIngredientRepository userIngredientRepository, IShoppingListItemRepository shoppingListItemRepository, IHttpContextAccessor httpContextAccessor, RecipeBusinessRules recipeBusinessRules)
+        public StartCookingCommandHandler(
+            IRecipeRepository recipeRepository,
+            IUserIngredientRepository userIngredientRepository,
+            IIngredientRepository ingredientRepository,
+            IHttpContextAccessor httpContextAccessor,
+            RecipeBusinessRules recipeBusinessRules,
+            IMapper mapper)
         {
             _recipeRepository = recipeRepository;
             _userIngredientRepository = userIngredientRepository;
-            _shoppingListItemRepository = shoppingListItemRepository;
+            _ingredientRepository = ingredientRepository;
             _httpContextAccessor = httpContextAccessor;
             _recipeBusinessRules = recipeBusinessRules;
+            _mapper = mapper;
         }
 
-        public async Task<string> Handle(StartCookingCommand request, CancellationToken cancellationToken)
+        public async Task<List<IngredientResponse>> Handle(StartCookingCommand request, CancellationToken cancellationToken)
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) throw new UnauthorizedAccessException();
@@ -36,54 +46,62 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.StartCooking
 
             var recipe = await _recipeRepository.GetAsync(
                 predicate: r => r.Id == request.RecipeId,
-                include: q => q.Include(r => r.RecipeIngredients),
+                include: q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient),
                 cancellationToken: cancellationToken);
 
             _recipeBusinessRules.CheckIfRecipeExists(recipe);
 
             QueryOptions<UserIngredient> query = new QueryOptions<UserIngredient>();
             query.Predicate = ui => ui.UserId == userId;
+            query.Size = 1000;
 
             var userIngredientsResult = await _userIngredientRepository.GetListAsync(query, cancellationToken);
 
-            var inventorySercive = new InventoryService();
-            var depletedIngredientIds = inventorySercive.DeductIngredientsFromPantry(userIngredientsResult.Items, recipe!.RecipeIngredients);
+            // Tüketilecek malzemeleri filtrele:
+            // 1. Temel Gıda (Staple) DEĞİLSE
+            // 2. Kullanıcı tarafından (Pre-Cook aşamasında) Yoksayılmamışsa (Ignored DEĞİLSE)
+            var ingredientsToConsume = recipe!.RecipeIngredients
+                .Where(ri => ri.Ingredient != null
+                          && !ri.Ingredient.IsStaple
+                          && ri.IngredientId.HasValue
+                          && !request.IgnoredIngredientIds.Contains(ri.IngredientId.Value))
+                .ToList();
+
+            var inventoryService = new InventoryService();
+            var depletedIngredientIds = inventoryService.DeductIngredientsFromPantry(userIngredientsResult.Items, ingredientsToConsume);
 
             if (userIngredientsResult.Items.Any())
             {
                 foreach (var updatedIngredient in userIngredientsResult.Items)
                 {
-                    await _userIngredientRepository.UpdateAsync(updatedIngredient);
-                }
-            }
-
-            if (depletedIngredientIds.Any())
-            {
-                QueryOptions<ShoppingListItem> shoppingListQuery = new QueryOptions<ShoppingListItem>();
-                query.Predicate = s => s.UserId == userId;
-
-                var currentShoppingListResult = await _shoppingListItemRepository.GetListAsync(shoppingListQuery, cancellationToken);
-
-                var currentShoppingListIds = currentShoppingListResult.Items.Select(s => s.IngredientId).ToList();
-
-                foreach (var ingredientId in depletedIngredientIds)
-                {
-                    if (!currentShoppingListIds.Contains(ingredientId))
+                    if (updatedIngredient.IsDepleted)
                     {
-                        await _shoppingListItemRepository.AddAsync(new ShoppingListItem
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = userId,
-                            IngredientId = ingredientId,
-                            IsPurchased = false
-                        });
+                        await _userIngredientRepository.DeleteAsync(updatedIngredient, permanent: true, cancellationToken: cancellationToken);
+                    }
+                    else
+                    {
+                        await _userIngredientRepository.UpdateAsync(updatedIngredient, cancellationToken: cancellationToken);
                     }
                 }
             }
 
-            return depletedIngredientIds.Any()
-            ? RecipeMessages.EnjoyAndInventoryUpdatedWithShoppingList
-            : RecipeMessages.EnjoyAndIngredientsRemovedFromInventory;
+            // Eskiden burada otomatik Alışveriş Listesine ekleme vardı. Artık bunu Frontend'e (Post-Cook) bırakıyoruz.
+            // Sadece biten ürünlerin detaylarını dönüyoruz.
+            if (!depletedIngredientIds.Any())
+            {
+                return new List<IngredientResponse>();
+            }
+
+            var queryOptions = new QueryOptions<Ingredient>
+            {
+                Predicate = i => depletedIngredientIds.Contains(i.Id),
+                Include = q => q.Include(i => i.Category),
+                EnableTracking = false
+            };
+
+            var depletedIngredientsResult = await _ingredientRepository.GetListAsync(queryOptions, cancellationToken);
+
+            return _mapper.Map<List<IngredientResponse>>(depletedIngredientsResult.Items);
         }
     }
 }

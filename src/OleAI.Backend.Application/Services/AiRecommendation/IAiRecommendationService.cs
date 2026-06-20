@@ -14,5 +14,19 @@ namespace OleAI.Backend.Application.Services.AiRecommendation
         Task<AiRecommendationResponse> GetRecommendationsAsync(
             AiRecommendationPayload payload,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Yeni bir tarif eklendiğinde veya güncellendiğinde AI modelini 
+        /// incremental olarak güncellemek için webhook tetikler.
+        /// </summary>
+        Task SyncRecipeAsync(
+            Guid recipeId,
+            string title,
+            List<RecipeIngredientAiDto> ingredients,
+            string? category = null,
+            List<string>? tags = null,
+            bool isPublished = true,
+            int popularity = 0,
+            CancellationToken cancellationToken = default);
     }
 }

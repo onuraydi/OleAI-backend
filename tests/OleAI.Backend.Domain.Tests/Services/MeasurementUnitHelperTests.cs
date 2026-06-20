@@ -46,4 +46,52 @@ public class MeasurementUnitHelperTests
         // Assert
         result.Should().Be(expected);
     }
+    [Fact]
+    public void IsCompatible_WithInvalidCategory_ShouldUseOtherCategory()
+    {
+        // Act
+        var result = MeasurementUnitHelper.IsCompatible((MeasurementCategory)999, MeasurementUnit.Piece);
+
+        // Assert
+        result.Should().BeTrue(); // Other category accepts all units
+    }
+
+    [Fact]
+    public void GetUnitsForCategory_WithInvalidCategory_ShouldReturnAllUnits()
+    {
+        // Act
+        var units = MeasurementUnitHelper.GetUnitsForCategory((MeasurementCategory)999);
+
+        // Assert
+        units.Should().Contain(MeasurementUnit.Piece);
+        units.Should().Contain(MeasurementUnit.Gram);
+        units.Should().Contain(MeasurementUnit.Liter);
+    }
+
+    [Theory]
+    [InlineData((MeasurementCategory)999, MeasurementUnit.Piece)]
+    public void GetDefaultUnitForCategory_WithInvalidCategory_ShouldReturnPiece(MeasurementCategory category, MeasurementUnit expected)
+    {
+        // Act
+        var result = MeasurementUnitHelper.GetDefaultUnitForCategory(category);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(10, MeasurementUnit.Kilogram, MeasurementUnit.Gram, 10000)]
+    [InlineData(5000, MeasurementUnit.Gram, MeasurementUnit.Kilogram, 5)]
+    [InlineData(2, MeasurementUnit.Liter, MeasurementUnit.Milliliter, 2000)]
+    [InlineData(1500, MeasurementUnit.Milliliter, MeasurementUnit.Liter, 1.5)]
+    [InlineData(10, MeasurementUnit.Piece, MeasurementUnit.Piece, 10)]
+    [InlineData(5, MeasurementUnit.Piece, MeasurementUnit.Gram, 5)] // Cannot convert piece to gram, should return amount
+    public void ConvertAmount_ShouldPerformCorrectConversion(double amount, MeasurementUnit fromUnit, MeasurementUnit toUnit, double expected)
+    {
+        // Act
+        var result = MeasurementUnitHelper.ConvertAmount(amount, fromUnit, toUnit);
+
+        // Assert
+        result.Should().Be(expected);
+    }
 }

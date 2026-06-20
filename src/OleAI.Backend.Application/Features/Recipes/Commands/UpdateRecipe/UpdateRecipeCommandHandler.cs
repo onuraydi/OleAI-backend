@@ -2,11 +2,14 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
+using OleAI.Backend.Application.Services.AiRecommendation;
 using OleAI.Backend.Application.Services.ImageStorage;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
 
 namespace OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
@@ -14,23 +17,32 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, string>
 {
     private readonly IRecipeRepository _recipeRepository;
+    private readonly IIngredientRequestRepository _ingredientRequestRepository;
     private readonly RecipeBusinessRules _recipeBusinessRules;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILocalLlmService _localLlmService;
     private readonly IImageService _imageService;
+    private readonly IMediator _mediator;
+    private readonly IAiRecommendationService _aiRecommendationService;
 
     public UpdateRecipeCommandHandler(
         IRecipeRepository recipeRepository,
+        IIngredientRequestRepository ingredientRequestRepository,
         RecipeBusinessRules recipeBusinessRules,
         IHttpContextAccessor httpContextAccessor,
         ILocalLlmService localLlmService,
-        IImageService imageService)
+        IImageService imageService,
+        IMediator mediator,
+        IAiRecommendationService aiRecommendationService)
     {
         _recipeRepository = recipeRepository;
+        _ingredientRequestRepository = ingredientRequestRepository;
         _recipeBusinessRules = recipeBusinessRules;
         _httpContextAccessor = httpContextAccessor;
         _localLlmService = localLlmService;
         _imageService = imageService;
+        _mediator = mediator;
+        _aiRecommendationService = aiRecommendationService;
     }
 
     public async Task<string> Handle(UpdateRecipeCommand command, CancellationToken cancellationToken)
@@ -41,18 +53,70 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
 
         var recipe = await _recipeRepository.GetAsync(
             predicate: r => r.Id == command.Request.Id,
-            include: q => q.Include(r => r.RecipeIngredients).Include(r => r.RecipeSteps).Include(r => r.RecipeImages),
+            include: q => q.Include(r => r.RecipeIngredients)
+                           .Include(r => r.RecipeSteps)
+                           .Include(r => r.RecipeImages)
+                           .Include(r => r.RecipeCategories)
+                           .Include(r => r.RecipeTags),
             cancellationToken: cancellationToken);
 
         _recipeBusinessRules.CheckIfRecipeExists(recipe);
-        _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
 
-        var ingredientIds = command.Ingredients.Select(i => i.IngredientId).ToList();
+        var isAdmin = _httpContextAccessor.HttpContext?.User.IsInRole("Admin") ?? false;
+        if (!isAdmin)
+        {
+            _recipeBusinessRules.CheckIfUserIsOwner(recipe!, userId);
+        }
+
+        var ingredientIds = command.Ingredients.Where(i => i.IngredientId.HasValue).Select(i => i.IngredientId!.Value).ToList();
         await _recipeBusinessRules.CheckIfIngredientsExistAsync(ingredientIds, cancellationToken);
 
-        recipe!.UpdateDetails(command.Request.Title, command.Request.Description, command.Request.Visibility);
+        recipe!.UpdateDetails(
+            command.Request.Title,
+            command.Request.Description,
+            command.Request.Difficulty,
+            command.Request.Servings,
+            command.Request.PrepTime,
+            command.Request.CookTime,
+            command.Request.Visibility
+        );
 
-        var ingredientTuples = command.Ingredients.Select(i => (i.IngredientId, i.Amount, i.UnitId));
+        if (command.Request.CategoryIds.Any())
+            recipe.SyncCategories(command.Request.CategoryIds);
+
+        if (command.Request.TagIds.Any())
+            recipe.SyncTags(command.Request.TagIds);
+
+        var ingredientTuples = new List<(Guid? IngredientId, Guid? IngredientRequestId, decimal Amount, int UnitId)>();
+        var requestsToAdd = new List<IngredientRequest>();
+        var eventsToPublish = new List<IngredientRequestedEvent>();
+
+        foreach (var ingredientDto in command.Ingredients)
+        {
+            if (ingredientDto.IngredientId.HasValue)
+            {
+                ingredientTuples.Add((ingredientDto.IngredientId.Value, null, ingredientDto.Amount, ingredientDto.UnitId));
+            }
+            else if (!string.IsNullOrEmpty(ingredientDto.RequestedName))
+            {
+                var ingredientRequest = new IngredientRequest(Guid.NewGuid(), userId, ingredientDto.RequestedName, ingredientDto.SuggestedCategoryId);
+                requestsToAdd.Add(ingredientRequest);
+
+                ingredientTuples.Add((null, ingredientRequest.Id, ingredientDto.Amount, ingredientDto.UnitId));
+
+                eventsToPublish.Add(new IngredientRequestedEvent
+                {
+                    RequestId = ingredientRequest.Id,
+                    RequestedName = ingredientRequest.RequestedName
+                });
+            }
+        }
+
+        if (requestsToAdd.Any())
+        {
+            await _ingredientRequestRepository.AddRangeAsync(requestsToAdd, cancellationToken);
+        }
+
         recipe.SyncIngredients(ingredientTuples);
 
         var stepTuples = command.Steps.OrderBy(s => s.StepNumber).Select(s => (s.StepNumber, s.Instruction));
@@ -83,7 +147,14 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
                 await _imageService.DeleteAsync(oldStepPublicId, cancellationToken);
         }
 
-        if (recipe.Visibility == RecipeVisibility.Public)
+        if (isAdmin)
+        {
+            if (recipe.Visibility == RecipeVisibility.Public)
+            {
+                recipe.ForcePublish();
+            }
+        }
+        else if (recipe.Visibility == RecipeVisibility.Public)
         {
             bool isClean = await _localLlmService.CheckRecipeContentForSpamAsync(recipe.Title, recipe.Description, cancellationToken);
             if (isClean) recipe.PassLlmFilter();
@@ -91,6 +162,52 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         }
 
         await _recipeRepository.UpdateAsync(recipe);
+
+        foreach (var evt in eventsToPublish)
+        {
+            await _mediator.Publish(evt, cancellationToken);
+        }
+
+        if (recipe.Status == RecipeStatus.Published)
+        {
+            var updatedRecipeWithIngredients = await _recipeRepository.GetAsync(
+                predicate: r => r.Id == recipe.Id,
+                include: q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).ThenInclude(i => i.Aliases).Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).ThenInclude(i => i.Category).Include(r => r.Interactions),
+                cancellationToken: cancellationToken);
+
+            if (updatedRecipeWithIngredients != null)
+            {
+                var structuredIngredients = updatedRecipeWithIngredients.RecipeIngredients.Where(ri => ri.Ingredient != null).Select(ri =>
+                {
+                    var baseUnit = ri.Ingredient!.UnitFamily switch
+                    {
+                        OleAI.Backend.Domain.Enums.MeasurementCategory.Weight => OleAI.Backend.Domain.Enums.MeasurementUnit.Gram,
+                        OleAI.Backend.Domain.Enums.MeasurementCategory.Volume => OleAI.Backend.Domain.Enums.MeasurementUnit.Milliliter,
+                        _ => OleAI.Backend.Domain.Enums.MeasurementUnit.Piece
+                    };
+                    return new OleAI.Backend.Application.Services.AiRecommendation.RecipeIngredientAiDto
+                    {
+                        Id = ri.Ingredient.Id,
+                        Name = ri.Ingredient.Name,
+                        Amount = OleAI.Backend.Domain.Services.MeasurementUnitHelper.ConvertAmount((double)ri.Amount, (OleAI.Backend.Domain.Enums.MeasurementUnit)ri.UnitId, baseUnit),
+                        Unit = baseUnit.ToString(),
+                        Aliases = ri.Ingredient.Aliases.Select(a => a.AliasName).ToList()
+                    };
+                }).ToList();
+
+                var representativeCategory = updatedRecipeWithIngredients.RecipeIngredients.FirstOrDefault(ri => ri.Ingredient?.Category != null)?.Ingredient?.Category?.Name;
+                var popularity = updatedRecipeWithIngredients.Interactions?.Count ?? 0;
+
+                await _aiRecommendationService.SyncRecipeAsync(
+                    updatedRecipeWithIngredients.Id,
+                    updatedRecipeWithIngredients.Title,
+                    structuredIngredients,
+                    representativeCategory,
+                    isPublished: true,
+                    popularity: popularity,
+                    cancellationToken: cancellationToken);
+            }
+        }
 
         return recipe.Status == RecipeStatus.Rejected
             ? RecipeMessages.RecipeUpdatedButRejectedDueToSpam

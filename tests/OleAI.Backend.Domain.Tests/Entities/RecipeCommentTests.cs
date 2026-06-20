@@ -32,10 +32,10 @@ public class RecipeCommentTests
     public void UpdateContent_ShouldChangeContentAndSetUpdatedDate()
     {
         // Arrange
-        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Old content");
+        var comment = new RecipeComment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Old content", null, 5);
 
         // Act
-        comment.UpdateContent("New content");
+        comment.Update("New content", 5);
 
         // Assert
         comment.Content.Should().Be("New content");

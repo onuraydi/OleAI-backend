@@ -12,5 +12,6 @@ public class RecipeStepConfiguration : IEntityTypeConfiguration<RecipeStep>
 
         builder.Property(rs => rs.StepNumber).IsRequired();
         builder.Property(rs => rs.Instruction).IsRequired().HasMaxLength(1000);
+        builder.Property(rs => rs.OriginalInstruction).HasMaxLength(1000);
     }
 }

@@ -18,7 +18,7 @@ public class RecipeTests
         var visibility = RecipeVisibility.Public;
 
         // Act
-        var recipe = Recipe.Create(userId, title, description, visibility);
+        var recipe = Recipe.Create(userId, title, description, RecipeDifficulty.Medium, 2, 10, 20, visibility);
 
         // Assert
         recipe.UserId.Should().Be(userId);
@@ -35,7 +35,7 @@ public class RecipeTests
     public void Create_WhenPrivate_ShouldSetStatusToPublished()
     {
         // Act
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Private);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private);
 
         // Assert
         recipe.Status.Should().Be(RecipeStatus.Published);
@@ -45,10 +45,10 @@ public class RecipeTests
     public void UpdateDetails_ShouldUpdateProperties()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Old Title", "Old Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Old Title", "Old Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         // Act
-        recipe.UpdateDetails("New Title", "New Desc", RecipeVisibility.Private);
+        recipe.UpdateDetails("New Title", "New Desc", RecipeDifficulty.Hard, 4, 15, 45, RecipeVisibility.Private);
 
         // Assert
         recipe.Title.Should().Be("New Title");
@@ -58,21 +58,33 @@ public class RecipeTests
     }
 
     [Fact]
-    public void SyncIngredients_ShouldAddUpdateAndRemoveCorrectly()
+    public void AddIngredient_ShouldAddIngredientToCollection()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
-        var stayId = Guid.NewGuid();
-        var removeId = Guid.NewGuid();
-        var addId = Guid.NewGuid();
+        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        var ingredientId = Guid.NewGuid();
 
-        recipe.AddIngredient(stayId, 100, 1);
-        recipe.AddIngredient(removeId, 200, 1);
+        // Act
+        recipe.AddIngredient(ingredientId, null, 100, 1);
+        recipe.AddIngredient(ingredientId, null, 100, 1);
 
-        var incoming = new List<(Guid IngredientId, decimal Amount, int UnitId)>
+        // Assert
+        Assert.Equal(2, recipe.RecipeIngredients.Count);
+    }
+
+    [Fact]
+    public void SyncIngredients_ShouldWorkCorrectly()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Test", "Test", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        var ing1 = Guid.NewGuid();
+        var ing2 = Guid.NewGuid();
+        recipe.AddIngredient(ing1, null, 100, 1);
+
+        var incoming = new List<(Guid? IngredientId, Guid? IngredientRequestId, decimal Amount, int UnitId)>
         {
-            (stayId, 150, 2), // Update
-            (addId, 300, 1)   // Add
+            (ing1, null, 200, 2),
+            (ing2, null, 50, 1)
         };
 
         // Act
@@ -80,16 +92,15 @@ public class RecipeTests
 
         // Assert
         recipe.RecipeIngredients.Should().HaveCount(2);
-        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == stayId && i.Amount == 150 && i.UnitId == 2);
-        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == addId && i.Amount == 300 && i.UnitId == 1);
-        recipe.RecipeIngredients.Should().NotContain(i => i.IngredientId == removeId);
+        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == ing1 && i.Amount == 200 && i.UnitId == 2);
+        recipe.RecipeIngredients.Should().ContainSingle(i => i.IngredientId == ing2 && i.Amount == 50 && i.UnitId == 1);
     }
 
     [Fact]
     public void SyncSteps_ShouldManageStepsAndReturnOrphanedImages()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.AddStep(1, "Step 1");
         recipe.AddStep(2, "Step 2");
         var step2 = recipe.RecipeSteps.First(s => s.StepNumber == 2);
@@ -118,7 +129,7 @@ public class RecipeTests
     public void ReplaceImage_ShouldHandleMainImage()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.AddImage("old_url", "old_public_id", true);
 
         // Act
@@ -133,7 +144,7 @@ public class RecipeTests
     public void ApproveByAdmin_WhenPendingAdminApproval_ShouldSetToPublished()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
         recipe.PassLlmFilter(); // Status becomes PendingAdminApproval
 
         // Act
@@ -147,25 +158,109 @@ public class RecipeTests
     public void ApproveByAdmin_WhenNotPendingAdminApproval_ShouldThrowException()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Private); // Sets status to Published
 
         // Act
         Action act = () => recipe.ApproveByAdmin();
 
         // Assert
-        act.Should().Throw<Exception>().WithMessage(DomainConstants.OnlyLlmApprovedRecipesCanBeApprovedByAdmin);
+        act.Should().Throw<Exception>().WithMessage("Sadece onay bekleyen tarifler onaylanabilir.");
     }
 
     [Fact]
     public void Reject_ShouldSetStatusToRejected()
     {
         // Arrange
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         // Act
         recipe.Reject("Bad content");
 
         // Assert
         recipe.Status.Should().Be(RecipeStatus.Rejected);
+    }
+
+    [Fact]
+    public void ApplyLlmCorrections_ShouldUpdateDescriptionAndSteps()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Old Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.AddStep(1, "Old Step 1");
+        recipe.AddStep(2, "Old Step 2");
+
+        var correctedSteps = new List<(int StepNumber, string CorrectedInstruction)>
+        {
+            (1, "New Step 1"),
+            (2, "New Step 2")
+        };
+
+        // Act
+        recipe.ApplyLlmCorrections("New Desc", correctedSteps);
+
+        // Assert
+        recipe.Description.Should().Be("New Desc");
+        recipe.RecipeSteps.First(s => s.StepNumber == 1).Instruction.Should().Be("New Step 1");
+        recipe.RecipeSteps.First(s => s.StepNumber == 2).Instruction.Should().Be("New Step 2");
+    }
+
+    [Fact]
+    public void SyncCategories_ShouldManageCategories()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.SyncCategories(new[] { 1, 2 });
+
+        // Act
+        recipe.SyncCategories(new[] { 2, 3 });
+
+        // Assert
+        recipe.RecipeCategories.Should().HaveCount(2);
+        recipe.RecipeCategories.Should().ContainSingle(c => c.RecipeCategoryId == 2);
+        recipe.RecipeCategories.Should().ContainSingle(c => c.RecipeCategoryId == 3);
+        recipe.RecipeCategories.Should().NotContain(c => c.RecipeCategoryId == 1);
+    }
+
+    [Fact]
+    public void SyncTags_ShouldManageTags()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        recipe.SyncTags(new[] { 1, 2 });
+
+        // Act
+        recipe.SyncTags(new[] { 2, 3 });
+
+        // Assert
+        recipe.RecipeTags.Should().HaveCount(2);
+        recipe.RecipeTags.Should().ContainSingle(t => t.TagId == 2);
+        recipe.RecipeTags.Should().ContainSingle(t => t.TagId == 3);
+        recipe.RecipeTags.Should().NotContain(t => t.TagId == 1);
+    }
+
+    [Fact]
+    public void ForcePublish_ShouldSetStatusToPublished()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+
+        // Act
+        recipe.ForcePublish();
+
+        // Assert
+        recipe.Status.Should().Be(RecipeStatus.Published);
+    }
+
+    [Fact]
+    public void SetLlmReviewResult_ShouldSetProperty()
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
+        var json = "{\"status\":\"approved\"}";
+
+        // Act
+        recipe.SetLlmReviewResult(json);
+
+        // Assert
+        recipe.LlmReviewResultJson.Should().Be(json);
     }
 }

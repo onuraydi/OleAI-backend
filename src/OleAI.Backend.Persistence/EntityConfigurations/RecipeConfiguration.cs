@@ -12,8 +12,13 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
 
             builder.Property(r => r.Title).IsRequired().HasMaxLength(100);
             builder.Property(r => r.Description).HasMaxLength(2000);
+            builder.Property(r => r.OriginalDescription).HasMaxLength(2000);
             builder.Property(r => r.Visibility).IsRequired();
             builder.Property(r => r.Status).IsRequired();
+            builder.Property(r => r.Difficulty).IsRequired();
+            builder.Property(r => r.Servings).IsRequired();
+            builder.Property(r => r.PrepTime).IsRequired();
+            builder.Property(r => r.CookTime).IsRequired();
 
             builder.HasMany(r => r.RecipeIngredients)
                 .WithOne()
@@ -32,6 +37,18 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
                 .HasForeignKey(ri => ri.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Navigation(r => r.RecipeImages).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            builder.HasMany(r => r.RecipeCategories)
+                .WithOne(rc => rc.Recipe)
+                .HasForeignKey(rc => rc.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(r => r.RecipeCategories).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            builder.HasMany(r => r.RecipeTags)
+                .WithOne(rt => rt.Recipe)
+                .HasForeignKey(rt => rt.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(r => r.RecipeTags).UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

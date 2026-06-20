@@ -16,6 +16,9 @@ namespace OleAI.Backend.Persistence.EntityConfigurations
             builder.Property(u => u.Email).IsRequired().HasMaxLength(100);
             builder.HasIndex(u => u.Email).IsUnique();
 
+            builder.Property(u => u.Username).IsRequired().HasMaxLength(50);
+            builder.HasIndex(u => u.Username).IsUnique();
+
             builder.Property(u => u.PasswordHash).IsRequired();
             builder.Property(u => u.PasswordSalt).IsRequired();
             builder.Property(u => u.IsEmailVerified).HasDefaultValue(true);

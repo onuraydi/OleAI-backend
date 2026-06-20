@@ -1,10 +1,12 @@
 using System.Linq.Expressions;
 using FluentAssertions;
 using Moq;
+using OleAI.Backend.Application.Features.Pantry.Dtos;
 using OleAI.Backend.Application.Features.ShoppingList.Commands.UpdateShoppingListItem;
 using OleAI.Backend.Application.Features.ShoppingList.Constants;
 using OleAI.Backend.Application.Features.ShoppingList.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
@@ -16,6 +18,7 @@ public class UpdateShoppingListItemCommandHandlerTests
 {
     private readonly Mock<IShoppingListItemRepository> _mockShoppingListRepo;
     private readonly Mock<IIngredientRepository> _mockIngredientRepo;
+    private readonly Mock<ICacheService> _mockCacheService;
     private readonly ShoppingListBusinessRules _rules;
     private readonly UpdateShoppingListItemCommandHandler _handler;
 
@@ -23,6 +26,7 @@ public class UpdateShoppingListItemCommandHandlerTests
     {
         _mockShoppingListRepo = new Mock<IShoppingListItemRepository>();
         _mockIngredientRepo = new Mock<IIngredientRepository>();
+        _mockCacheService = new Mock<ICacheService>();
 
         _rules = new ShoppingListBusinessRules(
             _mockShoppingListRepo.Object,
@@ -30,7 +34,8 @@ public class UpdateShoppingListItemCommandHandlerTests
 
         _handler = new UpdateShoppingListItemCommandHandler(
             _mockShoppingListRepo.Object,
-            _rules);
+            _rules,
+            _mockCacheService.Object);
     }
 
     [Fact]
@@ -38,7 +43,7 @@ public class UpdateShoppingListItemCommandHandlerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
 
         _mockShoppingListRepo
             .Setup(r => r.GetAsync(
@@ -74,7 +79,7 @@ public class UpdateShoppingListItemCommandHandlerTests
     {
         // Arrange: item satın alınmış (domain guard devreye girer)
         var userId = Guid.NewGuid();
-        var item = new ShoppingListItem(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
+        var item = ShoppingListItem.CreateStandard(userId, Guid.NewGuid(), 1, MeasurementUnit.Piece);
         item.MarkAsPurchased(); // IsPurchased = true
 
         _mockShoppingListRepo
@@ -118,3 +123,4 @@ public class UpdateShoppingListItemCommandHandlerTests
             .WithMessage(ShoppingListMessages.ItemNotFoundOrUnauthorized);
     }
 }
+

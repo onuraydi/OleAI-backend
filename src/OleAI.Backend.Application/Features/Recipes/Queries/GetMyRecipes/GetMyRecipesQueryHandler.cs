@@ -33,12 +33,48 @@ public class GetMyRecipesQueryHandler : IRequestHandler<GetMyRecipesQuery, Pagin
             Index = request.Page,
             Size = request.Size,
             EnableTracking = false,
-            Include = q => q.Include(r => r.RecipeImages),
-
-            Predicate = r => r.UserId == userId
+            Include = q => q.Include(r => r.RecipeImages).Include(r => r.Comments).Include(r => r.Interactions).Include(r => r.RecipeTags).ThenInclude(rt => rt.Tag)
         };
 
+        var searchTerm = request.SearchTerm?.ToLower();
+        query.Predicate = r =>
+            r.DeletedDate == null &&
+            r.UserId == userId &&
+            (string.IsNullOrWhiteSpace(searchTerm) || r.Title.ToLower().Contains(searchTerm) || r.Description.ToLower().Contains(searchTerm)) &&
+            (!request.CategoryId.HasValue || r.RecipeCategories.Any(c => c.RecipeCategoryId == request.CategoryId.Value)) &&
+            (!request.Difficulty.HasValue || r.Difficulty == request.Difficulty.Value) &&
+            (!request.MaxTotalTime.HasValue || (r.PrepTime + r.CookTime) <= request.MaxTotalTime.Value) &&
+            (!request.TagId.HasValue || r.RecipeTags.Any(t => t.TagId == request.TagId.Value)) &&
+            (!request.MinRating.HasValue || (r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0) >= request.MinRating.Value) &&
+            (!request.Visibility.HasValue || r.Visibility == request.Visibility.Value);
+
+        // Apply Sorting
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            switch (request.SortBy.ToLower())
+            {
+                case "highest rated":
+                    query.OrderBy = q => q.OrderByDescending(r => r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0);
+                    break;
+                case "quickest":
+                    query.OrderBy = q => q.OrderBy(r => r.PrepTime + r.CookTime);
+                    break;
+                case "popular":
+                    query.OrderBy = q => q.OrderByDescending(r => r.Interactions.Count(i => i.IsLiked))
+                                          .ThenByDescending(r => r.Comments.Where(c => c.Rating != null).Average(c => (double?)c.Rating) ?? 0);
+                    break;
+                case "newest":
+                default:
+                    query.OrderBy = q => q.OrderByDescending(r => r.CreatedDate);
+                    break;
+            }
+        }
+        else
+        {
+            query.OrderBy = q => q.OrderByDescending(r => r.CreatedDate);
+        }
+
         var recipes = await _recipeRepository.GetListAsync(query, cancellationToken);
-        return _mapper.Map<Paginate<RecipeListItemResponse>>(recipes);
+        return _mapper.Map<Paginate<RecipeListItemResponse>>(recipes, opt => opt.Items["currentUserId"] = userId);
     }
 }

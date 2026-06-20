@@ -26,7 +26,7 @@ public class RejectRecipeCommandHandlerTests
     [Fact]
     public async Task Handle_WhenValidRequest_ShouldRejectRecipeAndReturnMessage()
     {
-        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", RecipeVisibility.Public);
+        var recipe = Recipe.Create(Guid.NewGuid(), "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Medium, 2, 10, 20, RecipeVisibility.Public);
 
         _mockRecipeRepository.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Recipe, bool>>>(), It.IsAny<Func<IQueryable<Recipe>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Recipe, object>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipe);
@@ -52,3 +52,4 @@ public class RejectRecipeCommandHandlerTests
         await act.Should().ThrowAsync<NotFoundException>();
     }
 }
+

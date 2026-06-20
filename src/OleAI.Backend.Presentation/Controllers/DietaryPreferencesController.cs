@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.DietaryPreferences.Commands.CreateDietaryPreference;
 using OleAI.Backend.Application.Features.DietaryPreferences.Commands.DeleteDietaryPreference;
+using OleAI.Backend.Application.Features.DietaryPreferences.Commands.RestoreDietaryPreference;
 using OleAI.Backend.Application.Features.DietaryPreferences.Commands.UpdateDietaryPreference;
 using OleAI.Backend.Application.Features.DietaryPreferences.Queries.GetDietaryPreferenceById;
 using OleAI.Backend.Application.Features.DietaryPreferences.Queries.GetDietaryPreferenceList;
@@ -49,6 +50,14 @@ public class DietaryPreferencesController : BaseController
     public async Task<IActionResult> Delete([FromRoute] Guid id)
     {
         var result = await Mediator.Send(new DeleteDietaryPreferenceCommand { Id = id });
+        return Ok(new { Message = result });
+    }
+
+    [HttpPut("{id}/restore")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Restore([FromRoute] Guid id)
+    {
+        var result = await Mediator.Send(new RestoreDietaryPreferenceCommand { Id = id });
         return Ok(new { Message = result });
     }
 }

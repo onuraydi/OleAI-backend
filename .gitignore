@@ -71,3 +71,15 @@ src/.vs/OleAI.Backend/v17/DocumentLayout.json
 /src/.vs
 /src/.vs/OleAI.Backend/v17
 /src/.vs/OleAI.Backend/DesignTimeBuild
+src/OleAI.Backend.Presentation/generate_recipes_100.py
+src/OleAI.Backend.Presentation/generate_recipes_final.py
+src/OleAI.Backend.Presentation/generate_seed.py
+src/OleAI.Backend.Presentation/generate_recipes.py
+src/Docs/Datasets/ingredients.json
+src/OleAI.Backend.Presentation/seed_data_gen.json
+src/OleAI.Backend.Presentation/seed_recipes_100_gen.json
+src/OleAI.Backend.Presentation/seed_recipes_final.json
+src/OleAI.Backend.Presentation/seed_recipes_gen.json
+src/Docs/Datasets/categories.json
+firebase-adminsdk.json  
+ !src/OleAI.Backend.Application/Features/Logs/

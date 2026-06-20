@@ -25,15 +25,14 @@ namespace OleAI.Backend.Application.Features.Recipes.Rules
         /// </summary>
         public async Task CheckIfIngredientsExistAsync(List<Guid> ingredientIds, CancellationToken cancellationToken)
         {
-            if (!ingredientIds.Any()) return;
+            var validIds = ingredientIds.Where(id => id != Guid.Empty).ToList();
+            if (!validIds.Any()) return;
 
-            // Gönderilen ID'lerin sistemde kaç tanesinin eşleştiğini buluyoruz
             var existingIngredientsCount = await _ingredientRepository.GetCountAsync(
-                predicate: i => ingredientIds.Contains(i.Id),
+                predicate: i => validIds.Contains(i.Id),
                 cancellationToken: cancellationToken);
 
-            // Eğer sayılar uyuşmuyorsa, kullanıcı sistemde olmayan sahte bir ID göndermiştir
-            if (existingIngredientsCount != ingredientIds.Count)
+            if (existingIngredientsCount != validIds.Count)
             {
                 throw new BusinessException(RecipeMessages.InvalidIngredientsSelectedForRecipe);
             }

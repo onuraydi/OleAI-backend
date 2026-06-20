@@ -25,6 +25,12 @@ namespace OleAI.Backend.Application.Features.Ingredients.Rules
             if (result != null) throw new BusinessException(IngredientMessages.ActiveIngredientAlreadyExistsMessage);
         }
 
+        public async Task IngredientNameCannotBeDuplicatedWhenUpdated(Guid id, string name)
+        {
+            var result = await _ingredientRepository.GetAsync(i => i.Id != id && i.Name.ToLower() == name.ToLower() && i.DeletedDate == null);
+            if (result != null) throw new BusinessException(IngredientMessages.ActiveIngredientAlreadyExistsMessage);
+        }
+
         public async Task CheckIfIngredientsExistAsync(List<Guid> ingredientIds, CancellationToken cancellationToken = default)
         {
             var count = await _ingredientRepository.GetCountAsync(
