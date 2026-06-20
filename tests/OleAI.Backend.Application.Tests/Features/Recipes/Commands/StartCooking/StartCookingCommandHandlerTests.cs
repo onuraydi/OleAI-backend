@@ -75,7 +75,7 @@ public class StartCookingCommandHandlerTests
 
         var ingredient1 = new Ingredient(Guid.NewGuid(), "Ing1", Guid.NewGuid(), OleAI.Backend.Domain.Enums.MeasurementCategory.Count);
         var recipe = Recipe.Create(userId, "Title", "Desc", OleAI.Backend.Domain.Enums.RecipeDifficulty.Easy, 1, 10, 10, OleAI.Backend.Domain.Enums.RecipeVisibility.Public);
-        recipe.AddIngredient(ingredient1.Id, null, 2, 0); 
+        recipe.AddIngredient(ingredient1.Id, null, 2, 0);
         // 0 corresponds to a valid unit id (Piece) for Count. We manually set it.
         var recipeIngredient = recipe.RecipeIngredients.First();
         recipeIngredient.Ingredient = ingredient1;

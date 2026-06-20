@@ -81,7 +81,7 @@ public class ApproveRecipeCommandHandlerTests
         Assert.Equal("Tarif başarıyla onaylandı ve topluluğa açıldı.", result);
         Assert.Equal(RecipeStatus.Published, recipe.Status);
         Assert.Equal("New Desc", recipe.Description);
-        
+
         _mockIngredientRepository.Verify(r => r.AddRangeAsync(It.IsAny<List<Ingredient>>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockIngredientRequestRepository.Verify(r => r.UpdateRangeAsync(It.IsAny<List<IngredientRequest>>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockAiRecommendationService.Verify(a => a.SyncRecipeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<List<OleAI.Backend.Application.Services.AiRecommendation.RecipeIngredientAiDto>>(), It.IsAny<string>(), null, true, It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
