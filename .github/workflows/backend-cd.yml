@@ -62,6 +62,12 @@ jobs:
             TokenOptions__MaxActiveTokens=5
             SecuritySettings__DefaultRoleId="5f9b3b1e-7b1e-4b1e-8b1e-7b1e4b1e5f9b"
             SecuritySettings__AdminRoleId=${{ secrets.SECURITY_ADMIN_ROLE_ID }}
+            MailSettings__Server=${{ secrets.MAIL_SERVER }}
+            MailSettings__Port=${{ secrets.MAIL_PORT }}
+            MailSettings__SenderFullName="${{ secrets.MAIL_SENDER_NAME }}"
+            MailSettings__SenderEmail=${{ secrets.MAIL_SENDER_EMAIL }}
+            MailSettings__UserName=${{ secrets.MAIL_USERNAME }}
+            MailSettings__Password=${{ secrets.MAIL_PASSWORD }}
             OllamaSettings__BaseUrl=http://ollama:11434
             AiService__BaseUrl=http://ai:8000
             AiService__ApiKey=${{ secrets.AI_SERVICE_API_KEY }}
