@@ -32,10 +32,10 @@ namespace OleAI.Backend.Application.Features.Pantry.EventHandlers
                 {
                     // CancellationToken.None veriyoruz çünkü HTTP Request'i iptal olsa bile bu arkaplan işlemi devam etmeli
                     var llmResultJson = await localLlmService.AnalyzeIngredientRequestAsync(notification.RequestedName, CancellationToken.None);
-                    
+
                     // 3. Domain entity'sinin iş kuralını (Behavior) tetikle
                     request.UpdateLlmAnalysis(llmResultJson);
-                    
+
                     // 4. Analiz sonucunu veritabanına kaydet
                     await requestRepository.UpdateAsync(request);
                 }
