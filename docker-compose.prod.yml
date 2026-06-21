@@ -34,6 +34,8 @@ services:
   ai:
     image: ${ACR_LOGIN_SERVER}/oleai-ai:latest
     container_name: oleai_ai
+    env_file:
+      - .env.prod
     networks:
       - oleai_internal
     restart: unless-stopped
