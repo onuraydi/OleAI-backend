@@ -72,16 +72,8 @@ namespace OleAI.Backend.Application.Features.Users.Commands.UpdateUserProfile
 
             if (request.ProfileImage != null)
             {
-                try
-                {
-                    var uploadResult = await _imageService.UploadAsync(request.ProfileImage, "profile_images", cancellationToken);
-                    user.ProfileImageUrl = uploadResult.Url;
-                }
-                catch (InvalidOperationException)
-                {
-                    // Cloudinary is not configured, we will gracefully skip image upload
-                    // so the user can still complete onboarding.
-                }
+                var uploadResult = await _imageService.UploadAsync(request.ProfileImage, "profile_images", cancellationToken);
+                user.ProfileImageUrl = uploadResult.Url;
             }
 
             await _userRepository.UpdateAsync(user, cancellationToken);
