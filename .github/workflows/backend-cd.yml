@@ -72,6 +72,9 @@ jobs:
             AiService__BaseUrl=http://ai:8000
             AiService__ApiKey=${{ secrets.AI_SERVICE_API_KEY }}
             AI_SERVICE_API_KEY=${{ secrets.AI_SERVICE_API_KEY }}
+            CloudinarySettings__CloudName=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+            CloudinarySettings__ApiKey=${{ secrets.CLOUDINARY_API_KEY }}
+            CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_API_SECRET }}
             Firebase__CredentialsJson='${{ secrets.FIREBASE_CREDENTIALS_JSON }}'
             EOF
             
