@@ -228,11 +228,8 @@ app.UseSerilogRequestLogging(options =>
 app.UseRateLimiter();
 
 // ---- Middleware Pipeline ----
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("OleAI-Web");
 
