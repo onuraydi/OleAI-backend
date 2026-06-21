@@ -87,7 +87,7 @@ jobs:
             # Create dummy certs if they don't exist to prevent Nginx from failing to start
             mkdir -p nginx/certs
             if [ ! -f nginx/certs/fullchain.pem ]; then
-              openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx/certs/privkey.pem -out nginx/certs/fullchain.pem -subj "/C=TR/ST=Istanbul/L=Istanbul/O=OleAI/CN=api.oleai.com"
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx/certs/privkey.pem -out nginx/certs/fullchain.pem -subj "/C=TR/ST=Istanbul/L=Istanbul/O=OleAI/CN=api.oleai.com.tr"
             fi
             
             # Export variable so docker compose can read it for the image tags
