@@ -56,7 +56,7 @@ namespace OleAI.Backend.Application.Services.PushNotifications
                     Data = data
                 };
 
-                var response = await FirebaseMessaging.DefaultInstance.SendMulticastAsync(message);
+                var response = await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message);
                 _logger.LogInformation("{successCount} messages were sent successfully", response.SuccessCount);
                 return response.SuccessCount > 0;
             }
