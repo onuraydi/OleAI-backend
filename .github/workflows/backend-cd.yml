@@ -48,33 +48,7 @@ jobs:
           script: |
             cd ~/deploy
             
-            # Create .env.prod file
-            cat <<EOF > .env.prod
-            ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
-            Env_SerilogConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
-            ConnectionStrings__OleAIConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
-            ConnectionStrings__Redis=redis:6379,abortConnect=false,connectTimeout=10000
-            TokenOptions__Audience=OleAIUsers
-            TokenOptions__Issuer=OleAIBackend
-            TokenOptions__SecurityKey=${{ secrets.JWT_SECURITY_KEY }}
-            TokenOptions__AccessTokenExpiration=15
-            TokenOptions__RefreshTokenExpiration=7
-            TokenOptions__MaxActiveTokens=5
-            SecuritySettings__DefaultRoleId="5f9b3b1e-7b1e-4b1e-8b1e-7b1e4b1e5f9b"
-            SecuritySettings__AdminRoleId=${{ secrets.SECURITY_ADMIN_ROLE_ID }}
-            MailSettings__Server=${{ secrets.MAIL_SERVER }}
-            MailSettings__Port=${{ secrets.MAIL_PORT }}
-            MailSettings__SenderFullName="${{ secrets.MAIL_SENDER_NAME }}"
-            MailSettings__SenderEmail=${{ secrets.MAIL_SENDER_EMAIL }}
-            MailSettings__UserName=${{ secrets.MAIL_USERNAME }}
-            MailSettings__Password=${{ secrets.MAIL_PASSWORD }}
-            OllamaSettings__BaseUrl=http://ollama:11434
-            AiService__BaseUrl=http://ai:8000
-            AiService__ApiKey=${{ secrets.AI_SERVICE_API_KEY }}
-            AI_SERVICE_API_KEY=${{ secrets.AI_SERVICE_API_KEY }}
-            Firebase__CredentialsJson='${{ secrets.FIREBASE_CREDENTIALS_JSON }}'
-            EOF
-            
+
             # Login to ACR on the VM
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
             
