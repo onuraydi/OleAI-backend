@@ -96,3 +96,6 @@ jobs:
             # Pull new image and restart services
             docker compose -f docker-compose.prod.yml pull backend
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            
+            # Nginx ayarları (nginx.conf) değişmiş olabileceği için config'i yeniden yükle
+            docker exec oleai_nginx nginx -s reload || true
