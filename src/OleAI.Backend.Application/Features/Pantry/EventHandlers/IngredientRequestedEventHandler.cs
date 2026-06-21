@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Services.Llm;
 using OleAI.Backend.Application.Services.Repositories;
@@ -7,38 +8,46 @@ namespace OleAI.Backend.Application.Features.Pantry.EventHandlers
 {
     public class IngredientRequestedEventHandler : INotificationHandler<IngredientRequestedEvent>
     {
-        private readonly IIngredientRequestRepository _requestRepository;
-        private readonly ILocalLlmService _localLlmService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public IngredientRequestedEventHandler(IIngredientRequestRepository requestRepository, ILocalLlmService localLlmService)
+        public IngredientRequestedEventHandler(IServiceScopeFactory scopeFactory)
         {
-            _requestRepository = requestRepository;
-            _localLlmService = localLlmService;
+            _scopeFactory = scopeFactory;
         }
 
-        public async Task Handle(IngredientRequestedEvent notification, CancellationToken cancellationToken)
+        public Task Handle(IngredientRequestedEvent notification, CancellationToken cancellationToken)
         {
-            var request = await _requestRepository.GetAsync(r => r.Id == notification.RequestId, cancellationToken: cancellationToken);
-            if (request == null) return;
-
-            try
+            // 2. LLM'e bağlan ve analiz et (Bu işlem birkaç saniye veya dakika sürebilir.
+            // Nginx Gateway Timeout (504) yememek için MediatR handler'ını bloklamayıp gerçek bir arkaplan thread'ine atıyoruz)
+            _ = Task.Run(async () =>
             {
-                // 2. LLM'e bağlan ve analiz et (Bu işlem birkaç saniye sürebilir, o yüzden arkaplanda yapıyoruz)
-                // Not: Gerçek LLM entegrasyonunda buraya prompt bağlamını da (mevcut kategoriler vb.) gönderebilirsin.
-                var llmResultJson = await _localLlmService.AnalyzeIngredientRequestAsync(notification.RequestedName, cancellationToken);
+                using var scope = _scopeFactory.CreateScope();
+                var requestRepository = scope.ServiceProvider.GetRequiredService<IIngredientRequestRepository>();
+                var localLlmService = scope.ServiceProvider.GetRequiredService<ILocalLlmService>();
 
-                // 3. Domain entity'sinin iş kuralını (Behavior) tetikle
-                request.UpdateLlmAnalysis(llmResultJson);
+                var request = await requestRepository.GetAsync(r => r.Id == notification.RequestId);
+                if (request == null) return;
 
-                // 4. Analiz sonucunu veritabanına kaydet
-                await _requestRepository.UpdateAsync(request);
-            }
-            catch (Exception ex)
-            {
-                // LLM servisi çökmüş olabilir, talebin Pending statüsünde kalmasını sağla ama logla
-                request.UpdateLlmAnalysis($"{{\"Error\": \"LLM Analizi başarısız oldu: {ex.Message}\"}}");
-                await _requestRepository.UpdateAsync(request);
-            }
+                try
+                {
+                    // CancellationToken.None veriyoruz çünkü HTTP Request'i iptal olsa bile bu arkaplan işlemi devam etmeli
+                    var llmResultJson = await localLlmService.AnalyzeIngredientRequestAsync(notification.RequestedName, CancellationToken.None);
+                    
+                    // 3. Domain entity'sinin iş kuralını (Behavior) tetikle
+                    request.UpdateLlmAnalysis(llmResultJson);
+                    
+                    // 4. Analiz sonucunu veritabanına kaydet
+                    await requestRepository.UpdateAsync(request);
+                }
+                catch (Exception ex)
+                {
+                    // LLM servisi çökmüş olabilir, talebin Pending statüsünde kalmasını sağla ama logla
+                    request.UpdateLlmAnalysis($"{{\"Error\": \"LLM Analizi başarısız oldu: {ex.Message}\"}}");
+                    await requestRepository.UpdateAsync(request);
+                }
+            });
+
+            return Task.CompletedTask;
         }
     }
 }
