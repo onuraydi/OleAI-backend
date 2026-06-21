@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("OleAI-Web",
         policy => policy
-            .WithOrigins("http://localhost:5173", "https://oleai.com", "https://www.oleai.com")
+            .WithOrigins("http://localhost:5173", "https://oleai.com", "https://www.oleai.com", "https://oleai.com.tr", "https://www.oleai.com.tr")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
