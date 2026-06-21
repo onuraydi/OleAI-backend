@@ -73,21 +73,37 @@ namespace OleAI.Backend.Persistence.Contexts
                 await context.SaveChangesAsync();
             }
 
+            var securitySettings = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OleAI.Backend.Application.Features.Auth.Constants.SecuritySettings>>().Value;
+
             // 3. Kullanıcılar ve Dolaplar (Pantry)
             var users = await context.Users.ToListAsync();
             if (!users.Any())
             {
                 var adminUser = new User { Id = Guid.NewGuid(), Username = "admin", FirstName = "System", LastName = "Admin", Email = "admin@oleai.com", IsActive = true, IsEmailVerified = true };
+
+                adminUser.UserOperationClaims.Add(new UserOperationClaim
+                {
+                    OperationClaimId = securitySettings.AdminRoleId
+                });
+
                 await context.Users.AddAsync(adminUser);
                 await context.SaveChangesAsync();
                 users.Add(adminUser);
+            }
+
+            // Senin özel kullanıcın varsa ona da Admin yetkisi verelim (Eğer henüz verilmediyse)
+            var targetUserId = Guid.Parse("ce85ac47-db7b-4d4a-b9bf-2971f644fcea");
+            var myUser = await context.Users.Include(u => u.UserOperationClaims).FirstOrDefaultAsync(u => u.Id == targetUserId);
+            if (myUser != null && !myUser.UserOperationClaims.Any(c => c.OperationClaimId == securitySettings.AdminRoleId))
+            {
+                myUser.UserOperationClaims.Add(new UserOperationClaim { OperationClaimId = securitySettings.AdminRoleId });
+                await context.SaveChangesAsync();
             }
 
             // TÜM kullanıcılara malzeme ekle (Senin kullanıcın dahil)
             var allIngredients = await context.Ingredients.ToListAsync();
 
             // Senin kullanıcı ID'ni de özel olarak garantiye alalım
-            var targetUserId = Guid.Parse("ce85ac47-db7b-4d4a-b9bf-2971f644fcea");
             if (!users.Any(u => u.Id == targetUserId))
             {
                 // Eğer kullanıcı veritabanında yoksa ama ID'sini biliyorsak, geçici bir kayıt oluşturabiliriz veya 

@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using OleAI.Backend.Application.Features.Auth.Constants;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Persistence.Contexts;
 using Xunit;
@@ -13,6 +15,14 @@ public class DbSeederTests
     {
         var services = new ServiceCollection();
         services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase(dbName));
+
+        var mockSecuritySettings = new SecuritySettings
+        {
+            AdminRoleId = Guid.NewGuid(),
+            DefaultRoleId = Guid.NewGuid()
+        };
+        services.AddSingleton(Options.Create(mockSecuritySettings));
+
         return services.BuildServiceProvider();
     }
 
