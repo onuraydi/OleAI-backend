@@ -54,6 +54,27 @@ jobs:
             Env_SerilogConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
             ConnectionStrings__OleAIConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
             ConnectionStrings__Redis=redis:6379,abortConnect=false,connectTimeout=10000
+            TokenOptions__Audience=OleAIUsers
+            TokenOptions__Issuer=OleAIBackend
+            TokenOptions__SecurityKey=${{ secrets.JWT_SECURITY_KEY }}
+            TokenOptions__AccessTokenExpiration=15
+            TokenOptions__RefreshTokenExpiration=7
+            TokenOptions__MaxActiveTokens=5
+            CloudinarySettings__CloudName=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+            CloudinarySettings__ApiKey=${{ secrets.CLOUDINARY_API_KEY }}
+            CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_API_SECRET }}
+            MailSettings__Server=${{ secrets.MAIL_SERVER }}
+            MailSettings__Port=${{ secrets.MAIL_PORT }}
+            MailSettings__SenderFullName=${{ secrets.MAIL_SENDER_NAME }}
+            MailSettings__SenderEmail=${{ secrets.MAIL_SENDER_EMAIL }}
+            MailSettings__UserName=${{ secrets.MAIL_USERNAME }}
+            MailSettings__Password=${{ secrets.MAIL_PASSWORD }}
+            SecuritySettings__DefaultRoleId=${{ secrets.SECURITY_DEFAULT_ROLE_ID }}
+            SecuritySettings__AdminRoleId=${{ secrets.SECURITY_ADMIN_ROLE_ID }}
+            OllamaSettings__BaseUrl=http://ollama:11434
+            AiService__BaseUrl=http://ai:8000
+            AiService__ApiKey=${{ secrets.AI_SERVICE_API_KEY }}
+            Firebase__CredentialsJson='${{ secrets.FIREBASE_CREDENTIALS_JSON }}'
             EOF
             
             # Login to ACR on the VM
