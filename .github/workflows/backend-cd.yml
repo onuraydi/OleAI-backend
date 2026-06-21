@@ -65,6 +65,7 @@ jobs:
             OllamaSettings__BaseUrl=http://ollama:11434
             AiService__BaseUrl=http://ai:8000
             AiService__ApiKey=${{ secrets.AI_SERVICE_API_KEY }}
+            AI_SERVICE_API_KEY=${{ secrets.AI_SERVICE_API_KEY }}
             Firebase__CredentialsJson='${{ secrets.FIREBASE_CREDENTIALS_JSON }}'
             EOF
             
