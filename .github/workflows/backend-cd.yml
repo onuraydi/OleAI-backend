@@ -75,6 +75,9 @@ jobs:
             Firebase__CredentialsJson='${{ secrets.FIREBASE_CREDENTIALS_JSON }}'
             EOF
             
+            # Remove any invisible Windows carriage return characters
+            sed -i 's/\r$//' .env.prod
+            
             # Login to ACR on the VM
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
             
