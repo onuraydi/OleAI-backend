@@ -60,6 +60,12 @@ jobs:
             TokenOptions__AccessTokenExpiration=15
             TokenOptions__RefreshTokenExpiration=7
             TokenOptions__MaxActiveTokens=5
+            SecuritySettings__DefaultRoleId="5f9b3b1e-7b1e-4b1e-8b1e-7b1e4b1e5f9b"
+            SecuritySettings__AdminRoleId=${{ secrets.SECURITY_ADMIN_ROLE_ID }}
+            OllamaSettings__BaseUrl=http://ollama:11434
+            AiService__BaseUrl=http://ai:8000
+            AiService__ApiKey=${{ secrets.AI_SERVICE_API_KEY }}
+            Firebase__CredentialsJson='${{ secrets.FIREBASE_CREDENTIALS_JSON }}'
             EOF
             
             # Login to ACR on the VM
