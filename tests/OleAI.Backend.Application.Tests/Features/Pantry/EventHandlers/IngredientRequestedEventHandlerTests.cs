@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using OleAI.Backend.Application.Features.Pantry.EventHandlers;
 using OleAI.Backend.Application.Features.Pantry.Events;
@@ -20,7 +21,22 @@ public class IngredientRequestedEventHandlerTests
     {
         _mockIngredientRequestRepository = new Mock<IIngredientRequestRepository>();
         _mockLocalLlmService = new Mock<ILocalLlmService>();
-        _handler = new IngredientRequestedEventHandler(_mockIngredientRequestRepository.Object, _mockLocalLlmService.Object);
+
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        mockServiceProvider
+            .Setup(sp => sp.GetService(typeof(IIngredientRequestRepository)))
+            .Returns(_mockIngredientRequestRepository.Object);
+        mockServiceProvider
+            .Setup(sp => sp.GetService(typeof(ILocalLlmService)))
+            .Returns(_mockLocalLlmService.Object);
+
+        var mockServiceScope = new Mock<IServiceScope>();
+        mockServiceScope.Setup(s => s.ServiceProvider).Returns(mockServiceProvider.Object);
+
+        var mockScopeFactory = new Mock<IServiceScopeFactory>();
+        mockScopeFactory.Setup(f => f.CreateScope()).Returns(mockServiceScope.Object);
+
+        _handler = new IngredientRequestedEventHandler(mockScopeFactory.Object);
     }
 
     [Fact]
@@ -35,6 +51,7 @@ public class IngredientRequestedEventHandlerTests
 
         // Act
         await _handler.Handle(notification, CancellationToken.None);
+        await Task.Delay(100); // Wait for fire-and-forget background task
 
         // Assert
         _mockLocalLlmService.Verify(l => l.AnalyzeIngredientRequestAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -63,6 +80,7 @@ public class IngredientRequestedEventHandlerTests
 
         // Act
         await _handler.Handle(notification, CancellationToken.None);
+        await Task.Delay(100); // Wait for fire-and-forget background task
 
         // Assert
         request.LlmAnalysisResult.Should().Be(llmJson);
@@ -90,6 +108,7 @@ public class IngredientRequestedEventHandlerTests
 
         // Act
         await _handler.Handle(notification, CancellationToken.None);
+        await Task.Delay(100); // Wait for fire-and-forget background task
 
         // Assert
         request.LlmAnalysisResult.Should().NotBeNull();
