@@ -62,17 +62,7 @@ namespace OleAI.Backend.Application.Features.Auth.Commands.Register
             );
 
             string mailBody = $@"<h2>OleAI'a Hoş Geldiniz!</h2><h1 style='color: #4CAF50;'>{otpCode}</h1>";
-            try 
-            {
-                await _mailService.sendAsync(newUser.Email, AuthMessages.EmailVerificationSubject, mailBody);
-            }
-            catch (Exception ex)
-            {
-                // SMTP ayarları yapılmadığı için mail gönderimi başarısız olursa süreci durdurma.
-                // OTP kodunu loglara yaz ki geliştirici veya admin görebilsin.
-                Console.WriteLine($"[Auth] E-posta gönderilemedi: {ex.Message}");
-                Console.WriteLine($"[Auth] Kullanıcı {newUser.Email} için Doğrulama Kodu (OTP): {otpCode}");
-            }
+            await _mailService.sendAsync(newUser.Email, AuthMessages.EmailVerificationSubject, mailBody);
 
             RegisteredResponse response = _mapper.Map<RegisteredResponse>(newUser);
             response.Message = AuthMessages.SuccessfulRegistration;
