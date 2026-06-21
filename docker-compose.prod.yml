@@ -17,6 +17,14 @@ services:
       - monitoring
     restart: unless-stopped
 
+  frontend:
+    image: ${ACR_LOGIN_SERVER}/oleai-frontend:latest
+    container_name: oleai_frontend
+    networks:
+      - oleai_public
+      - oleai_internal
+    restart: unless-stopped
+
   backend:
     image: ${ACR_LOGIN_SERVER}/oleai-backend:latest
     container_name: oleai_backend
