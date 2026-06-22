@@ -100,7 +100,6 @@ networks:
     driver: bridge
   oleai_internal:
     driver: bridge
-    internal: true
   monitoring:
     driver: bridge
 
