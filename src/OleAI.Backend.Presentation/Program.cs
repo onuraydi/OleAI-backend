@@ -39,6 +39,8 @@ if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production"
 
 var builder = WebApplication.CreateBuilder(args);
 
+Serilog.Debugging.SelfLog.Enable(Console.Error);
+
 builder.Host.UseSerilog((context, loggerConfiguration) =>
 {
     var connectionString = context.Configuration.GetConnectionString("OleAIConnectionString");
@@ -52,9 +54,7 @@ builder.Host.UseSerilog((context, loggerConfiguration) =>
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
         .Enrich.WithExceptionDetails()
-        .WriteTo.Async(a => a.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"))
-        .WriteTo.Async(a => a.File("logs/oleai-log-.txt", rollingInterval: RollingInterval.Day,
-                       outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [CorrId: {CorrelationId}] {Message:lj}{NewLine}{Exception}"))
+        .WriteTo.Async(a => a.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [CorrId: {CorrelationId}] {Message:lj} {Properties:j}{NewLine}{Exception}"))
         .WriteTo.Async(a => a.MSSqlServer(
             connectionString: connectionString,
             sinkOptions: new MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true },
@@ -353,4 +353,11 @@ recurringJobManager.AddOrUpdate<OleAI.Backend.Application.Features.Notifications
     job => job.ExecuteAsync(),
     Cron.Daily);
 
-await app.RunAsync();
+try
+{
+    await app.RunAsync();
+}
+finally
+{
+    Log.CloseAndFlush();
+}
