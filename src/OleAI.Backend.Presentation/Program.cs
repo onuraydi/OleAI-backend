@@ -23,6 +23,7 @@ using OleAI.Backend.Core.Security.Jwt;
 using OleAI.Backend.Persistence;
 using OleAI.Backend.Persistence.Contexts;
 using OleAI.Backend.Presentation.Core.CrossCuttingConcerns.Monitoring;
+using OleAI.Backend.Presentation.Filters;
 using OleAI.Backend.Presentation.Middlewares;
 using OleAI.Backend.Presentation.Swagger;
 using OpenTelemetry.Metrics;
@@ -274,11 +275,11 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-// Hangfire Dashboard (Development only or protected in Prod)
-if (app.Environment.IsDevelopment())
+// Hangfire Dashboard (Protected with Admin authorization)
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    app.UseHangfireDashboard("/hangfire");
-}
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
 
 // Automatic Migration at Startup
 using (var scope = app.Services.CreateScope())
