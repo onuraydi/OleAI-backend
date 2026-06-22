@@ -18,7 +18,7 @@ namespace OleAI.Backend.Application.Services.Llm
             _httpClient = httpClient;
             _settings = settings.Value;
             _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
-            _httpClient.Timeout = TimeSpan.FromMinutes(5); // Artırıldı
+            _httpClient.Timeout = TimeSpan.FromMinutes(30); // Artırıldı (CPU'da uzun sürebilir)
             _ingredientRepository = ingredientRepository;
         }
 
