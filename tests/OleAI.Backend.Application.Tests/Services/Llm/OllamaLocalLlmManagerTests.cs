@@ -162,29 +162,10 @@ public class OllamaLocalLlmManagerTests
     [Fact]
     public async Task AnalyzeRecipeContentAsync_WhenApproved_ShouldCorrectAndReturnJson()
     {
-        // Arrange
-        var phase1Output = "{\"isApproved\": true, \"isToxic\": false, \"correctedDescription\": \"Corrected desc\", \"rejectionReason\": null}";
-        var stepOutput = "{\"reasoning\": \"ok\", \"correctedStep\": \"Corrected step 1\"}";
+        // Arrange - Artık tek bir istekte hem açıklama hem adımlar birlikte döner
+        var unifiedOutput = "{\"isApproved\": true, \"isToxic\": false, \"correctedDescription\": \"Corrected desc\", \"correctedSteps\": [\"Corrected step 1\"], \"rejectionReason\": null}";
 
-        var handlerMock = new Mock<HttpMessageHandler>();
-        handlerMock
-            .Protected()
-            .SetupSequence<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(new { response = phase1Output }))
-            })
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(new { response = stepOutput }))
-            });
-
-        var httpClient = new HttpClient(handlerMock.Object);
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, JsonSerializer.Serialize(new { response = unifiedOutput }));
         var manager = new OllamaLocalLlmManager(httpClient, _mockOptions.Object, _mockIngredientRepository.Object);
 
         // Act
@@ -200,7 +181,7 @@ public class OllamaLocalLlmManagerTests
     public async Task AnalyzeRecipeContentAsync_WhenRejected_ShouldReturnRejectionJson()
     {
         // Arrange
-        var phase1Output = "{\"isApproved\": false, \"isToxic\": true, \"correctedDescription\": null, \"rejectionReason\": \"Bad words\"}";
+        var phase1Output = "{\"isApproved\": false, \"isToxic\": true, \"correctedDescription\": null, \"correctedSteps\": [], \"rejectionReason\": \"Bad words\"}";
 
         var handlerMock = new Mock<HttpMessageHandler>();
         handlerMock

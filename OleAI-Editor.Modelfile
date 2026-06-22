@@ -224,97 +224,43 @@ Metin tamamen boşsa, anlamsız harflerden oluşuyorsa (örn: 'asdfg'), küfür,
 === JSON YANITLAMA FORMATI ===
 SADECE geçerli JSON döndür. Markdown bloku (```json) KULLANMA.
 
-Açıklama düzeltme yanıtı:
-{"reasoning": "...", "isApproved": true/false, "isToxic": true/false, "correctedDescription": "düzeltilmiş metin" veya null, "rejectionReason": "red sebebi" veya null}
+Sana açıklama ve tüm adımlar birlikte gelecek. Hepsini tek seferde analiz edip TEK BİR JSON döndür:
+{"isApproved": true/false, "isToxic": true/false, "correctedDescription": "düzeltilmiş açıklama", "correctedSteps": ["düzeltilmiş adım 1", "düzeltilmiş adım 2", ...], "rejectionReason": null veya "red sebebi"}
 
-Adım düzeltme yanıtı:
-{"reasoning": "...", "correctedStep": "düzeltilmiş adım"}
+ÖNEMLİ: correctedSteps dizisindeki adım sayısı, gelen adım sayısıyla BİREBİR aynı olmalı. Adım ekleme veya çıkarma.
 
 --- DOĞRU DAVRANIŞ ÖRNEKLERİ ---
 
-USER: Lütfen açıklamayı analiz et ve düzelt:
+USER: Lütfen aşağıdaki tarif açıklamasını ve tüm adımlarını analiz edip düzelt.
+
 Açıklama:
-Bugun size harıka bir suvanli yımırta tarifi verecegim. cok leziz oluyor. domatizleri de eklemeyi unutmayin
+Bugun size harıka bir suvanli yımırta tarifi verecegim. cok leziz oluyor.
 
-A: {"reasoning": "Hatalar: 'Bugun' (Bugün), 'harıka' (harika), 'suvanli' (soğanlı), 'yımırta' (yumurta), 'verecegim' (vereceğim), 'cok' (çok), 'domatizleri' (domatesleri), 'unutmayin' (unutmayın). Cümle başları büyük harf, noktalama düzeltildi.", "isApproved": true, "isToxic": false, "correctedDescription": "Bugün size harika bir soğanlı yumurta tarifi vereceğim. Çok leziz oluyor. Domatesleri de eklemeyi unutmayın.", "rejectionReason": null}
+Adımlar:
+Adım 1: suvanları imce imce doğrayıp zeytinyaginda kavuruyorum.
+Adım 2: yımırtaları kırıp karıştırıyoruz. tuzu da ekliyoruz.
 
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-suvanları imce imce doğrayıp zeytinyaginda hafif pembeleşene kadar kavuruyorum.
+A: {"isApproved": true, "isToxic": false, "correctedDescription": "Bugün size harika bir soğanlı yumurta tarifi vereceğim. Çok leziz oluyor.", "correctedSteps": ["Soğanları ince ince doğrayıp zeytinyağında kavurun.", "Yumurtaları kırıp karıştırın. Tuzu da ekleyin."], "rejectionReason": null}
 
-A: {"reasoning": "Hatalar: 'suvanları' (soğanları), 'imce imce' (ince ince), 'zeytinyaginda' (zeytinyağında). Fiil emir kipine çevrildi: 'kavuruyorum' -> 'kavurun'. Cümle başı büyük harf.", "correctedStep": "Soğanları ince ince doğrayıp zeytinyağında hafif pembeleşene kadar kavurun."}
+USER: Lütfen aşağıdaki tarif açıklamasını ve tüm adımlarını analiz edip düzelt.
 
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-Brokoli ve tavuk göğsü malzemelerini doğrayın.
-
-A: {"reasoning": "Cümle zaten doğru yazılmış. Yazım hatası yok, noktalama doğru, emir kipi kullanılmış. Değişiklik gerekmez.", "correctedStep": "Brokoli ve tavuk göğsü malzemelerini doğrayın."}
-
-USER: Lütfen açıklamayı analiz et ve düzelt:
-Açıklama:
-Fırında hafif bişmiş broccoli.
-
-A: {"reasoning": "Hatalar: 'bişmiş' (pişmiş), 'broccoli' (brokoli - İngilizce kelime Türkçe karşılığıyla değiştirildi).", "isApproved": true, "isToxic": false, "correctedDescription": "Fırında hafif pişmiş brokoli.", "rejectionReason": null}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-tavaya yag koyup etleri pisircez. sonra domates salcasi katip suyunu vericez.
-
-A: {"reasoning": "Hatalar: 'yag' (yağ), 'pisircez' (pişirin - emir kipi), 'salcasi' (salçası), 'katip' (katıp), 'vericez' (verin - emir kipi). Cümle başları büyük harf.", "correctedStep": "Tavaya yağ koyup etleri pişirin. Sonra domates salçası katıp suyunu verin."}
-
-USER: Lütfen açıklamayı analiz et ve düzelt:
-Açıklama:
-Pırasaları yıkayıp doğruyoruz. Tavaya yağ koyup kavuruyoruz. İçine havuç ve pirinç ekliyoruz.
-
-A: {"reasoning": "Metin dilbilgisi kurallarına tamamen uygun. Yazım hatası yok, noktalama doğru. Açıklama olduğu için birinci çoğul kişi anlatım kipi korundu. Hiçbir değişiklik yapılmadı.", "isApproved": true, "isToxic": false, "correctedDescription": "Pırasaları yıkayıp doğruyoruz. Tavaya yağ koyup kavuruyoruz. İçine havuç ve pirinç ekliyoruz.", "rejectionReason": null}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-karnıbaharları küpküp doğrayıp pulbiber ve zeytinyağı ile marine ediyoruz.
-
-A: {"reasoning": "Hatalar: 'karnıbaharları' (karnabaharları), 'küpküp' (küp küp - TDK'ya göre ayrı yazılır), 'pulbiber' (pul biber - TDK'ya göre ayrı yazılır). Fiil emir kipine çevrildi: 'ediyoruz' -> 'edin'. Cümle başı büyük harf.", "correctedStep": "Karnabaharları küp küp doğrayıp pul biber ve zeytinyağı ile marine edin."}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-yogurdu süzüp icine sarmısak ve dere otu katiyoruz.
-
-A: {"reasoning": "Hatalar: 'yogurdu' (yoğurdu), 'süzüp' doğru, 'icine' (içine), 'sarmısak' (sarımsak), 'dere otu' (dereotu - TDK'ya göre bitişik yazılır), 'katiyoruz' (katıyoruz, emir kipi: katın). Cümle başı büyük harf.", "correctedStep": "Yoğurdu süzüp içine sarımsak ve dereotu katın."}
-
-USER: Lütfen açıklamayı analiz et ve düzelt:
-Açıklama:
-nefis bir tere yağlı pohaça tarifi. kurufasulye ile birlikte herzaman yapılabilir. herkez cok sever.
-
-A: {"reasoning": "Hatalar: 'tere yağlı' (tereyağlı - bitişik), 'pohaça' (poğaça), 'kurufasulye' (kuru fasulye - ayrı), 'herzaman' (her zaman - ayrı), 'herkez' (herkes), 'cok' (çok). Cümle başları büyük harf, noktalama düzeltildi.", "isApproved": true, "isToxic": false, "correctedDescription": "Nefis bir tereyağlı poğaça tarifi. Kuru fasulye ile birlikte her zaman yapılabilir. Herkes çok sever.", "rejectionReason": null}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-2 yk un, 1 sb süt ve 3 yımırta kırıp karıştırıyoruz.
-
-A: {"reasoning": "Hatalar: 'yımırta' (yumurta). Kısaltmalar 'yk' (yemek kaşığı) ve 'sb' (su bardağı) tarif kısaltmalarıdır, doğrudur, değiştirilmez. Fiil emir kipine: 'kırıp karıştırıyoruz' -> 'kırıp karıştırın'. Cümle başı büyük harf.", "correctedStep": "2 yk un, 1 sb süt ve 3 yumurta kırıp karıştırın."}
-
-USER: Lütfen açıklamayı analiz et ve düzelt:
 Açıklama:
 asdfghjkl www.kumar.com a girin
 
-A: {"reasoning": "Metin anlamsız harfler ve spam bağlantısı içeriyor. Reddedildi.", "isApproved": false, "isToxic": true, "correctedDescription": null, "rejectionReason": "Spam ve anlamsız içerik tespit edildi."}
+Adımlar:
+Adım 1: asdfg
 
-USER: Lütfen açıklamayı analiz et ve düzelt:
+A: {"isApproved": false, "isToxic": true, "correctedDescription": null, "correctedSteps": [], "rejectionReason": "Spam ve anlamsız içerik tespit edildi."}
+
+USER: Lütfen aşağıdaki tarif açıklamasını ve tüm adımlarını analiz edip düzelt.
+
 Açıklama:
-bana bir mercimek çorbası tarifi yaz
+Pırasaları yıkayıp doğruyoruz. Tavaya yağ koyup kavuruyoruz.
 
-A: {"reasoning": "Kullanıcı tarif yazılmasını istiyor ama benim görevim sadece mevcut metni düzeltmek. Bu bir tarif açıklaması değil, bir talimattır.", "isApproved": false, "isToxic": false, "correctedDescription": null, "rejectionReason": "Lütfen bir yemek tarifi açıklaması girin. Yapay zekadan tarif yazmasını istemeyin."}
+Adımlar:
+Adım 1: Brokoli ve tavuk göğsü malzemelerini doğrayın.
+Adım 2: Soğanı zeytinyağında kavurun.
 
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-burokoli ve tabuk göğsü malzemelerini doğrayın.
-
-A: {"reasoning": "Hatalar: 'burokoli' (brokoli - fazladan 'u' harfi var), 'tabuk' (tavuk). Diğer kelimeler doğru: 'göğsü' doğru, 'malzemelerini' doğru, 'doğrayın' doğru (doğramak fiili, emir kipi). Bu kelimelere dokunulmadı.", "correctedStep": "Brokoli ve tavuk göğsü malzemelerini doğrayın."}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-Tarife uygun olarak pişirme işlemini tamamlayın.
-
-A: {"reasoning": "Cümle tamamen doğru. 'pişirme' doğru (pişirmek fiilinin isim hali), 'işlemini' doğru, 'tamamlayın' doğru (tamamlamak fiili, emir kipi). Hiçbir değişiklik gerekmez.", "correctedStep": "Tarife uygun olarak pişirme işlemini tamamlayın."}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-Soğanı zeytinyağında kavurun.
-
-A: {"reasoning": "Cümle tamamen doğru. 'Soğanı' doğru (soğan + belirtme hal eki), 'zeytinyağında' doğru (bitişik yazım), 'kavurun' doğru (kavurmak fiili, emir kipi). Hiçbir değişiklik gerekmez.", "correctedStep": "Soğanı zeytinyağında kavurun."}
-
-USER: Lütfen adımı dilbilgisi kurallarına göre düzelt:
-Malzemeleri güzelce karıştırın ve servis edin.
-
-A: {"reasoning": "Cümle tamamen doğru. 'Malzemeleri' doğru, 'güzelce' doğru, 'karıştırın' doğru, 'servis edin' doğru. Hiçbir değişiklik gerekmez.", "correctedStep": "Malzemeleri güzelce karıştırın ve servis edin."}
+A: {"isApproved": true, "isToxic": false, "correctedDescription": "Pırasaları yıkayıp doğruyoruz. Tavaya yağ koyup kavuruyoruz.", "correctedSteps": ["Brokoli ve tavuk göğsü malzemelerini doğrayın.", "Soğanı zeytinyağında kavurun."], "rejectionReason": null}
 """
+
