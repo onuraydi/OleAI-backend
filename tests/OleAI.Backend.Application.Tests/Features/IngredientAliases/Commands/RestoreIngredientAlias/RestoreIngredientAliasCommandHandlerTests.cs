@@ -6,6 +6,7 @@ using OleAI.Backend.Application.Features.IngredientAliases.Commands.RestoreIngre
 using OleAI.Backend.Application.Features.IngredientAliases.Constants;
 using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Repositories;
 using OleAI.Backend.Core.Repositories.Options;
@@ -19,6 +20,7 @@ namespace OleAI.Backend.Application.Tests.Features.IngredientAliases.Commands.Re
     {
         private readonly Mock<IIngredientAliasRepository> _mockAliasRepository;
         private readonly Mock<IIngredientRepository> _mockIngredientRepository;
+        private readonly Mock<ICacheService> _mockCacheService;
         private readonly IngredientAliasBusinessRules _rules;
         private readonly RestoreIngredientAliasCommandHandler _handler;
 
@@ -26,9 +28,10 @@ namespace OleAI.Backend.Application.Tests.Features.IngredientAliases.Commands.Re
         {
             _mockAliasRepository = new Mock<IIngredientAliasRepository>();
             _mockIngredientRepository = new Mock<IIngredientRepository>();
+            _mockCacheService = new Mock<ICacheService>();
 
             _rules = new IngredientAliasBusinessRules(_mockAliasRepository.Object, _mockIngredientRepository.Object);
-            _handler = new RestoreIngredientAliasCommandHandler(_mockAliasRepository.Object, _rules);
+            _handler = new RestoreIngredientAliasCommandHandler(_mockAliasRepository.Object, _rules, _mockCacheService.Object);
         }
 
         [Fact]

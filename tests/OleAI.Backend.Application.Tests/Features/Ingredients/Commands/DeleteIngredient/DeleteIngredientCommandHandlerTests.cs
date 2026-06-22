@@ -5,6 +5,7 @@ using OleAI.Backend.Application.Features.Ingredients.Commands.DeleteIngredient;
 using OleAI.Backend.Application.Features.Ingredients.Constants;
 using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Core.Repositories.Options;
 using OleAI.Backend.Core.Repositories.Pagination;
@@ -18,6 +19,7 @@ public class DeleteIngredientCommandHandlerTests
 {
     private readonly Mock<IIngredientRepository> _mockIngredientRepository;
     private readonly Mock<IUserIngredientRepository> _mockUserIngredientRepository;
+    private readonly Mock<ICacheService> _mockCacheService;
     private readonly IngredientBusinessRules _rules;
     private readonly DeleteIngredientCommandHandler _handler;
 
@@ -25,9 +27,10 @@ public class DeleteIngredientCommandHandlerTests
     {
         _mockIngredientRepository = new Mock<IIngredientRepository>();
         _mockUserIngredientRepository = new Mock<IUserIngredientRepository>();
+        _mockCacheService = new Mock<ICacheService>();
 
         _rules = new IngredientBusinessRules(_mockIngredientRepository.Object);
-        _handler = new DeleteIngredientCommandHandler(_mockIngredientRepository.Object, _mockUserIngredientRepository.Object, _rules);
+        _handler = new DeleteIngredientCommandHandler(_mockIngredientRepository.Object, _mockUserIngredientRepository.Object, _rules, _mockCacheService.Object);
     }
 
     [Fact]

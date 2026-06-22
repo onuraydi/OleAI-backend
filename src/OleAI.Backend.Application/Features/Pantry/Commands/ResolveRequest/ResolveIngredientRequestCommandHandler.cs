@@ -76,7 +76,7 @@ namespace OleAI.Backend.Application.Features.Pantry.Commands.ResolveRequest
 
             if (command.Request.Action == ResolutionAction.ApproveAsNew || command.Request.Action == ResolutionAction.MergeAsAlias)
             {
-                await _cacheService.RemoveAsync("Pantry:AllIngredientsCatalog:v3");
+                await _cacheService.RemoveAsync("Pantry:AllIngredientsCatalog:v4");
             }
 
             // Eğer onaylandıysa veya birleştirildiyse, kullanıcının dolabında "Onay Bekliyor" statüsünde olan bu ürünü AKTİF hale getiriyoruz.

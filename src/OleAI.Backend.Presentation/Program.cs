@@ -29,6 +29,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using Serilog;
 using Serilog.Exceptions;
+using Serilog.Sinks.MSSqlServer;
 using StackExchange.Redis;
 
 if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production")
@@ -40,9 +41,24 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, loggerConfiguration) =>
 {
+    var connectionString = context.Configuration.GetConnectionString("OleAIConnectionString");
+
+    var columnOptions = new ColumnOptions();
+    columnOptions.AdditionalColumns = new List<SqlColumn>
+    {
+        new SqlColumn { ColumnName = "CorrelationId", DataType = System.Data.SqlDbType.NVarChar, DataLength = 50 }
+    };
+
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
-        .Enrich.WithExceptionDetails();
+        .Enrich.WithExceptionDetails()
+        .WriteTo.Async(a => a.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"))
+        .WriteTo.Async(a => a.File("logs/oleai-log-.txt", rollingInterval: RollingInterval.Day,
+                       outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [CorrId: {CorrelationId}] {Message:lj}{NewLine}{Exception}"))
+        .WriteTo.Async(a => a.MSSqlServer(
+            connectionString: connectionString,
+            sinkOptions: new MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true },
+            columnOptions: columnOptions));
 });
 
 // CORS Config

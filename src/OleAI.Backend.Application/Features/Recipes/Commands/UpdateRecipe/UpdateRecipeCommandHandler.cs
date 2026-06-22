@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using OleAI.Backend.Application.Features.Pantry.Events;
 using OleAI.Backend.Application.Features.Recipes.Constants;
 using OleAI.Backend.Application.Features.Recipes.Rules;
@@ -24,6 +25,7 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
     private readonly IImageService _imageService;
     private readonly IMediator _mediator;
     private readonly IAiRecommendationService _aiRecommendationService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public UpdateRecipeCommandHandler(
         IRecipeRepository recipeRepository,
@@ -33,7 +35,8 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         ILocalLlmService localLlmService,
         IImageService imageService,
         IMediator mediator,
-        IAiRecommendationService aiRecommendationService)
+        IAiRecommendationService aiRecommendationService,
+        IServiceScopeFactory scopeFactory)
     {
         _recipeRepository = recipeRepository;
         _ingredientRequestRepository = ingredientRequestRepository;
@@ -43,6 +46,7 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
         _imageService = imageService;
         _mediator = mediator;
         _aiRecommendationService = aiRecommendationService;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<string> Handle(UpdateRecipeCommand command, CancellationToken cancellationToken)
@@ -154,12 +158,6 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
                 recipe.ForcePublish();
             }
         }
-        else if (recipe.Visibility == RecipeVisibility.Public)
-        {
-            bool isClean = await _localLlmService.CheckRecipeContentForSpamAsync(recipe.Title, recipe.Description, cancellationToken);
-            if (isClean) recipe.PassLlmFilter();
-            else recipe.Reject(RecipeMessages.SpamDetectedAfterUpdate);
-        }
 
         await _recipeRepository.UpdateAsync(recipe);
 
@@ -168,7 +166,74 @@ public class UpdateRecipeCommandHandler : IRequestHandler<UpdateRecipeCommand, s
             await _mediator.Publish(evt, cancellationToken);
         }
 
-        if (recipe.Status == RecipeStatus.Published)
+        if (!isAdmin && recipe.Visibility == RecipeVisibility.Public)
+        {
+            var recipeId = recipe.Id;
+            _ = Task.Run(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var llmService = scope.ServiceProvider.GetRequiredService<ILocalLlmService>();
+                var recipeRepo = scope.ServiceProvider.GetRequiredService<IRecipeRepository>();
+                var aiService = scope.ServiceProvider.GetRequiredService<IAiRecommendationService>();
+
+                try
+                {
+                    var savedRecipe = await recipeRepo.GetAsync(r => r.Id == recipeId);
+                    if (savedRecipe != null && savedRecipe.Status == RecipeStatus.PendingLlmApproval)
+                    {
+                        bool isClean = await llmService.CheckRecipeContentForSpamAsync(savedRecipe.Title, savedRecipe.Description, CancellationToken.None);
+                        if (isClean)
+                            savedRecipe.PassLlmFilter();
+                        else
+                            savedRecipe.Reject(RecipeMessages.SpamDetectedAfterUpdate);
+
+                        await recipeRepo.UpdateAsync(savedRecipe);
+
+                        if (savedRecipe.Status == RecipeStatus.Published)
+                        {
+                            var updatedRecipeWithIngredients = await recipeRepo.GetAsync(
+                                predicate: r => r.Id == savedRecipe.Id,
+                                include: q => q.Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).ThenInclude(i => i.Aliases).Include(r => r.RecipeIngredients).ThenInclude(ri => ri.Ingredient).ThenInclude(i => i.Category).Include(r => r.Interactions));
+
+                            if (updatedRecipeWithIngredients != null)
+                            {
+                                var structuredIngredients = updatedRecipeWithIngredients.RecipeIngredients.Where(ri => ri.Ingredient != null).Select(ri =>
+                                {
+                                    var baseUnit = ri.Ingredient!.UnitFamily switch
+                                    {
+                                        OleAI.Backend.Domain.Enums.MeasurementCategory.Weight => OleAI.Backend.Domain.Enums.MeasurementUnit.Gram,
+                                        OleAI.Backend.Domain.Enums.MeasurementCategory.Volume => OleAI.Backend.Domain.Enums.MeasurementUnit.Milliliter,
+                                        _ => OleAI.Backend.Domain.Enums.MeasurementUnit.Piece
+                                    };
+                                    return new OleAI.Backend.Application.Services.AiRecommendation.RecipeIngredientAiDto
+                                    {
+                                        Id = ri.Ingredient.Id,
+                                        Name = ri.Ingredient.Name,
+                                        Amount = OleAI.Backend.Domain.Services.MeasurementUnitHelper.ConvertAmount((double)ri.Amount, (OleAI.Backend.Domain.Enums.MeasurementUnit)ri.UnitId, baseUnit),
+                                        Unit = baseUnit.ToString(),
+                                        Aliases = ri.Ingredient.Aliases.Select(a => a.AliasName).ToList()
+                                    };
+                                }).ToList();
+
+                                var representativeCategory = updatedRecipeWithIngredients.RecipeIngredients.FirstOrDefault(ri => ri.Ingredient?.Category != null)?.Ingredient?.Category?.Name;
+                                var popularity = updatedRecipeWithIngredients.Interactions?.Count ?? 0;
+
+                                await aiService.SyncRecipeAsync(
+                                    updatedRecipeWithIngredients.Id,
+                                    updatedRecipeWithIngredients.Title,
+                                    structuredIngredients,
+                                    representativeCategory,
+                                    isPublished: true,
+                                    popularity: popularity,
+                                    cancellationToken: CancellationToken.None);
+                            }
+                        }
+                    }
+                }
+                catch (Exception) { }
+            });
+        }
+        else if (recipe.Status == RecipeStatus.Published)
         {
             var updatedRecipeWithIngredients = await _recipeRepository.GetAsync(
                 predicate: r => r.Id == recipe.Id,

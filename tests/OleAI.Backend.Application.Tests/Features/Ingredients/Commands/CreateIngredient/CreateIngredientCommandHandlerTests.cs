@@ -8,6 +8,7 @@ using OleAI.Backend.Application.Features.Ingredients.Dtos.Requests;
 using OleAI.Backend.Application.Features.Ingredients.Dtos.Responses;
 using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 using OleAI.Backend.Domain.Entities;
 using OleAI.Backend.Domain.Enums;
@@ -19,6 +20,7 @@ public class CreateIngredientCommandHandlerTests
 {
     private readonly Mock<IIngredientRepository> _mockIngredientRepository;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<ICacheService> _mockCacheService;
     private readonly IngredientBusinessRules _rules;
     private readonly CreateIngredientCommandHandler _handler;
 
@@ -26,9 +28,10 @@ public class CreateIngredientCommandHandlerTests
     {
         _mockIngredientRepository = new Mock<IIngredientRepository>();
         _mockMapper = new Mock<IMapper>();
+        _mockCacheService = new Mock<ICacheService>();
 
         _rules = new IngredientBusinessRules(_mockIngredientRepository.Object);
-        _handler = new CreateIngredientCommandHandler(_mockIngredientRepository.Object, _mockMapper.Object, _rules);
+        _handler = new CreateIngredientCommandHandler(_mockIngredientRepository.Object, _mockMapper.Object, _rules, _mockCacheService.Object);
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using Hangfire;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OleAI.Backend.Application.Features.Recipes.Commands.AddComment;
@@ -115,10 +117,11 @@ public class RecipesController : BaseController
     /// </summary>
     [HttpPost("sync-all-to-ai")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> SyncAllToAi()
+    public IActionResult SyncAllToAi([FromServices] IBackgroundJobClient backgroundJobClient)
     {
-        var resultMessage = await Mediator.Send(new SyncAllToAiCommand());
-        return Ok(new { Message = resultMessage });
+        var command = new SyncAllToAiCommand();
+        backgroundJobClient.Enqueue<IMediator>(m => m.Send(command, CancellationToken.None));
+        return Accepted(new { Message = "Tüm tariflerin yapay zeka analiz süreci arka planda başlatıldı." });
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using MediatR;
 using OleAI.Backend.Application.Features.Ingredients.Dtos.Responses;
 using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Domain.Entities;
 
 namespace OleAI.Backend.Application.Features.Ingredients.Commands.CreateIngredient
@@ -12,12 +13,14 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.CreateIngredie
         private readonly IIngredientRepository _ingredientRepository;
         private readonly IMapper _mapper;
         private readonly IngredientBusinessRules _businessRules;
+        private readonly ICacheService _cacheService;
 
-        public CreateIngredientCommandHandler(IIngredientRepository ingredientRepository, IMapper mapper, IngredientBusinessRules businessRules)
+        public CreateIngredientCommandHandler(IIngredientRepository ingredientRepository, IMapper mapper, IngredientBusinessRules businessRules, ICacheService cacheService)
         {
             _ingredientRepository = ingredientRepository;
             _mapper = mapper;
             _businessRules = businessRules;
+            _cacheService = cacheService;
         }
         public async Task<CreatedIngredientResponse> Handle(CreateIngredientCommand command, CancellationToken cancellationToken)
         {
@@ -28,6 +31,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.CreateIngredie
             ingredient.SetDefaultExpirationMode(command.Request.DefaultExpirationMode);
             ingredient.SetStaple(command.Request.IsStaple);
             var created = await _ingredientRepository.AddAsync(ingredient);
+            await _cacheService.RemoveAsync("Pantry:AllIngredientsCatalog:v4");
             var response = _mapper.Map<CreatedIngredientResponse>(created);
             return response;
         }
