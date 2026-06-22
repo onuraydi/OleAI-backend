@@ -53,7 +53,7 @@ jobs:
             ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
             Env_SerilogConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
             ConnectionStrings__OleAIConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
-            ConnectionStrings__Redis=redis:6379,abortConnect=false,connectTimeout=10000
+            ConnectionStrings__Redis=oleai_redis:6379,abortConnect=false,connectTimeout=10000
             TokenOptions__Audience=OleAIUsers
             TokenOptions__Issuer=OleAIBackend
             TokenOptions__SecurityKey=${{ secrets.JWT_SECURITY_KEY }}
