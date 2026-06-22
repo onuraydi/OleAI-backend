@@ -48,10 +48,10 @@ public class AnalyzeRecipeWithLlmCommandHandlerTests
             .ReturnsAsync("{\"result\":\"ok\"}");
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Should().Be("Yapay zeka analizi başarıyla tamamlandı.");
+        recipe.LlmReviewResultJson.Should().Be("{\"result\":\"ok\"}");
         recipe.LlmReviewResultJson.Should().Be("{\"result\":\"ok\"}");
         _mockRecipeRepository.Verify(r => r.UpdateAsync(recipe, It.IsAny<CancellationToken>()), Times.Once());
     }
