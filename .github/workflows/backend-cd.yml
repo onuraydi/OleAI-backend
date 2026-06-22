@@ -36,7 +36,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "docker-compose.prod.yml,nginx,monitoring"
+          source: "docker-compose.prod.yml,nginx,monitoring,OleAI-Editor.Modelfile"
           target: "~/deploy"
 
       - name: Deploy to VM
@@ -100,3 +100,17 @@ jobs:
             
             # Nginx ayarları (nginx.conf) değişmiş olabileceği için config'i yeniden yükle
             docker exec oleai_nginx nginx -s reload || true
+            
+            # Ollama modelini güncelle
+            echo "Waiting for Ollama to be ready..."
+            for i in {1..15}; do
+              if docker exec oleai_ollama ollama list >/dev/null 2>&1; then
+                echo "Ollama is ready!"
+                break
+              fi
+              sleep 2
+            done
+            
+            echo "Deploying Ollama model..."
+            docker cp OleAI-Editor.Modelfile oleai_ollama:/tmp/OleAI-Editor.Modelfile
+            docker exec oleai_ollama ollama create oleai-editor -f /tmp/OleAI-Editor.Modelfile

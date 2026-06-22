@@ -2,6 +2,7 @@ using MediatR;
 using OleAI.Backend.Application.Features.IngredientAliases.Constants;
 using OleAI.Backend.Application.Features.IngredientAliases.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 using OleAI.Backend.Core.Repositories.Options;
 
 namespace OleAI.Backend.Application.Features.IngredientAliases.Commands.RestoreIngredientAlias
@@ -10,11 +11,13 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Commands.RestoreI
     {
         private readonly IIngredientAliasRepository _ingredientAliasRepository;
         private readonly IngredientAliasBusinessRules _ingredientAliasBusinessRules;
+        private readonly ICacheService _cacheService;
 
-        public RestoreIngredientAliasCommandHandler(IIngredientAliasRepository ingredientAliasRepository, IngredientAliasBusinessRules ingredientAliasBusinessRules)
+        public RestoreIngredientAliasCommandHandler(IIngredientAliasRepository ingredientAliasRepository, IngredientAliasBusinessRules ingredientAliasBusinessRules, ICacheService cacheService)
         {
             _ingredientAliasRepository = ingredientAliasRepository;
             _ingredientAliasBusinessRules = ingredientAliasBusinessRules;
+            _cacheService = cacheService;
         }
 
         public async Task<string> Handle(RestoreIngredientAliasCommand request, CancellationToken cancellationToken)
@@ -32,6 +35,7 @@ namespace OleAI.Backend.Application.Features.IngredientAliases.Commands.RestoreI
 
             ingredientAlias!.DeletedDate = null;
             await _ingredientAliasRepository.UpdateAsync(ingredientAlias!);
+            await _cacheService.RemoveAsync("Pantry:AllIngredientsCatalog:v4");
 
             return "Eşanlamlı kelime başarıyla geri getirildi.";
         }

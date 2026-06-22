@@ -18,7 +18,7 @@ namespace OleAI.Backend.Application.Services.Llm
             _httpClient = httpClient;
             _settings = settings.Value;
             _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
-            _httpClient.Timeout = TimeSpan.FromMinutes(2);
+            _httpClient.Timeout = TimeSpan.FromMinutes(5); // Artırıldı
             _ingredientRepository = ingredientRepository;
         }
 
@@ -41,7 +41,8 @@ namespace OleAI.Backend.Application.Services.Llm
 
             try
             {
-                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken);
+                var systemPrompt = "Sen kıdemli bir mutfak ve veri tabanı asistanısın. Kullanıcının girdiği malzeme adını analiz edip SADECE JSON formatında yanıt vermelisin.";
+                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken, systemPromptOverride: systemPrompt);
                 if (string.IsNullOrEmpty(llmOutput)) return GenerateErrorJson("LLM boş yanıt döndü");
                 JsonDocument.Parse(llmOutput);
                 return llmOutput;
@@ -70,7 +71,8 @@ namespace OleAI.Backend.Application.Services.Llm
 
             try
             {
-                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken);
+                var systemPrompt = "Sen bir içerik moderatörüsün. Küfür, spam, anlamsız tuşlamalar veya yiyecek dışı tehlikeli bir içerik barındırıp barındırmadığını kontrol et.";
+                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken, systemPromptOverride: systemPrompt);
                 if (string.IsNullOrEmpty(llmOutput)) return false;
 
                 using var outputDoc = JsonDocument.Parse(llmOutput);
@@ -86,133 +88,63 @@ namespace OleAI.Backend.Application.Services.Llm
 
         public async Task<string> AnalyzeRecipeContentAsync(string description, List<string> steps, CancellationToken cancellationToken = default)
         {
-            var phase1SystemPrompt = @"You are a senior Turkish culinary editor. Your task is to analyze and correct the grammar of a recipe description.
-
-CRITICAL RULES:
-1. Fix Turkish grammar, spelling, capitalization, and punctuation.
-2. CULINARY DICTIONARY (Fix these common typos): 'suvan'->'soğan', 'imce'->'ince', 'yımırta'->'yumurta', 'domatiz'->'domates', 'püskevit'->'bisküvi', 'sarmısak'->'sarımsak'.
-3. DO NOT hallucinate, change the meaning, or replace culinary equipment/ingredients with unrelated words.
-4. Pay special attention to Turkish characters 'I/ı' and 'İ/i'.
-5. If it contains advertisements, links, or spam, set 'isApproved' to false and state 'Spam'.
-6. If it contains profanity or complete gibberish (e.g. 'asdfg'), set 'isApproved' to false and 'isToxic' to true.
-7. RESPOND STRICTLY IN JSON FORMAT using the structure below. Do NOT output markdown formatting like ```json.
-
-EXPECTED JSON:
-{
-  ""reasoning"": ""Explain what typos and grammatical errors you found and why you are correcting them."",
-  ""isApproved"": boolean,
-  ""isToxic"": boolean,
-  ""correctedDescription"": ""The grammatically corrected description, or null if rejected"",
-  ""rejectionReason"": ""Reason if rejected, or null""
-}
-
---- EXAMPLES ---
-
-INPUT:
-Lütfen açıklamayı analiz et ve düzelt:
-Açıklama:
-Bugun size harıka bir suvanli yımırta tarifi verecegim. cok leziz oluyor.
-
-JSON OUTPUT:
-{
-  ""reasoning"": ""The text contains common typos like 'harıka' (harika), 'suvanli' (soğanlı), 'yımırta' (yumurta), 'verecegim' (vereceğim), 'cok' (çok). I will fix these based on the culinary dictionary and correct the punctuation by capitalizing the first letters of sentences."",
-  ""isApproved"": true,
-  ""isToxic"": false,
-  ""correctedDescription"": ""Bugün size harika bir soğanlı yumurta tarifi vereceğim. Çok leziz oluyor."",
-  ""rejectionReason"": null
-}
-
-INPUT:
-Lütfen açıklamayı analiz et ve düzelt:
-Açıklama:
-asdfghjkl www.kumar.com a girin
-
-JSON OUTPUT:
-{
-  ""reasoning"": ""The text contains gibberish 'asdfghjkl' and a spam link. It must be rejected."",
-  ""isApproved"": false,
-  ""isToxic"": true,
-  ""correctedDescription"": null,
-  ""rejectionReason"": ""Spam and gibberish content detected.""
-}";
-
             var phase1UserPrompt = $"Lütfen açıklamayı analiz et ve düzelt:\nAçıklama:\n{description}";
 
             try
             {
-                var phase1Output = await ExecuteOllamaRequestAsync(phase1UserPrompt, cancellationToken, systemPromptOverride: phase1SystemPrompt);
-                if (string.IsNullOrEmpty(phase1Output)) return "{\"isApproved\":false,\"isToxic\":false,\"correctedDescription\":null,\"correctedSteps\":[],\"rejectionReason\":\"LLM boş yanıt döndü\"}";
+                var phase1Output = await ExecuteOllamaRequestAsync(phase1UserPrompt, cancellationToken, systemPromptOverride: null);
+                if (string.IsNullOrEmpty(phase1Output))
+                {
+                    var emptyObj = new { isApproved = false, isToxic = false, correctedDescription = (string?)null, correctedSteps = new List<string>(), rejectionReason = "LLM boş yanıt döndü" };
+                    return JsonSerializer.Serialize(emptyObj);
+                }
+
+                // Clean markdown ticks if LLM hallucinated them
+                phase1Output = phase1Output.Replace("```json", "").Replace("```", "").Trim();
 
                 using var doc = JsonDocument.Parse(phase1Output);
-                var isApproved = doc.RootElement.GetProperty("isApproved").GetBoolean();
 
-                if (!isApproved)
+                bool isApproved = true;
+                if (doc.RootElement.TryGetProperty("isApproved", out var approvedProp) && (approvedProp.ValueKind == JsonValueKind.True || approvedProp.ValueKind == JsonValueKind.False))
                 {
-                    // Eğer onaylanmadıysa direkt bu sonucu correctedSteps ekleyerek dön
-                    var isToxic = doc.RootElement.TryGetProperty("isToxic", out var toxicProp) && toxicProp.GetBoolean();
-                    var rejectionReason = doc.RootElement.TryGetProperty("rejectionReason", out var reasonProp) ? reasonProp.GetString() : "Bilinmeyen Sebep";
+                    isApproved = approvedProp.GetBoolean();
+                }
 
+                bool isToxic = false;
+                if (doc.RootElement.TryGetProperty("isToxic", out var toxicProp) && (toxicProp.ValueKind == JsonValueKind.True || toxicProp.ValueKind == JsonValueKind.False))
+                {
+                    isToxic = toxicProp.GetBoolean();
+                }
+
+                string? rejectionReason = doc.RootElement.TryGetProperty("rejectionReason", out var reasonProp) && reasonProp.ValueKind == JsonValueKind.String ? reasonProp.GetString() : null;
+
+                if (!isApproved || isToxic)
+                {
                     var rejectedResult = new
                     {
                         isApproved = false,
                         isToxic = isToxic,
                         correctedDescription = (string?)null,
                         correctedSteps = new List<string>(),
-                        rejectionReason = rejectionReason
+                        rejectionReason = rejectionReason ?? "Yapay zeka bu içeriği onaylamadı."
                     };
                     return JsonSerializer.Serialize(rejectedResult);
                 }
 
-                var correctedDescription = doc.RootElement.GetProperty("correctedDescription").GetString();
+                string? correctedDescription = doc.RootElement.TryGetProperty("correctedDescription", out var descProp) && descProp.ValueKind == JsonValueKind.String ? descProp.GetString() : description;
 
                 // Phase 2: Adımları tek tek analiz et
                 var correctedSteps = new List<string>();
-                var stepSystemPrompt = @"You are a senior Turkish culinary editor. Your job is to correct a single recipe step.
-
-CRITICAL RULES:
-1. ONLY fix grammar, spelling, and punctuation. Convert verbs to professional imperative mood (e.g., 'doğra' -> 'doğrayın', 'koyuyorum' -> 'koyun').
-2. CULINARY DICTIONARY (Fix these common typos): 'suvan'->'soğan', 'imce'->'ince', 'yımırta'->'yumurta', 'domatiz'->'domates', 'püskevit'->'bisküvi', 'sarmısak'->'sarımsak', 'pampiş'->'pembe'.
-3. DO NOT change the vocabulary, meaning, or cooking method.
-4. DO NOT hallucinate or change objects. A pan ('tava') must stay a pan, it must NOT become a plate ('tabak').
-5. Pay special attention to correct Turkish characters 'I/ı' and 'İ/i'.
-6. RESPOND STRICTLY IN JSON FORMAT using the structure below. Do NOT output markdown formatting like ```json.
-
-EXPECTED JSON:
-{
-  ""reasoning"": ""Explain the grammatical errors and typos you found, and how you will correct them to an imperative mood."",
-  ""correctedStep"": ""The grammatically corrected step text""
-}
-
---- EXAMPLES ---
-
-INPUT:
-Lütfen adımı dilbilgisi kurallarına göre düzelt:
-suvanları imce imce doğrayıp zeytinyaginda hafif pembeleşene kadar kavuruyorum.
-
-JSON OUTPUT:
-{
-  ""reasoning"": ""I identified typos: 'suvanları' (soğanları), 'imce imce' (ince ince), 'zeytinyaginda' (zeytinyağında). The verb 'kavuruyorum' is in first-person present continuous; I will change it to the professional imperative 'kavurun'. I will capitalize the first letter."",
-  ""correctedStep"": ""Soğanları ince ince doğrayıp zeytinyağında hafif pembeleşene kadar kavurun.""
-}
-
-INPUT:
-Lütfen adımı dilbilgisi kurallarına göre düzelt:
-sonra onlari yagi koydugunuz tavaya alip karamelize edin.
-
-JSON OUTPUT:
-{
-  ""reasoning"": ""Typos identified: 'onlari' (onları), 'yagi' (yağı), 'koydugunuz' (koyduğunuz), 'alip' (alıp). The verb 'karamelize edin' is already in the correct imperative form. I will fix the Turkish characters and capitalize the first letter. I will not change 'tavaya' to another word."",
-  ""correctedStep"": ""Sonra onları yağı koyduğunuz tavaya alıp karamelize edin.""
-}";
                 foreach (var step in steps)
                 {
                     var stepUserPrompt = $"Lütfen adımı dilbilgisi kurallarına göre düzelt:\n{step}";
                     try
                     {
-                        var stepOutput = await ExecuteOllamaRequestAsync(stepUserPrompt, cancellationToken, systemPromptOverride: stepSystemPrompt);
+                        var stepOutput = await ExecuteOllamaRequestAsync(stepUserPrompt, cancellationToken, systemPromptOverride: null);
 
                         if (!string.IsNullOrEmpty(stepOutput))
                         {
+                            stepOutput = stepOutput.Replace("```json", "").Replace("```", "").Trim();
                             using var stepDoc = JsonDocument.Parse(stepOutput);
                             if (stepDoc.RootElement.TryGetProperty("correctedStep", out var prop) && prop.ValueKind == JsonValueKind.String)
                             {
@@ -249,26 +181,45 @@ JSON OUTPUT:
             }
             catch (Exception ex)
             {
-                return $"{{\"isApproved\":false,\"isToxic\":false,\"correctedDescription\":null,\"correctedSteps\":[],\"rejectionReason\":\"Hata: {ex.Message.Replace("\"", "'")}\"}}";
+                var errorObj = new
+                {
+                    isApproved = false,
+                    isToxic = false,
+                    correctedDescription = (string?)null,
+                    correctedSteps = new List<string>(),
+                    rejectionReason = $"Hata: {ex.Message}"
+                };
+                return JsonSerializer.Serialize(errorObj);
             }
         }
 
         private async Task<string?> ExecuteOllamaRequestAsync(string prompt, CancellationToken cancellationToken, string? systemPromptOverride = null)
         {
-            var requestPayload = new
+            object requestPayload;
+
+            if (!string.IsNullOrWhiteSpace(systemPromptOverride))
             {
-                model = _settings.ModelName,
-                system = systemPromptOverride ?? _settings.SystemPrompt,
-                prompt = prompt,
-                stream = false,
-                format = "json",
-                options = new
+                requestPayload = new
                 {
-                    temperature = 0.1,
-                    top_p = 0.9,
-                    top_k = 40
-                }
-            };
+                    model = _settings.ModelName,
+                    system = systemPromptOverride,
+                    prompt = prompt,
+                    stream = false,
+                    format = "json",
+                    options = new { temperature = 0.0, top_p = 0.9, top_k = 40 }
+                };
+            }
+            else
+            {
+                requestPayload = new
+                {
+                    model = _settings.ModelName,
+                    prompt = prompt,
+                    stream = false,
+                    format = "json",
+                    options = new { temperature = 0.0, top_p = 0.9, top_k = 40 }
+                };
+            }
 
             var content = new StringContent(JsonSerializer.Serialize(requestPayload), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("/api/generate", content, cancellationToken);
