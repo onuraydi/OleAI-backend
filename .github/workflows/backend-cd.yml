@@ -54,6 +54,7 @@ jobs:
             Env_SerilogConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
             ConnectionStrings__OleAIConnectionString=${{ secrets.SQL_CONNECTION_STRING }}
             ConnectionStrings__Redis=oleai_redis:6379,abortConnect=false,connectTimeout=10000
+            BACKEND_URL=http://backend:8080
             TokenOptions__Audience=OleAIUsers
             TokenOptions__Issuer=OleAIBackend
             TokenOptions__SecurityKey=${{ secrets.JWT_SECURITY_KEY }}

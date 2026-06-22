@@ -130,11 +130,11 @@ public class RecipesController : BaseController
     /// </summary>
     [HttpPost("{id}/analyze-with-ai")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> AnalyzeWithAi([FromRoute] Guid id)
+    public IActionResult AnalyzeWithAi([FromRoute] Guid id, [FromServices] IBackgroundJobClient backgroundJobClient)
     {
         var command = new AnalyzeRecipeWithLlmCommand { RecipeId = id };
-        var resultMessage = await Mediator.Send(command);
-        return Ok(new { Message = resultMessage });
+        backgroundJobClient.Enqueue<IMediator>(m => m.Send(command, CancellationToken.None));
+        return Accepted(new { Message = "Tarif analiz işlemi arka plana alındı. Sayfayı bir süre sonra yenileyiniz." });
     }
 
     /// <summary>

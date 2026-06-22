@@ -6,7 +6,7 @@ using OleAI.Backend.Core.CrossCuttingConcerns.Exceptions.Types;
 
 namespace OleAI.Backend.Application.Features.Recipes.Commands.AnalyzeRecipeWithLlm
 {
-    public class AnalyzeRecipeWithLlmCommandHandler : IRequestHandler<AnalyzeRecipeWithLlmCommand, string>
+    public class AnalyzeRecipeWithLlmCommandHandler : IRequestHandler<AnalyzeRecipeWithLlmCommand>
     {
         private readonly IRecipeRepository _recipeRepository;
         private readonly ILocalLlmService _localLlmService;
@@ -17,7 +17,7 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.AnalyzeRecipeWithL
             _localLlmService = localLlmService;
         }
 
-        public async Task<string> Handle(AnalyzeRecipeWithLlmCommand request, CancellationToken cancellationToken)
+        public async Task Handle(AnalyzeRecipeWithLlmCommand request, CancellationToken cancellationToken)
         {
             var recipe = await _recipeRepository.GetAsync(
                 predicate: r => r.Id == request.RecipeId,
@@ -38,8 +38,6 @@ namespace OleAI.Backend.Application.Features.Recipes.Commands.AnalyzeRecipeWithL
             recipe.SetLlmReviewResult(llmResultJson);
 
             await _recipeRepository.UpdateAsync(recipe);
-
-            return "Yapay zeka analizi başarıyla tamamlandı.";
         }
     }
 }
