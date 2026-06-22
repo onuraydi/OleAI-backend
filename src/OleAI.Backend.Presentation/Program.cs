@@ -142,7 +142,16 @@ builder.Services.AddHangfire(configuration => configuration
 builder.Services.AddHangfireServer();
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-        ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+{
+    var redisConnString = builder.Configuration.GetConnectionString("Redis") ?? "redis:6379";
+    var options = ConfigurationOptions.Parse(redisConnString);
+    options.AbortOnConnectFail = false;
+    options.ConnectRetry = 5;
+    options.ConnectTimeout = 10000;
+    options.SyncTimeout = 10000;
+    options.ResolveDns = true;
+    return ConnectionMultiplexer.Connect(options);
+});
 
 // CORE KATMANI SERVİSLERİ
 builder.Services.AddScoped<ICacheService, RedisCacheManager>();
