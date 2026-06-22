@@ -88,21 +88,38 @@ namespace OleAI.Backend.Application.Services.Llm
 
         public async Task<string> AnalyzeRecipeContentAsync(string description, List<string> steps, CancellationToken cancellationToken = default)
         {
-            var phase1UserPrompt = $"Lütfen açıklamayı analiz et ve düzelt:\nAçıklama:\n{description}";
+            // Tüm tarifi (açıklama + adımlar) TEK BİR istekte gönder.
+            // Böylece 8 ayrı istek yerine 1 istek atılır ve ~80 dk yerine ~12 dk sürer.
+            var stepsBlock = new StringBuilder();
+            for (int i = 0; i < steps.Count; i++)
+            {
+                stepsBlock.AppendLine($"Adım {i + 1}: {steps[i]}");
+            }
+
+            var userPrompt = $@"Lütfen aşağıdaki tarif açıklamasını ve tüm adımlarını analiz edip düzelt.
+
+Açıklama:
+{description}
+
+Adımlar:
+{stepsBlock}
+
+YANIT FORMATI (SADECE JSON, başka hiçbir şey yazma):
+{{""isApproved"": true/false, ""isToxic"": true/false, ""correctedDescription"": ""düzeltilmiş açıklama"", ""correctedSteps"": [""düzeltilmiş adım 1"", ""düzeltilmiş adım 2"", ...], ""rejectionReason"": null veya ""red sebebi""}}";
 
             try
             {
-                var phase1Output = await ExecuteOllamaRequestAsync(phase1UserPrompt, cancellationToken, systemPromptOverride: null);
-                if (string.IsNullOrEmpty(phase1Output))
+                var llmOutput = await ExecuteOllamaRequestAsync(userPrompt, cancellationToken, systemPromptOverride: null);
+                if (string.IsNullOrEmpty(llmOutput))
                 {
                     var emptyObj = new { isApproved = false, isToxic = false, correctedDescription = (string?)null, correctedSteps = new List<string>(), rejectionReason = "LLM boş yanıt döndü" };
                     return JsonSerializer.Serialize(emptyObj);
                 }
 
-                // Clean markdown ticks if LLM hallucinated them
-                phase1Output = phase1Output.Replace("```json", "").Replace("```", "").Trim();
+                // Markdown bloklarını temizle
+                llmOutput = llmOutput.Replace("```json", "").Replace("```", "").Trim();
 
-                using var doc = JsonDocument.Parse(phase1Output);
+                using var doc = JsonDocument.Parse(llmOutput);
 
                 bool isApproved = true;
                 if (doc.RootElement.TryGetProperty("isApproved", out var approvedProp) && (approvedProp.ValueKind == JsonValueKind.True || approvedProp.ValueKind == JsonValueKind.False))
@@ -133,41 +150,22 @@ namespace OleAI.Backend.Application.Services.Llm
 
                 string? correctedDescription = doc.RootElement.TryGetProperty("correctedDescription", out var descProp) && descProp.ValueKind == JsonValueKind.String ? descProp.GetString() : description;
 
-                // Phase 2: Adımları tek tek analiz et
+                // Düzeltilmiş adımları JSON dizisinden oku
                 var correctedSteps = new List<string>();
-                foreach (var step in steps)
+                if (doc.RootElement.TryGetProperty("correctedSteps", out var stepsProp) && stepsProp.ValueKind == JsonValueKind.Array)
                 {
-                    var stepUserPrompt = $"Lütfen adımı dilbilgisi kurallarına göre düzelt:\n{step}";
-                    try
+                    foreach (var stepElement in stepsProp.EnumerateArray())
                     {
-                        var stepOutput = await ExecuteOllamaRequestAsync(stepUserPrompt, cancellationToken, systemPromptOverride: null);
-
-                        if (!string.IsNullOrEmpty(stepOutput))
-                        {
-                            stepOutput = stepOutput.Replace("```json", "").Replace("```", "").Trim();
-                            using var stepDoc = JsonDocument.Parse(stepOutput);
-                            if (stepDoc.RootElement.TryGetProperty("correctedStep", out var prop) && prop.ValueKind == JsonValueKind.String)
-                            {
-                                correctedSteps.Add(prop.GetString()!);
-                            }
-                            else
-                            {
-                                correctedSteps.Add(step);
-                            }
-                        }
-                        else
-                        {
-                            correctedSteps.Add(step);
-                        }
-                    }
-                    catch
-                    {
-                        // Fallback to original step if LLM fails for this specific step
-                        correctedSteps.Add(step);
+                        correctedSteps.Add(stepElement.GetString() ?? "");
                     }
                 }
 
-                // Final JSON
+                // Eğer LLM adım sayısını yanlış döndürdüyse, orijinal adımları kullan
+                if (correctedSteps.Count != steps.Count)
+                {
+                    correctedSteps = steps;
+                }
+
                 var finalResult = new
                 {
                     isApproved = true,
