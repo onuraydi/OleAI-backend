@@ -3,6 +3,7 @@ using MediatR;
 using OleAI.Backend.Application.Features.Ingredients.Constants;
 using OleAI.Backend.Application.Features.Ingredients.Rules;
 using OleAI.Backend.Application.Services.Repositories;
+using OleAI.Backend.Core.CrossCuttingConcerns.Caching;
 
 namespace OleAI.Backend.Application.Features.Ingredients.Commands.UpdateIngredient
 {
@@ -11,12 +12,14 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.UpdateIngredie
         private readonly IIngredientRepository _ingredientRepository;
         private readonly IMapper _mapper;
         private readonly IngredientBusinessRules _ingredientBusinessRules;
+        private readonly ICacheService _cacheService;
 
-        public UpdateIngredientCommandHandler(IIngredientRepository ingredientRepository, IMapper mapper, IngredientBusinessRules ingredientBusinessRules)
+        public UpdateIngredientCommandHandler(IIngredientRepository ingredientRepository, IMapper mapper, IngredientBusinessRules ingredientBusinessRules, ICacheService cacheService)
         {
             _ingredientRepository = ingredientRepository;
             _mapper = mapper;
             _ingredientBusinessRules = ingredientBusinessRules;
+            _cacheService = cacheService;
         }
 
         public async Task<string> Handle(UpdateIngredientCommand command, CancellationToken cancellationToken)
@@ -32,6 +35,7 @@ namespace OleAI.Backend.Application.Features.Ingredients.Commands.UpdateIngredie
             ingredient.SetDefaultExpirationMode(command.Request.DefaultExpirationMode);
             ingredient.SetStaple(command.Request.IsStaple);
             await _ingredientRepository.UpdateAsync(ingredient!);
+            await _cacheService.RemoveAsync("Pantry:AllIngredientsCatalog:v4");
 
             return IngredientMessages.IngredientUpdatedMessage;
         }

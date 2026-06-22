@@ -3,6 +3,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using OleAI.Backend.Application.Features.Recipes.Commands.UpdateRecipe;
 using OleAI.Backend.Application.Features.Recipes.Constants;
@@ -49,7 +50,8 @@ public class UpdateRecipeCommandHandlerTests
             _mockLocalLlmService.Object,
             _mockImageService.Object,
             new Mock<IMediator>().Object,
-            new Mock<IAiRecommendationService>().Object);
+            new Mock<IAiRecommendationService>().Object,
+            new Mock<IServiceScopeFactory>().Object);
     }
 
     [Fact]

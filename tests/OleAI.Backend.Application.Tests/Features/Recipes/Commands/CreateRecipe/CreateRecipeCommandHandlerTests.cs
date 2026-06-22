@@ -7,6 +7,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using OleAI.Backend.Application.Features.Ingredients.Dtos.Requests;
 using OleAI.Backend.Application.Features.Recipes.Commands.CreateRecipe;
@@ -55,7 +56,8 @@ public class CreateRecipeCommandHandlerTests
             _recipeBusinessRules, // Needs full setup if used, but CheckIfIngredientsExistAsync is bypassed if we mock appropriately, wait CheckIfIngredientsExistAsync uses IngredientRepository. We should mock that!
             _mockLocalLlmService.Object,
             _mockMediator.Object,
-            _mockAiRecommendationService.Object
+            _mockAiRecommendationService.Object,
+            new Mock<IServiceScopeFactory>().Object
         );
     }
 
@@ -80,7 +82,8 @@ public class CreateRecipeCommandHandlerTests
             new RecipeBusinessRules(mockIngredientRepo.Object, new Mock<IRecipeCommentRepository>().Object),
             _mockLocalLlmService.Object,
             _mockMediator.Object,
-            _mockAiRecommendationService.Object
+            _mockAiRecommendationService.Object,
+            new Mock<IServiceScopeFactory>().Object
         );
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handlerWithMockedRules.Handle(command, CancellationToken.None));
@@ -132,7 +135,8 @@ public class CreateRecipeCommandHandlerTests
             new RecipeBusinessRules(mockIngredientRepo.Object, new Mock<IRecipeCommentRepository>().Object),
             _mockLocalLlmService.Object,
             _mockMediator.Object,
-            _mockAiRecommendationService.Object
+            _mockAiRecommendationService.Object,
+            new Mock<IServiceScopeFactory>().Object
         );
 
         _mockImageService.Setup(s => s.UploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
