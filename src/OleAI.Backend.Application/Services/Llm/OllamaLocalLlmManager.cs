@@ -96,16 +96,17 @@ namespace OleAI.Backend.Application.Services.Llm
                 stepsBlock.AppendLine($"Adım {i + 1}: {steps[i]}");
             }
 
-            var userPrompt = $@"Lütfen aşağıdaki tarif açıklamasını ve tüm adımlarını analiz edip düzelt.
+            var userPrompt = $@"Aşağıda bir tarif var. İki bölümden oluşuyor: AÇIKLAMA ve ADIMLAR.
+Her iki bölümü de ayrı ayrı düzelt.
 
-Açıklama:
+=== AÇIKLAMA (sadece bu metni correctedDescription alanına yaz) ===
 {description}
 
-Adımlar:
+=== ADIMLAR (her adımı correctedSteps dizisine AYRI AYRI yaz, toplam {steps.Count} adet olmalı) ===
 {stepsBlock}
-
-YANIT FORMATI (SADECE JSON, başka hiçbir şey yazma):
-{{""isApproved"": true/false, ""isToxic"": true/false, ""correctedDescription"": ""düzeltilmiş açıklama"", ""correctedSteps"": [""düzeltilmiş adım 1"", ""düzeltilmiş adım 2"", ...], ""rejectionReason"": null veya ""red sebebi""}}";
+=== YANIT ===
+SADECE JSON döndür. correctedDescription alanına YALNIZCA açıklama metnini yaz. correctedSteps dizisine YALNIZCA adımları yaz. İkisini BİRBİRİNE KARIŞTIRMA.
+{{""isApproved"": true/false, ""isToxic"": true/false, ""correctedDescription"": ""sadece açıklama metni"", ""correctedSteps"": [""adım 1"", ""adım 2"", ...], ""rejectionReason"": null}}";
 
             try
             {
