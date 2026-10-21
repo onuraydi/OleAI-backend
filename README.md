@@ -15,7 +15,7 @@
 
 ---
 
-## 📖 Proje Hakkında
+##Proje Hakkında
 
 **OleAI Backend**, kullanıcıların mutfak kilerlerindeki malzemeleri (son kullanma tarihleri ve ölçü birimleriyle) takip etmelerini sağlayan, ellerindeki malzemelere, alerjilerine, diyet tercihlerine ve sevmedikleri malzemelere göre **Yapay Zeka (AI) destekli tarif önerileri** sunan kurumsal ölçekli bir RESTful API servisidir.
 
@@ -23,22 +23,22 @@ Sistem; tarif oluşturma aşamasında yerel büyük dil modelleri (**Ollama - `O
 
 ---
 
-## ✨ Temel Özellikler
+##Temel Özellikler
 
-* **🧠 AI Tarif Öneri & Kullanıcı Vektör Entegrasyonu:** Kullanıcının kilerindeki malzemeler, alerji kısıtlamaları (`AllergyRestrictions`), diyet tercihleri (`DietaryPreferences`) ve sevmediği malzemeler (`DislikedIngredients`) harmanlanarak Python tabanlı AI öneri motoru ile haberleşilir.
-* **🤖 Yerel LLM ile Tarif Analizi (Ollama):** `OleAI-Editor.Modelfile` ile özelleştirilmiş yerel LLM modeli sayesinde tarif metinleri, adımları ve malzeme tutarlılıkları otomatik olarak analiz edilir (`AnalyzeRecipeWithLlm`).
-* **🥫 Akıllı Kiler (Pantry) ve Birim Dönüştürme:** Gram, mililitre, adet, su bardağı gibi farklı ölçü birimleri (`MeasurementUnitHelper`) arasında otomatik dönüşüm yapılır. Kilerde olmayan malzemeler için kullanıcılar malzeme talebi (`IngredientRequest`) oluşturabilir.
-* **🔄 Event-Driven Stok ve Alışveriş Listesi Senkronizasyonu:**
-  * Kullanıcı bir tarifi pişirmeye başladığında (`RecipeConsumedEvent`), kullanılan miktarlar kilerden otomatik düşülür (`InventoryDeductionEventHandler`).
-  * Kilerde tükenen ürünler (`IngredientDepletedEvent`) otomatik olarak alışveriş listesine eklenir (`ShoppingListEventHandler`).
-  * Alışveriş listesinden satın alınan ürünler (`ItemPurchasedEvent`) tek tıkla kilere geri aktarılır (`PantryAdditionEventHandler`).
-* **⏰ Arka Plan İşlemleri ve Bildirimler (Hangfire & Firebase FCM):** `ExpirationNotifierJob` ile son kullanma tarihi yaklaşan kiler ürünleri düzenli taranır ve kullanıcının mobil cihazlarına (`UserDevice`) Firebase Cloud Messaging üzerinden anlık bildirim gönderilir.
-* **🛡️ Gelişmiş Kimlik Doğrulama & Güvenlik:** JWT Access/Refresh Token rotasyonu, e-posta OTP doğrulaması (`OtpHelper`), rol bazlı yetkilendirme (`Admin`, `User`), hesap kilitleme/banlama mekanizmaları.
-* **📊 Gözlemlenebilirlik (Observability) ve Loglama:** `CorrelationIdMiddleware` ile uçtan uca istek takibi, veritabanı ve dosya tabanlı sistem logları (`AdminLogs`), Prometheus sağlık ve metrik izleyicisi (`HealthCheckMetricsService`).
+* **AI Tarif Öneri & Kullanıcı Vektör Entegrasyonu:** Kullanıcının kilerindeki malzemeler, alerji kısıtlamaları (`AllergyRestrictions`), diyet tercihleri (`DietaryPreferences`) ve sevmediği malzemeler (`DislikedIngredients`) harmanlanarak Python tabanlı AI öneri motoru ile haberleşilir.
+* **Yerel LLM ile Tarif Analizi (Ollama):** `OleAI-Editor.Modelfile` ile özelleştirilmiş yerel LLM modeli sayesinde tarif metinleri, adımları ve malzeme tutarlılıkları otomatik olarak analiz edilir (`AnalyzeRecipeWithLlm`).
+* **Akıllı Kiler (Pantry) ve Birim Dönüştürme:** Gram, mililitre, adet, su bardağı gibi farklı ölçü birimleri (`MeasurementUnitHelper`) arasında otomatik dönüşüm yapılır. Kilerde olmayan malzemeler için kullanıcılar malzeme talebi (`IngredientRequest`) oluşturabilir.
+* **Event-Driven Stok ve Alışveriş Listesi Senkronizasyonu:**
+  *Kullanıcı bir tarifi pişirmeye başladığında (`RecipeConsumedEvent`), kullanılan miktarlar kilerden otomatik düşülür (`InventoryDeductionEventHandler`).
+  *Kilerde tükenen ürünler (`IngredientDepletedEvent`) otomatik olarak alışveriş listesine eklenir (`ShoppingListEventHandler`).
+  *Alışveriş listesinden satın alınan ürünler (`ItemPurchasedEvent`) tek tıkla kilere geri aktarılır (`PantryAdditionEventHandler`).
+* **Arka Plan İşlemleri ve Bildirimler (Hangfire & Firebase FCM):** `ExpirationNotifierJob` ile son kullanma tarihi yaklaşan kiler ürünleri düzenli taranır ve kullanıcının mobil cihazlarına (`UserDevice`) Firebase Cloud Messaging üzerinden anlık bildirim gönderilir.
+* **Gelişmiş Kimlik Doğrulama & Güvenlik:** JWT Access/Refresh Token rotasyonu, e-posta OTP doğrulaması (`OtpHelper`), rol bazlı yetkilendirme (`Admin`, `User`), hesap kilitleme/banlama mekanizmaları.
+* **Gözlemlenebilirlik (Observability) ve Loglama:** `CorrelationIdMiddleware` ile uçtan uca istek takibi, veritabanı ve dosya tabanlı sistem logları (`AdminLogs`), Prometheus sağlık ve metrik izleyicisi (`HealthCheckMetricsService`).
 
 ---
 
-## 🏗️ Mimari ve Teknoloji Yığını
+##Mimari ve Teknoloji Yığını
 
 Proje, **Clean Architecture (Temiz Mimari)** ve **CQRS (Command Query Responsibility Segregation)** prensiplerine sıkı sıkıya bağlı kalınarak 4 ana katmanda geliştirilmiştir:
 
@@ -69,7 +69,7 @@ OleAI-backend/
 
 ---
 
-## 🚀 Kurulum ve Çalıştırma (Getting Started)
+##Kurulum ve Çalıştırma (Getting Started)
 
 Projeyi yerel ortamınızda **Docker ile (Önerilen)** veya **.NET CLI ile** ayağa kaldırabilirsiniz.
 
@@ -96,7 +96,7 @@ cp .env.example .env
 
 `.env` dosyasını açarak veritabanı bağlantı cümlenizi, JWT anahtarınızı, Redis, Cloudinary ve SMTP ayarlarınızı kendi ortamınıza göre doldurun.
 
-> **⚠️ Firebase Bildirimleri İçin Önemli Not:**
+> **Firebase Bildirimleri İçin Önemli Not:**
 > Push Notification servisinin çalışması için Firebase Console üzerinden aldığınız Service Account JSON dosyasını `src/OleAI.Backend.Presentation/firebase-adminsdk.json` yoluna ekleyin (Bu dosya güvenlik gereği `.gitignore` içerisindedir, asla commit etmeyin).
 
 ### 3. Yerel LLM Modelini (Ollama) Hazırlayın
@@ -148,7 +148,7 @@ dotnet run --project src/OleAI.Backend.Presentation
 
 ---
 
-## 🧪 Testleri Çalıştırma
+##Testleri Çalıştırma
 
 Projenin tüm katmanları (`Core`, `Domain`, `Application`, `Persistence`, `Presentation`) kapsamlı birim testlerine sahiptir. Testleri çalıştırmak için:
 
@@ -158,7 +158,7 @@ dotnet test src/OleAI.Backend.sln --configuration Release
 
 ---
 
-## 📚 API Dokümantasyonu ve Uç Noktalar (Endpoints)
+##API Dokümantasyonu ve Uç Noktalar (Endpoints)
 
 Uygulama ayağa kalktıktan sonra interaktif **Swagger UI** arayüzüne aşağıdaki adresten ulaşabilirsiniz:
 * **Swagger UI:** `http://localhost:<PORT>/swagger`
@@ -177,7 +177,7 @@ Uygulama ayağa kalktıktan sonra interaktif **Swagger UI** arayüzüne aşağı
 
 ---
 
-## 🪝 Git Kancaları (Husky.Net)
+##Git Kancaları (Husky.Net)
 
 Projede kod kalitesini korumak adına `.husky` üzerinden `pre-commit` kancaları tanımlanmıştır. Klonlama sonrasında Husky'yi aktif etmek için:
 
@@ -188,7 +188,7 @@ dotnet husky install
 
 ---
 
-## 🤝 Katkıda Bulunma
+##Katkıda Bulunma
 
 Projeye katkıda bulunmak isterseniz lütfen önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasını inceleyin.
 
