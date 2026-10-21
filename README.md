@@ -15,7 +15,7 @@
 
 ---
 
-##Proje Hakkında
+## Proje Hakkında
 
 **OleAI Backend**, kullanıcıların mutfak kilerlerindeki malzemeleri (son kullanma tarihleri ve ölçü birimleriyle) takip etmelerini sağlayan, ellerindeki malzemelere, alerjilerine, diyet tercihlerine ve sevmedikleri malzemelere göre **Yapay Zeka (AI) destekli tarif önerileri** sunan kurumsal ölçekli bir RESTful API servisidir.
 
@@ -23,7 +23,7 @@ Sistem; tarif oluşturma aşamasında yerel büyük dil modelleri (**Ollama - `O
 
 ---
 
-##Temel Özellikler
+## Temel Özellikler
 
 * **AI Tarif Öneri & Kullanıcı Vektör Entegrasyonu:** Kullanıcının kilerindeki malzemeler, alerji kısıtlamaları (`AllergyRestrictions`), diyet tercihleri (`DietaryPreferences`) ve sevmediği malzemeler (`DislikedIngredients`) harmanlanarak Python tabanlı AI öneri motoru ile haberleşilir.
 * **Yerel LLM ile Tarif Analizi (Ollama):** `OleAI-Editor.Modelfile` ile özelleştirilmiş yerel LLM modeli sayesinde tarif metinleri, adımları ve malzeme tutarlılıkları otomatik olarak analiz edilir (`AnalyzeRecipeWithLlm`).
@@ -38,7 +38,7 @@ Sistem; tarif oluşturma aşamasında yerel büyük dil modelleri (**Ollama - `O
 
 ---
 
-##Mimari ve Teknoloji Yığını
+## Mimari ve Teknoloji Yığını
 
 Proje, **Clean Architecture (Temiz Mimari)** ve **CQRS (Command Query Responsibility Segregation)** prensiplerine sıkı sıkıya bağlı kalınarak 4 ana katmanda geliştirilmiştir:
 
@@ -148,7 +148,7 @@ dotnet run --project src/OleAI.Backend.Presentation
 
 ---
 
-##Testleri Çalıştırma
+## Testleri Çalıştırma
 
 Projenin tüm katmanları (`Core`, `Domain`, `Application`, `Persistence`, `Presentation`) kapsamlı birim testlerine sahiptir. Testleri çalıştırmak için:
 
@@ -158,7 +158,7 @@ dotnet test src/OleAI.Backend.sln --configuration Release
 
 ---
 
-##API Dokümantasyonu ve Uç Noktalar (Endpoints)
+## API Dokümantasyonu ve Uç Noktalar (Endpoints)
 
 Uygulama ayağa kalktıktan sonra interaktif **Swagger UI** arayüzüne aşağıdaki adresten ulaşabilirsiniz:
 * **Swagger UI:** `http://localhost:<PORT>/swagger`
@@ -177,7 +177,7 @@ Uygulama ayağa kalktıktan sonra interaktif **Swagger UI** arayüzüne aşağı
 
 ---
 
-##Git Kancaları (Husky.Net)
+## Git Kancaları (Husky.Net)
 
 Projede kod kalitesini korumak adına `.husky` üzerinden `pre-commit` kancaları tanımlanmıştır. Klonlama sonrasında Husky'yi aktif etmek için:
 
@@ -188,10 +188,10 @@ dotnet husky install
 
 ---
 
-##Katkıda Bulunma
+## Katkıda Bulunma
 
 Projeye katkıda bulunmak isterseniz lütfen önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasını inceleyin.
 
-## 📄 Lisans
+## Lisans
 
 Bu proje MIT Lisansı altında lisanslanmıştır.
