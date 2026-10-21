@@ -1,119 +1,279 @@
-# Contributing to This Project
+<div align="center">
 
-First off, thank you for considering contributing to this project! 
+**🌐 Language / Dil:** &nbsp; [🇬🇧 English](#en) &nbsp;|&nbsp; [🇹🇷 Türkçe](#tr)
 
-This document outlines the end-to-end workflow, from setting up the project on your local machine to submitting a Pull Request (PR), alongside our version control (Git) workflow and coding standards. Adhering to these rules is mandatory to ensure a maintainable, clean, and bug-free codebase.
+</div>
 
-## 1. Getting Started: Project Setup
+---
 
-Follow these steps to get the project running on your local environment.
+<a id="en"></a>
 
-### Prerequisites
-Make sure you have the following installed:
-* [Git](https://git-scm.com/)
-* [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+> 🇹🇷 Türkçe okumak için: **[Türkçe sürüme git ↓](#tr)**
 
-### Step 1: Clone the Repository
-First, clone the repository to your local machine and navigate into the project directory:
-```bash
-git clone <repository-url>
-cd <project-directory>
+# OleAI Backend Contributing Guide
+
+Thank you for your interest in contributing to the **OleAI Backend** project! To maintain the highest standards of code quality, architectural integrity (**Clean Architecture & CQRS**), and testability, we kindly ask you to follow the guidelines outlined below.
+
+---
+
+## 1. Setting Up the Development Environment
+
+1. **Fork** the repository to your own GitHub account and clone it to your local machine:
+
+   ```bash
+   git clone https://github.com/onuraydi/OleAI-backend.git
+   cd OleAI-backend
+   ```
+
+2. Restore the local .NET tools and install Git hooks using Husky:
+
+   ```bash
+   dotnet tool restore
+   dotnet husky install
+   ```
+
+3. Copy the `.env.example` file to `.env` and configure your local development environment.
+
+4. Before starting development, make sure all tests pass:
+
+   ```bash
+   dotnet test src/OleAI.Backend.sln
+   ```
+
+---
+
+## 2. Branching and Commit Standards
+
+### Branch Naming Conventions
+
+Create a new branch from `main` (or `develop`) for every new feature or bug fix.
+
+- **New Feature:** `feat/<feature-name>` (e.g., `feat/recipe-nutrition-calculator`)
+- **Bug Fix:** `fix/<bug-name>` (e.g., `fix/pantry-unit-conversion-bug`)
+- **Architecture / Refactoring:** `refactor/<scope>` (e.g., `refactor/redis-cache-keys`)
+- **Documentation:** `docs/<scope>` (e.g., `docs/update-readme`)
+- **Tests:** `test/<scope>` (e.g., `test/shopping-list-handler-tests`)
+
+### Conventional Commits
+
+The **Conventional Commits** standard is mandatory for this project. All commit messages must follow the format below:
+
+```text
+<type>(<scope>): <short description>
+
+[optional detailed description]
 ```
 
-### Step 2: Environment Variables
-We use environment variables to manage sensitive configurations. 
-1. Locate the `.env.example` file in the root directory.
-2. Duplicate it and rename the copy to `.env`.
-3. Fill in the required values (database credentials, API keys, etc.) in the `.env` file. *Never commit your `.env` file to version control.*
+**Examples:**
 
-### Step 3: Run the Application
-We use Docker to ensure consistent development environments. To build and start the application and its dependencies:
-```bash
-docker-compose up -d --build
+- `feat(pantry): add bulk expiration date check endpoint`
+- `fix(recipes): handle null images in CreateRecipeCommandModelBinder`
+- `test(auth): add unit tests for RefreshTokenCommandHandler`
+- `chore(ci): update github actions dotnet version`
+
+> **Note:** When you create a commit, the `.husky/pre-commit` hook runs automatically to check code formatting and build status.
+
+---
+
+## 3. Architecture and Coding Standards
+
+The project includes an `.editorconfig` file. Make sure your IDE respects the rules defined in this file.
+
+When implementing a new feature, you **must** follow the layer-specific rules described below.
+
+### A. Application Layer (CQRS & Feature-Sliced Structure)
+
+Each new feature must be organized under `src/OleAI.Backend.Application/Features/<FeatureName>/`, with the following directory structure where applicable:
+
+1. **`Commands/` or `Queries/`**
+   - Each Command or Query must have its own subdirectory.
+   - Example: `Commands/CreateIngredient/CreateIngredientCommand.cs` and `CreateIngredientCommandHandler.cs`.
+
+2. **`Rules/` (Business Rules)**
+   - Business logic must not be embedded directly in handlers.
+   - Place business logic checks in a `<Feature>BusinessRules.cs` class.
+   - Throw `BusinessException` or `NotFoundException` when a business rule fails or a requested resource cannot be found.
+
+3. **`Validations/` (FluentValidation)**
+   - Every Command received from a user must have a corresponding `AbstractValidator<TCommand>` implementation.
+   - The `ValidationBehavior` pipeline will execute these validators automatically.
+
+4. **`Constants/`**
+   - Do not use magic strings for error or informational messages.
+   - Define these messages in a `<Feature>Messages.cs` class and reference the corresponding constants.
+
+5. **`Profiles/`**
+   - Define AutoMapper profiles for Entity-to-DTO and DTO-to-Entity mappings in the relevant feature's `Profiles/` directory.
+
+### B. Presentation Layer (Controllers)
+
+- **Controllers must not contain business logic.**
+- Controllers must inherit from `BaseController` and should only dispatch requests through `Mediator.Send(...)` and return the appropriate HTTP status codes, such as `Ok`, `Created`, or `NoContent`.
+- Do not use `try-catch` blocks for error handling in controllers. All exceptions are handled by `ExceptionMiddleware` and returned in the standard `ProblemDetails` format.
+
+### C. Security Guidelines
+
+- **Never** hardcode or commit API keys, passwords, connection strings, or sensitive files such as `firebase-adminsdk.json`.
+- When introducing a new external service configuration class (`*Settings.cs`), add the corresponding configuration keys to both `.env.example` and `appsettings.json`, leaving sensitive values empty or using safe placeholders.
+
+---
+
+## 4. Unit Testing Requirements
+
+High test coverage is a critical priority for the OleAI Backend project.
+
+- Create corresponding test classes under `tests/OleAI.Backend.Application.Tests/` for every new:
+  - `CommandHandler`
+  - `QueryHandler`
+  - `BusinessRules` class
+  - `Validator`
+
+- Use the `MethodName_StateUnderTest_ExpectedBehavior` naming convention or other clear, scenario-based test names.
+- Use `Moq` or the mocking library already adopted by the project to isolate dependencies and ensure that tests focus on the behavior being tested.
+
+---
+
+## 5. Pull Request (PR) Process
+
+1. After completing your changes and ensuring that all local tests pass, push your branch to your fork:
+
+   ```bash
+   git push origin feat/feature-name
+   ```
+
+2. Open a **Pull Request (PR)** on GitHub against the upstream repository.
+
+3. Include the following information in your PR description:
+   - A summary of what you changed and why.
+   - The relevant Issue number, if applicable (e.g., `Closes #12`).
+   - A clear note if you have introduced any new `.env` variables.
+
+4. Ensure that all build and test steps in the GitHub Actions workflow (`backend-ci.yml`) complete successfully.
+
+---
+
+Thank you for helping us improve OleAI Backend! By following these guidelines, you help maintain a consistent, secure, maintainable, and testable codebase.
+
+<div align="right">
+
+[⬆ Back to top](#) &nbsp;|&nbsp; [🇹🇷 Türkçe sürüme git](#tr)
+
+</div>
+
+---
+---
+
+<a id="tr"></a>
+
+> 🇬🇧 To read in English: **[Go to the English version ↑](#en)**
+
+# OleAI Backend Katkıda Bulunma Rehberi (Contributing Guide)
+
+**OleAI Backend** projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Projemizin kod kalitesini, mimari bütünlüğünü (**Clean Architecture & CQRS**) ve test edilebilirliğini en üst düzeyde tutmak için aşağıdaki kurallara uymanızı rica ediyoruz.
+
+---
+
+## 1. Geliştirme Ortamının Hazırlanması
+
+1. Projeyi kendi hesabınıza **Fork** edin ve yerel makinenize klonlayın:
+   ```bash
+   git clone https://github.com/onuraydi/OleAI-backend.git
+   cd OleAI-backend
+   ```
+2. .NET yerel araçlarını (Husky vb.) geri yükleyin:
+   ```bash
+   dotnet tool restore
+   dotnet husky install
+   ```
+3. `.env.example` dosyasını `.env` olarak kopyalayın ve yerel geliştirme ayarlarınızı yapın.
+4. Kod yazmaya başlamadan önce tüm testlerin geçtiğinden emin olun:
+   ```bash
+   dotnet test src/OleAI.Backend.sln
+   ```
+
+---
+
+## 2. Dal (Branch) ve Commit Standartları
+
+### Branch İsimlendirme
+Yeni bir özellik veya hata düzeltmesi için `main` (veya `develop`) dalından yeni bir dal oluşturun:
+* **Yeni Özellik:** `feat/<ozellik-adi>` (Örn: `feat/recipe-nutrition-calculator`)
+* **Hata Düzeltmesi:** `fix/<hata-adi>` (Örn: `fix/pantry-unit-conversion-bug`)
+* **Mimari / Refactoring:** `refactor/<kapsam>` (Örn: `refactor/redis-cache-keys`)
+* **Dokümantasyon:** `docs/<kapsam>` (Örn: `docs/update-readme`)
+* **Test Ekleme:** `test/<kapsam>` (Örn: `test/shopping-list-handler-tests`)
+
+### Conventional Commits
+Projemizde **Conventional Commits** standardı zorunludur. Commit mesajlarınız aşağıdaki formatta olmalıdır:
+
+```text
+<tip>(<kapsam>): <kısa açıklama>
+
+[opsiyonel detaylı açıklama]
 ```
-*The application should now be running. Check the specific service ports in the `docker-compose.yml` file.*
 
-## 2. Branching Strategy
+**Örnekler:**
+* `feat(pantry): add bulk expiration date check endpoint`
+* `fix(recipes): handle null images in CreateRecipeCommandModelBinder`
+* `test(auth): add unit tests for RefreshTokenCommandHandler`
+* `chore(ci): update github actions dotnet version`
 
-Our project utilizes a structured Git Flow model.
+> **Not:** Commit attığınızda `.husky/pre-commit` kancası otomatik olarak çalışacak ve kod formatını / derleme durumunu kontrol edecektir.
 
-### Main Branches
-* **`main`:** This branch contains only stable, thoroughly tested code that is running in the production environment. Direct commits to this branch are strictly prohibited; all changes must be merged via Pull Requests.
-* **`develop`:** This is the primary branch for the development environment. All new features (`feature`) and bug fixes are initially merged and tested here.
+---
 
-### Supporting Branches
-These branches are created temporarily for specific tasks and must be deleted after being merged into the relevant main branch.
+## 🏛️ 3. Mimari Kurallar ve Kodlama Standartları
 
-* **`feature/<feature-name>`:** Created from the **`develop`** branch when working on a new feature or module. Once the work is complete, it is merged back into `develop`.
-  * *Example:* `feature/user-authentication`
-* **`bugfix/<bug-name>`:** Created from **`develop`** to fix bugs discovered during the development phase (before reaching production).
-  * *Example:* `bugfix/login-crash-issue`
-* **`refactor/<refactor-name>`:** Created from the **`develop`** branch when restructuring existing code without changing its external behavior or adding new features.
-  * *Example:* `refactor/user-service-logic`
-* **`hotfix/<bug-name>`:** Created directly from the **`main`** branch to address critical, urgent issues in the production environment. Once resolved, the fix must be merged into **both** `main` and `develop` to ensure the bug does not reappear in future releases.
-  * *Example:* `hotfix/payment-gateway-timeout`
+Projemizde `.editorconfig` dosyası tanımlıdır. IDE'nizin bu dosyayı dikkate aldığından emin olun. Yeni bir özellik (Feature) eklerken aşağıdaki katman kurallarına **kesinlikle** uyulmalıdır:
 
-## 3. Development Workflow
+### A. Application Katmanı (CQRS & Feature-Sliced Yapı)
+Her yeni işlev `src/OleAI.Backend.Application/Features/<FeatureName>/` altında ilgili klasörlere ayrılmalıdır:
+1. **`Commands/` veya `Queries/`:**
+   * Her Command/Query kendi alt klasörüne sahip olmalıdır (Örn: `Commands/CreateIngredient/CreateIngredientCommand.cs` ve `CreateIngredientCommandHandler.cs`).
+2. **`Rules/` (İş Kuralları):**
+   * İş mantığı kontrolleri doğrudan Handler içine gömülmemeli, `<Feature>BusinessRules.cs` sınıfı içerisine yazılmalı ve hata durumunda `BusinessException` veya `NotFoundException` fırlatılmalıdır.
+3. **`Validations/` (FluentValidation):**
+   * Kullanıcıdan gelen her Command için mutlaka `AbstractValidator<TCommand>` sınıfı yazılmalıdır. `ValidationBehavior` pipeline'ı bunu otomatik olarak çalıştıracaktır.
+4. **`Constants/`:**
+   * Döndürülen hata veya bilgi mesajları magic string olarak yazılmamalı, `<Feature>Messages.cs` içerisinden sabit olarak çağrılmalıdır.
+5. **`Profiles/`:**
+   * Entity <-> DTO dönüşümleri için AutoMapper profilleri ilgili özelliğin `Profiles/` klasöründe tanımlanmalıdır.
 
-Once your environment is running, follow these steps to start coding.
+### B. Presentation Katmanı (Controllers)
+* Controller'lar içerisinde **kesinlikle iş mantığı (business logic) bulunmamalıdır.**
+* Controller'lar `BaseController` sınıfından türemeli ve sadece `Mediator.Send(...)` çağrısı yaparak uygun HTTP durum kodunu (`Ok`, `Created`, `NoContent`) dönmelidir.
+* Hata yönetimi için `try-catch` blokları **kullanılmamalıdır**; tüm hatalar `ExceptionMiddleware` tarafından yakalanıp standart `ProblemDetails` formatında döndürülmektedir.
 
-### Step 1: Update Your Local `develop` Branch
-Always start your work from the most up-to-date `develop` branch:
-```bash
-git checkout develop
-git pull origin develop
-```
+### C. Güvenlik Kuralları
+* **Asla** API anahtarı, parola, bağlantı cümlesi veya `firebase-adminsdk.json` gibi hassas dosyaları koda gömmeyin ve commit etmeyin.
+* Yeni bir dış servis ayar sınıfı eklediğinizde (`*Settings.cs`), örnek anahtarlarını mutlaka `.env.example` ve `appsettings.json` (değeri boş olarak) dosyalarına ekleyin.
 
-### Step 2: Create a New Branch
-Create a supporting branch for your task based on the strategy outlined above:
-* **`feature/...`** for new additions.
-* **`bugfix/...`** for fixing issues.
-* **`refactor/...`** for code restructuring.
-* **`hotfix/...`** for urgent production patches.
+---
 
-```bash
-git checkout -b feature/your-feature-name
-```
+## 4. Birim Testi (Unit Test) Zorunluluğu
 
-### Step 3: Code and Test
-Write your code! Ensure that your changes do not break existing functionality. Run any local test suites and linting tools before committing.
+OleAI Backend projesinde yüksek test kapsamı (Code Coverage) kritik öneme sahiptir.
+* Yazdığınız her yeni **CommandHandler**, **QueryHandler**, **BusinessRules** ve **Validator** için `tests/OleAI.Backend.Application.Tests/` altında karşılık gelen test sınıfını oluşturmalısınız.
+* Test metod isimlendirmelerinde **`MethodName_StateUnderTest_ExpectedBehavior`** veya anlaşılır senaryo isimlendirmeleri kullanın.
+* Bağımlılıkları izole etmek için `Moq` (veya projede kullanılan mocking kütüphanesini) kullanın.
 
-## 4. Commit Message Standards
+---
 
-We follow "Conventional Commits" standards to maintain a clean, readable commit history that is compatible with automated versioning (semver) tools.
+## 5. Pull Request (PR) Süreci
 
-### Format
-`<type>(<scope>): <short_description>`
+1. Kodunuzu tamamladıktan ve yerel testlerinizi (`dotnet test`) başarıyla geçirdikten sonra dalınızı (branch) kendi fork'unuza push edin:
+   ```bash
+   git push origin feat/ozellik-adi
+   ```
+2. GitHub üzerinden ana repoya bir **Pull Request (PR)** açın.
+3. PR açıklamasında:
+   * Ne değiştirdiğinizi ve neden değiştirdiğinizi özetleyin.
+   * Varsa ilgili Issue numarasını (`Closes #12` gibi) belirtin.
+   * Yeni bir `.env` değişkeni eklediyseniz bunu PR açıklamasında açıkça vurgulayın.
+4. GitHub Actions (`backend-ci.yml`) üzerindeki tüm derleme ve test adımlarının yeşil (başarılı) olduğundan emin olun.
 
-### Types
-* **`feat:`** Used when adding a new feature.
-* **`fix:`** Used when fixing a bug in the system.
-* **`hotfix:`** Used for urgent patches in the production environment.
-* **`docs:`** Used for changes strictly related to documentation (e.g., `README`, `CONTRIBUTING.md`, inline comments).
-* **`chore:`** Used for maintenance tasks, dependency updates, or build process adjustments that do not affect production code.
-* **`refactor:`** Used for code changes that neither fix a bug nor add a feature, but improve code structure and readability.
-* **`test:`** Used when adding missing tests or correcting existing ones.
+<div align="right">
 
-### Commit Examples
-* `feat(auth): add Google login integration`
-* `fix(cart): resolve incorrect total calculation`
-* `hotfix(db): patch urgent database connection drop`
-* `docs(readme): add git flow and commit standards`
-* `chore(deps): bump axios version for security patch`
-* `refactor(api): restructure user controller for better readability`
+[⬆ Başa dön](#) &nbsp;|&nbsp; [🇬🇧 İngilizce sürüme git](#en)
 
-## 5. Submitting Your Work
-
-### Step 1: Push Your Branch
-Push your newly created branch to the remote repository:
-```bash
-git push origin feature/your-feature-name
-```
-
-### Step 2: Open a Pull Request (PR)
-1. Navigate to the repository on GitHub/GitLab.
-2. Open a Pull Request targeting the **`develop`** branch (or `main` if it is a `hotfix`).
-3. Provide a clear title and description of your changes. 
-4. Wait for code review. Make any requested changes by pushing new commits to your branch.
-
-Once approved, a maintainer will merge your PR. Thank you for your contribution!
+</div>
