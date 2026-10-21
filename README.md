@@ -69,7 +69,7 @@ OleAI-backend/
 
 ---
 
-##Kurulum ve Çalıştırma (Getting Started)
+## Kurulum ve Çalıştırma (Getting Started)
 
 Projeyi yerel ortamınızda **Docker ile (Önerilen)** veya **.NET CLI ile** ayağa kaldırabilirsiniz.
 
@@ -82,7 +82,7 @@ Projeyi yerel ortamınızda **Docker ile (Önerilen)** veya **.NET CLI ile** aya
 ### 1. Projeyi Klonlayın
 
 ```bash
-git clone [https://github.com/](https://github.com/)<kullanici-adin>/OleAI-backend.git
+git clone https://github.com/onuraydi/OleAI-backend.git
 cd OleAI-backend
 ```
 
