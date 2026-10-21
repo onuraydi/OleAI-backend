@@ -29,9 +29,9 @@ Sistem; tarif oluşturma aşamasında yerel büyük dil modelleri (**Ollama - `O
 * **Yerel LLM ile Tarif Analizi (Ollama):** `OleAI-Editor.Modelfile` ile özelleştirilmiş yerel LLM modeli sayesinde tarif metinleri, adımları ve malzeme tutarlılıkları otomatik olarak analiz edilir (`AnalyzeRecipeWithLlm`).
 * **Akıllı Kiler (Pantry) ve Birim Dönüştürme:** Gram, mililitre, adet, su bardağı gibi farklı ölçü birimleri (`MeasurementUnitHelper`) arasında otomatik dönüşüm yapılır. Kilerde olmayan malzemeler için kullanıcılar malzeme talebi (`IngredientRequest`) oluşturabilir.
 * **Event-Driven Stok ve Alışveriş Listesi Senkronizasyonu:**
-  *Kullanıcı bir tarifi pişirmeye başladığında (`RecipeConsumedEvent`), kullanılan miktarlar kilerden otomatik düşülür (`InventoryDeductionEventHandler`).
-  *Kilerde tükenen ürünler (`IngredientDepletedEvent`) otomatik olarak alışveriş listesine eklenir (`ShoppingListEventHandler`).
-  *Alışveriş listesinden satın alınan ürünler (`ItemPurchasedEvent`) tek tıkla kilere geri aktarılır (`PantryAdditionEventHandler`).
+  * Kullanıcı bir tarifi pişirmeye başladığında (`RecipeConsumedEvent`), kullanılan miktarlar kilerden otomatik düşülür (`InventoryDeductionEventHandler`).
+  * Kilerde tükenen ürünler (`IngredientDepletedEvent`) otomatik olarak alışveriş listesine eklenir (`ShoppingListEventHandler`).
+  * Alışveriş listesinden satın alınan ürünler (`ItemPurchasedEvent`) tek tıkla kilere geri aktarılır (`PantryAdditionEventHandler`).
 * **Arka Plan İşlemleri ve Bildirimler (Hangfire & Firebase FCM):** `ExpirationNotifierJob` ile son kullanma tarihi yaklaşan kiler ürünleri düzenli taranır ve kullanıcının mobil cihazlarına (`UserDevice`) Firebase Cloud Messaging üzerinden anlık bildirim gönderilir.
 * **Gelişmiş Kimlik Doğrulama & Güvenlik:** JWT Access/Refresh Token rotasyonu, e-posta OTP doğrulaması (`OtpHelper`), rol bazlı yetkilendirme (`Admin`, `User`), hesap kilitleme/banlama mekanizmaları.
 * **Gözlemlenebilirlik (Observability) ve Loglama:** `CorrelationIdMiddleware` ile uçtan uca istek takibi, veritabanı ve dosya tabanlı sistem logları (`AdminLogs`), Prometheus sağlık ve metrik izleyicisi (`HealthCheckMetricsService`).
